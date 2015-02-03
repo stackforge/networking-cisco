@@ -15,9 +15,11 @@
 # limitations under the License.
 
 import mock
-from oslo.config import cfg
+from oslo_config import cfg
 
-from neutron.plugins.ml2.drivers.cisco.nexus import config as cisco_config
+from networking_cisco.plugins.ml2.drivers.cisco.nexus \
+        import config as cisco_config
+
 from neutron.tests import base
 
 
