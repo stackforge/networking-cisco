@@ -1,0 +1,1 @@
+git fetch https://review.openstack.org/openstack/neutron refs/changes/36/155436/2 && git format-patch -l --stdout FETCH_HEAD
