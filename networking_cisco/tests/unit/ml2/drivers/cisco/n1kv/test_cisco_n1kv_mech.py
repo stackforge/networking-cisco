@@ -207,6 +207,24 @@ class TestN1KVMechDriverNetworksV2(test_db_base_plugin_v2.TestNetworksV2,
                           n1kv_db.get_network_binding,
                           network['network']['id'])
 
+    def test_shared_network_create(self):
+        """Test shared network creation"""
+        res = self._create_network(self.fmt, name='net', admin_state_up=True,
+                                   shared=True)
+        network = self.deserialize(self.fmt, res)
+        self.assertEqual(network['network']['tenant_id'], 0)
+
+    def test_update_network_set_shared(self):
+        """Test shared network udpate"""
+        with self.network(shared=False) as network:
+            data = {'network': {'shared': True}}
+            req = self.new_update_request('networks',
+                                          data,
+                                          network['network']['id'])
+            res = self.deserialize(self.fmt, req.get_response(self.api))
+            self.assertTrue(res['network']['shared'])
+            self.assertEqual(network['network']['tenant_id'], 0)
+
 
 class TestN1KVMechDriverPortsV2(test_db_base_plugin_v2.TestPortsV2,
                                 TestN1KVMechanismDriver):
