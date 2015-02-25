@@ -24,24 +24,26 @@ from neutron.db import agents_db
 from neutron.db import common_db_mixin
 from neutron.extensions import providernet as pnet
 from neutron import manager
-from neutron.plugins.cisco.common import cisco_constants as c_constants
-from neutron.plugins.cisco.db.l3 import device_handling_db
-from neutron.plugins.cisco.db.l3 import l3_router_appliance_db
-from neutron.plugins.cisco.l3.rpc import devices_cfgagent_rpc_cb
-from neutron.plugins.cisco.l3.rpc import l3_router_cfgagent_rpc_cb
-from neutron.plugins.cisco.l3 import service_vm_lib
 from neutron.plugins.common import constants as service_constants
-from neutron.tests.unit.cisco.l3 import device_handling_test_support
 from neutron.tests.unit import test_db_plugin
 from neutron.tests.unit import test_extension_extraroute as test_ext_extraroute
 from neutron.tests.unit import test_l3_plugin
 from neutron.tests.unit import testlib_plugin
 
+from networking_cisco.plugins.cisco.common import (
+    cisco_constants as c_constants)
+from networking_cisco.plugins.cisco.db.l3 import device_handling_db
+from networking_cisco.plugins.cisco.db.l3 import l3_router_appliance_db
+from networking_cisco.plugins.cisco.l3.rpc import devices_cfgagent_rpc_cb
+from networking_cisco.plugins.cisco.l3.rpc import l3_router_cfgagent_rpc_cb
+from networking_cisco.plugins.cisco.l3 import service_vm_lib
+from networking_cisco.tests.unit.cisco.l3 import device_handling_test_support
 
-CORE_PLUGIN_KLASS = ('neutron.tests.unit.cisco.l3.'
+
+CORE_PLUGIN_KLASS = ('networking_cisco.tests.unit.cisco.l3.'
                      'test_l3_router_appliance_plugin.TestNoL3NatPlugin')
 L3_PLUGIN_KLASS = (
-    "neutron.tests.unit.cisco.l3.test_l3_router_appliance_plugin."
+    "networking_cisco.tests.unit.cisco.l3.test_l3_router_appliance_plugin."
     "TestApplianceL3RouterServicePlugin")
 extensions_path = neutron.plugins.__path__[0] + '/cisco/extensions'
 
