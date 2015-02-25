@@ -20,11 +20,12 @@ import oslo_messaging
 from neutron.common import config as base_config
 from neutron.common import constants as l3_constants
 from neutron.openstack.common import uuidutils
-from neutron.plugins.cisco.cfg_agent import cfg_agent
-from neutron.plugins.cisco.cfg_agent import cfg_exceptions
-from neutron.plugins.cisco.cfg_agent.service_helpers.routing_svc_helper import(
+
+from networking_cisco.plugins.cisco.cfg_agent import cfg_agent
+from networking_cisco.plugins.cisco.cfg_agent import cfg_exceptions
+from networking_cisco.plugins.cisco.cfg_agent.service_helpers.routing_svc_helper import(
     RouterInfo)
-from neutron.plugins.cisco.cfg_agent.service_helpers.routing_svc_helper import(
+from networking_cisco.plugins.cisco.cfg_agent.service_helpers.routing_svc_helper import(
     RoutingServiceHelper)
 
 
