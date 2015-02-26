@@ -156,7 +156,7 @@ class PolicyProfileTests(testlib_api.SqlTestCase):
 
     def test_get_policy_profiles(self):
         profile = _create_test_policy_profile_if_not_there(self.session)
-        got_profile = pprofile_mixin._get_policy_profiles().one()
+        got_profile = pprofile_mixin._get_policy_profiles().first()
         self.assertEqual(profile.id, got_profile.id)
         self.assertEqual(profile.name, got_profile.name)
 
