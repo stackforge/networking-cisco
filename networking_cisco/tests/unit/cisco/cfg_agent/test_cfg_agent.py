@@ -29,6 +29,31 @@ HOSTNAME = 'myhost'
 FAKE_ID = _uuid()
 
 
+class FakeFirewallSvcHelper(object):
+
+    def __init__(self, host, conf, cfg_agent):
+        pass
+
+
+# fake path of the firewall service helper class
+fake_opts = [
+    cfg.IntOpt('rpc_loop_interval', default=10,
+               help=_("Interval when the process_services() loop "
+                      "executes in seconds. This is when the config agent "
+                      "lets each service helper to process its neutron "
+                      "resources.")),
+    cfg.StrOpt('routing_svc_helper_class',
+               default='networking_cisco.plugins.cisco.cfg_agent.'
+                       'service_helpers.routing_svc_helper.'
+                       'RoutingServiceHelper',
+               help=_("Path of the routing service helper class.")),
+    cfg.StrOpt('fw_svc_helper_class',
+               default='networking_cisco.tests.unit.cisco.cfg_agent.'
+                       'test_cfg_agent.FakeFirewallSvcHelper',
+               help=_("Path of the firewall service helper class.")),
+]
+
+
 def prepare_router_data(enable_snat=None, num_internal_ports=1):
     router_id = _uuid()
     ex_gw_port = {'id': _uuid(),
@@ -69,7 +94,7 @@ class TestCiscoCfgAgentWIthStateReporting(base.BaseTestCase):
         self.conf = cfg.ConfigOpts()
         config.register_agent_state_opts_helper(cfg.CONF)
         self.conf.register_opts(base_config.core_opts)
-        self.conf.register_opts(cfg_agent.CiscoCfgAgent.OPTS, "cfg_agent")
+
         cfg.CONF.set_override('report_interval', 0, 'AGENT')
         super(TestCiscoCfgAgentWIthStateReporting, self).setUp()
         self.devmgr_plugin_api_cls_p = mock.patch(
@@ -92,11 +117,16 @@ class TestCiscoCfgAgentWIthStateReporting(base.BaseTestCase):
 
         mock.patch('neutron.common.rpc.create_connection').start()
 
+    def _setup_register_opts_cfg_agent(self):
+        self.conf.register_opts(fake_opts, "cfg_agent")
+
     def test_agent_registration_success(self):
+        self._setup_register_opts_cfg_agent()
         agent = cfg_agent.CiscoCfgAgentWithStateReport(HOSTNAME, self.conf)
         self.assertTrue(agent.devmgr_rpc.register_for_duty(agent.context))
 
     def test_agent_registration_success_after_2_tries(self):
+        self._setup_register_opts_cfg_agent()
         self.devmgr_plugin_api.register_for_duty = mock.Mock(
             side_effect=[False, False, True])
         cfg_agent.REGISTRATION_RETRY_DELAY = 0.01
@@ -104,6 +134,7 @@ class TestCiscoCfgAgentWIthStateReporting(base.BaseTestCase):
         self.assertEqual(agent.devmgr_rpc.register_for_duty.call_count, 3)
 
     def test_agent_registration_fail_always(self):
+        self._setup_register_opts_cfg_agent()
         self.devmgr_plugin_api.register_for_duty = mock.Mock(
             return_value=False)
         cfg_agent.REGISTRATION_RETRY_DELAY = 0.01
@@ -112,6 +143,7 @@ class TestCiscoCfgAgentWIthStateReporting(base.BaseTestCase):
             cfg_agent.CiscoCfgAgentWithStateReport(HOSTNAME, self.conf)
 
     def test_agent_registration_no_device_mgr(self):
+        self._setup_register_opts_cfg_agent()
         self.devmgr_plugin_api.register_for_duty = mock.Mock(
             return_value=None)
         cfg_agent.REGISTRATION_RETRY_DELAY = 0.01
@@ -120,6 +152,7 @@ class TestCiscoCfgAgentWIthStateReporting(base.BaseTestCase):
             cfg_agent.CiscoCfgAgentWithStateReport(HOSTNAME, self.conf)
 
     def test_report_state(self):
+        self._setup_register_opts_cfg_agent()
         agent = cfg_agent.CiscoCfgAgentWithStateReport(HOSTNAME, self.conf)
         agent._report_state()
         self.assertIn('total routers', agent.agent_state['configurations'])
@@ -129,9 +162,17 @@ class TestCiscoCfgAgentWIthStateReporting(base.BaseTestCase):
     @mock.patch('networking_cisco.plugins.cisco.cfg_agent.'
                 'cfg_agent.CiscoCfgAgentWithStateReport._agent_registration')
     def test_report_state_attribute_error(self, agent_registration):
+        self._setup_register_opts_cfg_agent()
         cfg.CONF.set_override('report_interval', 1, 'AGENT')
         self.plugin_reportstate_api.report_state.side_effect = AttributeError
         agent = cfg_agent.CiscoCfgAgentWithStateReport(HOSTNAME, self.conf)
         agent.heartbeat = mock.Mock()
         agent.send_agent_report(None, None)
         self.assertTrue(agent.heartbeat.stop.called)
+
+    def test_initialize_service_helpers_error(self):
+        # we expect to see failure in unit test if we
+        # do not use fake path of the firewall service helper class
+        self.conf.register_opts(cfg_agent.CiscoCfgAgent.OPTS, "cfg_agent")
+        agent = cfg_agent.CiscoCfgAgent(HOSTNAME, self.conf)
+        self.assertEqual(None, agent.fw_service_helper)
