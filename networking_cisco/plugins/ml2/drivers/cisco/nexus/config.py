@@ -23,6 +23,9 @@ ml2_cisco_opts = [
                 help=_("Distribute SVI interfaces over all switches")),
     cfg.StrOpt('managed_physical_network',
                help=_("The physical network managed by the switches.")),
+    cfg.BoolOpt('host_key_checks', default=False,
+                help=_("Enable strict host key checks when "
+                       "connecting to Nexus switches")),
 ]
 
 
