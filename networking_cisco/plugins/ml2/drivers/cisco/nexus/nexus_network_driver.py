@@ -102,6 +102,7 @@ class CiscoNexusDriver(object):
                                             port=nexus_ssh_port,
                                             username=nexus_user,
                                             password=nexus_password,
+                                            hostkey_verify=False,
                                             device_params={"name": "nexus"})
             except TypeError:
                 # ... but if that causes an error, we appear to have the old
@@ -109,7 +110,8 @@ class CiscoNexusDriver(object):
                 man = self.ncclient.connect(host=nexus_host,
                                             port=nexus_ssh_port,
                                             username=nexus_user,
-                                            password=nexus_password)
+                                            password=nexus_password,
+                                            hostkey_verify=False)
         except Exception as e:
             # Raise a Neutron exception. Include a description of
             # the original ncclient exception.
