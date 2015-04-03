@@ -106,10 +106,11 @@ def get_policy_profile_by_name(name, db_session=None):
     """
     db_session = db_session or db.get_session()
     with db_session.begin(subtransactions=True):
-        try:
-            return (db_session.query(n1kv_models.PolicyProfile).
-                    filter_by(name=name).first())
-        except sa_exc.NoResultFound:
+        policy_profile = (db_session.query(n1kv_models.PolicyProfile).
+                      filter_by(name=name).first())
+        if policy_profile:
+            return policy_profile
+        else:
             raise n1kv_exc.PolicyProfileNotFound(profile=name)
 
 
@@ -122,10 +123,11 @@ def get_policy_profile_by_uuid(db_session, profile_id):
     :returns: policy profile object
     """
     with db_session.begin(subtransactions=True):
-        try:
-            return (db_session.query(n1kv_models.PolicyProfile).
-                    filter_by(id=profile_id).first())
-        except sa_exc.NoResultFound:
+        policy_profile = (db_session.query(n1kv_models.PolicyProfile).
+                          filter_by(id=profile_id).first())
+        if policy_profile:
+            return policy_profile
+        else:
             raise n1kv_exc.PolicyProfileNotFound(profile=profile_id)
 
 
