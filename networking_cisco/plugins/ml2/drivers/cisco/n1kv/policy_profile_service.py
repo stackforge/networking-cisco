@@ -230,6 +230,7 @@ class PolicyProfilePlugin(PolicyProfile_db_mixin):
             except (n1kv_exc.VSMError, n1kv_exc.VSMConnectionFailed):
                 with excutils.save_and_reraise_exception(reraise=False):
                     LOG.warning(_LW('No policy profile populated from VSM'))
+        self.santitize_policy_profile_table()
 
     def get_policy_profiles(self, context, filters=None, fields=None):
         """
@@ -263,3 +264,27 @@ class PolicyProfilePlugin(PolicyProfile_db_mixin):
         return super(PolicyProfilePlugin, self).get_policy_profile(context,
                                                                    pprofile_id,
                                                                    fields)
+
+    def santitize_policy_profile_table(self):
+        """Clear policy profiles from stale VSM"""
+        db_session = db.get_session()
+        hosts = self.n1kvclient.get_vsm_hosts()
+        vsm_ips = [i[0] for i in db_session.query(
+                        n1kv_models.PolicyProfile.vsm_ip).distinct()]
+        for vsm_ip in vsm_ips:
+            # Delete the policy profiles from the VSMs that are not configured
+            if vsm_ip not in hosts:
+                pprofiles = (db_session.query(n1kv_models.PolicyProfile).
+                             filter_by(vsm_ip=vsm_ip).all())
+                if pprofiles:
+                    for pprofile in pprofiles:
+                        # Do not delete profile if it is in use and if it
+                        # is the only VSM to have it configured
+                        if ((not n1kv_db.policy_profile_in_use(pprofile['id']))
+                            or ((db_session.query(n1kv_models.PolicyProfile).
+                                filter_by(id=pprofile['id']).count()) > 1)):
+                            db_session.delete(pprofile)
+                            db_session.flush()
+                        else:
+                            LOG.warning(_LW('Cannot delete policy profile %s'
+                                        'as it is in use.'), pprofile['id'])
