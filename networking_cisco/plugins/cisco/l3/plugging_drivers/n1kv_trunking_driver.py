@@ -16,6 +16,7 @@ import eventlet
 
 from oslo_config import cfg
 from oslo_log import log as logging
+import six
 from sqlalchemy.orm import exc
 from sqlalchemy.sql import expression as expr
 
@@ -195,7 +196,7 @@ class N1kvTrunkingPlugDriver(plug.PluginSidePluggingDriver):
                     'ip_version': 4,
                     'dns_nameservers': attributes.ATTR_NOT_SPECIFIED,
                     'host_routes': attributes.ATTR_NOT_SPECIFIED}}
-                for i in xrange(max_hosted):
+                for i in six.moves.range(max_hosted):
                     # Create T1 trunk network for this router
                     self._create_resources(
                         context, "T1", i, n_spec, n1kv_const.T1_NETWORK_NAME,

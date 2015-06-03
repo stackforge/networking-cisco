@@ -24,6 +24,7 @@ from oslo_log import log as logging
 import oslo_messaging
 from oslo_utils import importutils
 from oslo_utils import timeutils
+import six
 
 from neutron.agent.common import config
 from neutron.agent.linux import external_process
@@ -288,7 +289,7 @@ class CiscoCfgAgentWithStateReport(CiscoCfgAgent):
         failure to register after the required number of attempts,
         the agent stops itself.
         """
-        for attempts in xrange(MAX_REGISTRATION_ATTEMPTS):
+        for attempts in six.moves.range(MAX_REGISTRATION_ATTEMPTS):
             context = n_context.get_admin_context_without_session()
             self.send_agent_report(self.agent_state, context)
             res = self.devmgr_rpc.register_for_duty(context)
