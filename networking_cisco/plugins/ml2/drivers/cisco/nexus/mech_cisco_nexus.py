@@ -17,6 +17,7 @@
 ML2 Mechanism Driver for Cisco Nexus platforms.
 """
 
+import eventlet
 import threading
 
 from oslo_concurrency import lockutils
@@ -46,6 +47,12 @@ from neutron.plugins.ml2 import driver_api as api
 LOG = logging.getLogger(__name__)
 
 HOST_NOT_FOUND = _LW("Host %s not defined in switch configuration section.")
+
+# Delay the start of the monitor thread to avoid problems with Neutron server
+# process forking. One problem observed was ncclient RPC sync close_session
+# call hanging during initial _monitor_thread() processing to replay existing
+# database.
+DELAY_MONITOR_THREAD = 30
 
 
 class CiscoNexusCfgMonitor(object):
@@ -94,14 +101,11 @@ class CiscoNexusCfgMonitor(object):
 
         try:
             port_bindings = nxos_db.get_nexusport_switch_bindings(switch_ip)
+            self._mdriver.configure_switch_entries(switch_ip, port_bindings)
         except excep.NexusPortBindingNotFound:
             LOG.warn(_LW("No port entries found for switch ip "
                       "%(switch_ip)s during replay."),
                       {'switch_ip': switch_ip})
-            return
-
-        self._mdriver.configure_switch_entries(switch_ip,
-            port_bindings)
 
     def check_connections(self):
         """Check connection between Openstack to Nexus device."""
@@ -172,7 +176,7 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         self.monitor_lock = threading.Lock()
         # Start the monitor thread
         if self.monitor_timeout > 0:
-            self._monitor_thread()
+            eventlet.spawn_after(DELAY_MONITOR_THREAD, self._monitor_thread)
 
     def set_switch_ip_and_active_state(self, switch_ip, state):
         self._switch_state[switch_ip, '_connect_active'] = state
