@@ -64,7 +64,7 @@ class CiscoNexusCfgMonitor(object):
         switch_connections = self._mdriver.get_switch_ips()
         for switch_ip in switch_connections:
             self._mdriver.set_switch_ip_and_active_state(
-                switch_ip, False)
+                switch_ip, True)
 
     def _configure_nexus_type(self, switch_ip, nexus_type):
         if nexus_type not in (const.NEXUS_3K, const.NEXUS_5K,
