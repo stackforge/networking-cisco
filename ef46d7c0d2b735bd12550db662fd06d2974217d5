@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Code-Review+2: Henry Gessau <gessau@cisco.com>
+Workflow+1: Henry Gessau <gessau@cisco.com>
+Code-Review+2: Abhishek Raut <abs.raut@gmail.com>
+Code-Review+1: Sourabh Patwardhan <sopatwar@gmail.com>
+Submitted-by: Jenkins
+Submitted-at: Sat, 20 Jun 2015 02:34:47 +0000
+Reviewed-on: https://review.openstack.org/190392
+Project: openstack/networking-cisco
+Branch: refs/heads/master
