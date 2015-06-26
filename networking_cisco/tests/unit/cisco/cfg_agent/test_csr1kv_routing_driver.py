@@ -15,10 +15,10 @@
 import sys
 
 import mock
+from oslo_utils import uuidutils
 import netaddr
 
 from neutron.common import constants as l3_constants
-from neutron.openstack.common import uuidutils
 from neutron.tests import base
 
 from networking_cisco.plugins.cisco.cfg_agent.device_drivers.csr1kv import (
