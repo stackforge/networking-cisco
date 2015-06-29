@@ -71,6 +71,26 @@ def get_network_profile_by_type(segment_type, db_session=None):
         raise n1kv_exc.NetworkProfileNotFound(profile=segment_type)
 
 
+def get_network_profile_by_name(name, db_session=None):
+    """Retrieve a network profile using its name."""
+    db_session = db_session or db.get_session()
+    try:
+        return (db_session.query(n1kv_models.NetworkProfile).
+                filter_by(name=name).one())
+    except sa_exc.NoResultFound:
+        raise n1kv_exc.NetworkProfileNotFound(profile=name)
+
+
+def get_network_profile_by_uuid(netp_id, db_session=None):
+    """Retrieve a network profile using its UUID."""
+    db_session = db_session or db.get_session()
+    try:
+       return (db_session.query(n1kv_models.NetworkProfile).
+                filter_by(id=netp_id).one())
+    except sa_exc.NoResultFound:
+        raise n1kv_exc.NetworkProfileNotFound(profile=netp_id)
+
+
 def add_network_profile(netp_name, netp_type, db_session=None):
     """
     Create a network profile.
@@ -168,14 +188,14 @@ def policy_profile_in_use(profile_id):
     return bool(ret)
 
 
-def get_network_binding(network_id):
+def get_network_binding(network_id, db_session=None):
     """
     Retrieve network binding.
 
     :param network_id: string representing the UUID of the network
     :returns: network to network profile binding object
     """
-    db_session = db.get_session()
+    db_session = db_session or db.get_session()
     try:
         return (db_session.query(n1kv_models.N1kvNetworkBinding).
                 filter_by(network_id=network_id).one())

@@ -37,6 +37,7 @@ from networking_cisco.plugins.ml2.drivers.cisco.n1kv import (
 from neutron.common import constants as n_const
 from neutron.db import db_base_plugin_v2
 from neutron.extensions import portbindings
+from neutron.extensions import providernet
 from neutron.i18n import _LE
 from neutron.i18n import _LI
 from neutron.i18n import _LW
@@ -65,15 +66,15 @@ class N1KVMechanismDriver(api.MechanismDriver):
         eventlet.spawn(self.sync_obj.do_sync)
 
         # Get VLAN/VXLAN network profiles name
-        self.netp_name = {p_const.TYPE_VLAN: (cfg.CONF.ml2_cisco_n1kv.
-                                              default_vlan_network_profile),
-                          p_const.TYPE_VXLAN: (cfg.CONF.ml2_cisco_n1kv.
-                                               default_vxlan_network_profile)}
-        # Ensure network profiles are created on the VSM
+        self.netp_name = {
+            p_const.TYPE_VLAN: n1kv_const.DEFAULT_VLAN_NETWORK_PROFILE_NAME,
+            p_const.TYPE_VXLAN: n1kv_const.DEFAULT_VXLAN_NETWORK_PROFILE_NAME}
+        # Ensure default network profiles are created on the VSM if network
+        # profile extension is not supported.
         try:
             self._ensure_network_profiles_created_on_vsm()
         except (n1kv_exc.VSMConnectionFailed, n1kv_exc.VSMError):
-            LOG.error(_LE("VSM Failed to create default network profiles."))
+            LOG.error(_LE("VSM failed to create default network profile."))
         self.vif_type = portbindings.VIF_TYPE_OVS
         self.vif_details = {portbindings.CAP_PORT_FILTER: True,
                             portbindings.OVS_HYBRID_PLUG: True}
@@ -84,19 +85,19 @@ class N1KVMechanismDriver(api.MechanismDriver):
         # they don't exist already.
         for netp_type in [p_const.TYPE_VLAN, p_const.TYPE_VXLAN]:
             try:
-                netp = n1kv_db.get_network_profile_by_type(netp_type)
+                netp = n1kv_db.get_network_profile_by_name(
+                    self.netp_name[netp_type])
             except n1kv_exc.NetworkProfileNotFound:
                 # Create a network profile in Neutron DB
                 netp = n1kv_db.add_network_profile(self.netp_name[netp_type],
-                                                   netp_type,
-                                                   db_session)
+                                                   netp_type)
                 try:
                     # Create a network profile of type VLAN on the VSM
                     self.n1kvclient.create_network_segment_pool(netp)
                 # Catch any exception here and cleanup if so
                 except (n1kv_exc.VSMConnectionFailed, n1kv_exc.VSMError):
                     with excutils.save_and_reraise_exception():
-                        n1kv_db.remove_network_profile(netp.id, db_session)
+                        n1kv_db.remove_network_profile(netp.id)
 
     def _is_segment_valid_for_n1kv(self, segment_id, network_type):
         """Validate the segment for Cisco Nexus1000V."""
@@ -120,6 +121,11 @@ class N1KVMechanismDriver(api.MechanismDriver):
 
     def create_network_precommit(self, context):
         """Update network binding information."""
+
+        # If network profile extension is enabled, the binding will be
+        # populated by the n1kv_ext_driver module.
+        if cfg.CONF.ml2_cisco_n1kv.enable_network_profiles:
+            return
         network = context.current
         segment = context.network_segments[0]
         network_type = segment['network_type']
@@ -128,9 +134,10 @@ class N1KVMechanismDriver(api.MechanismDriver):
         if not self._is_segment_valid_for_n1kv(segment['segmentation_id'],
                                                network_type):
             return
-        # Retrieve the network profile for network binding
+        # Retrieve the default network profile to add network binding
         try:
-            netp = n1kv_db.get_network_profile_by_type(network_type, session)
+            netp = n1kv_db.get_network_profile_by_name(
+                self.netp_name[network_type], session)
         except n1kv_exc.NetworkProfileNotFound:
             raise ml2_exc.MechanismDriverError()
 
@@ -151,7 +158,12 @@ class N1KVMechanismDriver(api.MechanismDriver):
                                                network_type):
             return
         session = context._plugin_context.session
-        netp = n1kv_db.get_network_profile_by_type(network_type, session)
+        binding = n1kv_db.get_network_binding(network['id'], session)
+        netp = n1kv_db.get_network_profile_by_uuid(binding.profile_id, session)
+        # If network profile extension is enabled, override segment ID
+        # allocated by network profile in the network dict.
+        if cfg.CONF.ml2_cisco_n1kv.enable_network_profiles:
+            network[providernet.SEGMENTATION_ID] = binding.segmentation_id
         try:
             self.n1kvclient.create_network_segment(network, netp)
         except(n1kv_exc.VSMError, n1kv_exc.VSMConnectionFailed):

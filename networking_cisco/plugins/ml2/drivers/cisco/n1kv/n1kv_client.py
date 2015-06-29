@@ -226,8 +226,8 @@ class Client(object):
         :param network_profile: network profile dict
         :param vsm_ip: string representing the IP address of the VSM
         """
-        body = {'description': network_profile.name}
-        logical_network_name = (network_profile.id +
+        body = {'description': network_profile['name']}
+        logical_network_name = (network_profile['id'] +
                                 n1kv_const.LOGICAL_NETWORK_SUFFIX)
         return self._post(self.logical_network_path % logical_network_name,
                           body=body, vsm_ip=vsm_ip)
@@ -249,14 +249,14 @@ class Client(object):
         :param vsm_ip: string representing the IP address of the VSM
         """
         self._create_logical_network(network_profile, vsm_ip=vsm_ip)
-        logical_network_name = (network_profile.id +
+        logical_network_name = (network_profile['id'] +
                                 n1kv_const.LOGICAL_NETWORK_SUFFIX)
-        body = {'name': network_profile.name,
-                'description': network_profile.name,
-                'id': network_profile.id,
+        body = {'name': network_profile['name'],
+                'description': network_profile['name'],
+                'id': network_profile['id'],
                 'logicalNetwork': logical_network_name}
         return self._post(
-            self.network_segment_pool_path % network_profile.id,
+            self.network_segment_pool_path % network_profile['id'],
             body=body, vsm_ip=vsm_ip)
 
     def delete_network_segment_pool(self, network_segment_pool_id,
@@ -282,8 +282,8 @@ class Client(object):
                 'id': network['id'],
                 'tenantId': network['tenant_id'],
                 'mode': 'access',
-                'segmentType': network_profile.segment_type,
-                'networkSegmentPool': network_profile.id}
+                'segmentType': network_profile['segment_type'],
+                'networkSegmentPool': network_profile['id']}
         # Override tenantId if network is shared
         if network['shared']:
             body['tenantId'] = '0'

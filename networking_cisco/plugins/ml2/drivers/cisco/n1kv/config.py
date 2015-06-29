@@ -25,17 +25,13 @@ n1kv_opts = [
     cfg.StrOpt('password',
                help=_("Password for all configured Cisco Nexus1000V VSMs."),
                secret=True),
-    cfg.StrOpt('default_vlan_network_profile', default='default-vlan-np',
-               help=_("Cisco Nexus1000V default network profile for VLAN "
-                      "networks.")),
-    cfg.StrOpt('default_vxlan_network_profile', default='default-vxlan-np',
-               help=_("Cisco Nexus1000V default network profile for VXLAN "
-                      "networks.")),
     cfg.StrOpt('default_policy_profile', default='default-pp',
                help=_("Cisco Nexus1000V default policy profile.")),
     cfg.BoolOpt('restrict_policy_profiles', default=False,
                help=_("Restrict the visibility of policy profiles to the "
                       "tenants.")),
+    cfg.BoolOpt('enable_network_profiles', default=False,
+               help=_("Enable the network profile extensions.")),
     cfg.IntOpt('poll_duration', default=60,
                help=_("Cisco Nexus1000V policy profile polling duration in "
                       "seconds.")),
