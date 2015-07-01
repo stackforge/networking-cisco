@@ -4,6 +4,8 @@
 
 hacking>=0.10.0,<0.11
 
+-e git+https://git.openstack.org/openstack/neutron.git@master#egg=neutron
+
 coverage>=3.6
 discover
 python-subunit>=0.0.18
