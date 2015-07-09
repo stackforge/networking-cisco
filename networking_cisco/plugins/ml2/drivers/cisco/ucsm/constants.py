@@ -24,8 +24,14 @@ VLAN_PATH = "fabric/lan"
 VLAN_COMPRESSION_TYPE = "included"
 DESCR = "Created by Openstack UCSM Mech Driver"
 PORT_PROFILESETDN = "fabric/lan/profiles"
+
+# High Performance modes or Nove needs to be set within Port profiles
+# "Direct" and "Macvtap" SR-IOV modes respectively.
 HIGH_PERF = "high-perf-reqd"
 NONE = "none"
+
+# Max ports that this port profile can be applied to
+MAX_PORTS = 64
 
 VNIC_PATH_PREFIX = "/vnic-"
 VLAN_PATH_PREFIX = "/if-"
