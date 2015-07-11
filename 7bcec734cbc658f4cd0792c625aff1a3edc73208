@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Code-Review+2: Kyle Mestery <mestery@mestery.com>
+Code-Review+2: Ihar Hrachyshka <ihrachys@redhat.com>
+Workflow+1: Ihar Hrachyshka <ihrachys@redhat.com>
+Code-Review+1: Saksham Varma <sakvarma@cisco.com>
+Submitted-by: Jenkins
+Submitted-at: Sat, 11 Jul 2015 07:19:58 +0000
+Reviewed-on: https://review.openstack.org/200677
+Project: openstack/networking-cisco
+Branch: refs/heads/stable/kilo
