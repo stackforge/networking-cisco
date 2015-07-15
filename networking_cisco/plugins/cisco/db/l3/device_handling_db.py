@@ -123,7 +123,7 @@ class DeviceHandlingMixin(object):
     def l3_tenant_id(cls):
         """Returns id of tenant owning hosting device resources."""
         if cls._l3_tenant_uuid is None:
-            auth_url,user,pw=self.get_auth_param()
+            auth_url,user,pw=cls.get_auth_param()
             tenant = cfg.CONF.keystone_authtoken.project_name
             keystone = k_client.Client(username=user, password=pw,
                                        tenant_name=tenant,
@@ -213,7 +213,8 @@ class DeviceHandlingMixin(object):
                 LOG.exception(_LE('Error loading hosting device driver'))
             return cls._hosting_device_driver
 
-    def get_auth_param(self):
+    @classmethod
+    def get_auth_param(cls):
         auth_url = cfg.CONF.keystone_authtoken.auth_uri + "/v2.0"
         user = cfg.CONF.keystone_authtoken.username
         pw = cfg.CONF.keystone_authtoken.password
