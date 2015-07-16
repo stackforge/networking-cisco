@@ -44,5 +44,7 @@ else
     pip install -U -e $VIRTUAL_ENV/src/neutron
 fi
 
+echo "$*"
+
 pip install -U $*
 exit $?
