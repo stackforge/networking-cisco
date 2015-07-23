@@ -8,3 +8,6 @@ ncclient>=0.4.2
 lxml>=3.3.3
 UcsSdk<=0.8.2
 ciscoconfparse>=1.2.10
+tabulate
+pika>=0.9.14
+paramiko
