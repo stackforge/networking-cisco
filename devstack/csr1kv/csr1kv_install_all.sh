@@ -11,25 +11,6 @@ mysql_user=$4
 mysql_password=$5
 mgmt_ip=$6
 
-# Adopted from Devstack scripts:
-# Normalize config values to True or False
-# Accepts as False: 0 no No NO false False FALSE
-# Accepts as True: 1 yes Yes YES true True TRUE
-# VAR=$(trueorfalse default-value test-value)
-function trueorfalse {
-    local xtrace=$(set +o | grep xtrace)
-    set +o xtrace
-    local default=$1
-    local testval=$2
-
-    [[ -z "$testval" ]] && { echo "$default"; return; }
-    [[ "0 no No NO false False FALSE" =~ "$testval" ]] && { echo "False"; return; }
-    [[ "1 yes Yes YES true True TRUE" =~ "$testval" ]] && { echo "True"; return; }
-    echo "$default"
-    $xtrace
-}
-
-
 if [[ ! -z $localrc && -f $localrc ]]; then
     eval $(grep ^Q_CISCO_CREATE_TEST_NETWORKS= $localrc)
 fi
