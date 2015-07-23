@@ -1,0 +1,5 @@
+# List of packages used by openstack_dfa_enabler.
+
+tabulate
+pika
+paramiko

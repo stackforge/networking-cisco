@@ -1,0 +1,249 @@
+# Copyright 2014 Cisco Systems, Inc.
+# All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License. 
+
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+import time
+import ConfigParser
+import cisco_scp
+import paramiko
+import shutil
+rm_dirs = ['build','dist','openstack_fabric_enabler.egg-info']
+src_dir = 'openstack_fabric_enabler'
+ssh_client_log='%s/paramiko.log' % src_dir 
+uplink_file="uplink"
+script_dir = '%s/dfa/scripts' % src_dir
+script0='sudo rm -f /tmp/uplink*'
+script0_1='cp %s/%s /tmp' % (src_dir, uplink_file)
+script1= 'sudo python %s/dfa_prepare_setup.py' % script_dir
+script1_1='touch %s/requirements.txt' % src_dir 
+script2='cd  %s;python setup.py build;python setup.py bdist_egg;  sudo -E python setup.py install' % src_dir
+ 
+script3='sudo stop fabric_enabler_agent'
+script4='sudo start fabric_enabler_agent'
+script5='sudo %s/run_lldpad.sh %s' % (script_dir, src_dir)
+script_list = [script0, script0_1,script1,script1_1, script2, script3, script4, script5]
+neutron_restart_procs = [
+    'neutron-server']
+def restart_neutron_processes():
+    print('    Restarting Neutron Processes   ')
+    reg_exes = {}
+    for proc in neutron_restart_procs:
+        reg_exes[proc] = re.compile(
+            "^(?P<uid>\S+)\s+(?P<pid>\d+)\s+(?P<ppid>\d+).*python(?P<cmd>.*%s.*)"
+            % proc)
+    ps_output, rc = run_cmd_line('ps -ef')
+    for line in ps_output.splitlines():
+        for proc, reg_ex in reg_exes.items():
+            result = reg_ex.search(line)
+            if result:
+                 print 'Restarting ', proc
+                 # Kill the process
+                 run_cmd_line('sudo kill -9 %d' % int(result.group('pid')))
+                 
+                 cmd = result.group('cmd') + ' > %s/%s 2>&1 &' % (src_dir,'enabler_neutron_svc.log')  
+                 print cmd
+                 os.system(cmd)
+    print 'Neutron processes: '
+    ps_output, rc = run_cmd_line('ps -ef')
+    for line in ps_output.splitlines():
+        for proc, reg_ex in reg_exes.items():
+            result = reg_ex.search(line)
+            if result:
+                 print line
+
+def run_cmd_line(cmd_str, stderr=None, shell=False,
+                 echo_cmd=True, check_result=True):
+    if echo_cmd:
+        print cmd_str
+    if shell:
+        cmd_args = cmd_str
+    else:
+        cmd_args = cmd_str.split()
+    output = None
+    returncode = 0
+    try:
+        output = subprocess.check_output(cmd_args, shell=shell, stderr=stderr)
+    except subprocess.CalledProcessError as e:
+        if check_result:
+            print e
+            sys.exit(e.returncode)
+        else:
+            returncode = e.returncode
+    return output, returncode
+
+
+def find_computes():
+    compute_list=[];
+    output, returncode=run_cmd_line("sudo nova-manage service list")
+    output_list = output.split('\n')
+    for o in output_list:
+        o1 = o.split()
+        if len(o1) != 0 and o1[0] == 'nova-compute': 
+           compute_list.append(o1[1])
+    return compute_list     
+        
+def parse_config():
+  compute_name_list = None
+  compute_uplink_list = None
+  configfile = '/etc/enabler_conf.ini'
+  if(os.path.exists(configfile) == False ):
+    print "Config file %s is missing\n" % configfile
+    return None, None, None, None
+
+  config = ConfigParser.ConfigParser() 
+  config.read(configfile)
+  try:  
+      compute_names = config.get("compute", "node")
+      if compute_names:
+         compute_name_list =compute_names.split(',')
+      compute_uplinks = config.get("compute", "node_uplink")
+      if compute_uplinks:
+        compute_uplink_list = compute_uplinks.split(',')
+  except:
+      pass
+  return config.get("general", "compute_user"), config.get("general", "compute_passwd"), compute_name_list, compute_uplink_list 
+         
+def create_sshClient(host, user, passwd):
+    client = paramiko.SSHClient()
+    client.load_system_host_keys()
+    paramiko.util.log_to_file(ssh_client_log)
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(host, username=user, password=passwd)
+    return client
+
+
+def copy_dir(compute_host, compute_uplink, compute_user, compute_passwd):
+#    for dir in rm_dirs:
+#       dir2='%s/%s' %(src_dir, dir)
+#       if os.path.exists(dir2):
+#          print "removing dir %s" % dir2
+#          shutil.rmtree(dir2)
+     
+    copy_dir=src_dir
+    print "Copying dir " + copy_dir + " to " + compute_host
+    client = create_sshClient(compute_host,  compute_user, compute_passwd)
+#    make_src_dir = 'mkdir %s' % src_dir
+#    ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(make_src_dir)
+#    for line in ssh_stdout:
+#        print line
+#    for line in ssh_stderr:
+#        print line 
+    scp_client = cisco_scp.cisco_SCPClient(client.get_transport())
+    scp_client.put(copy_dir, recursive=True)
+#    sftp = client.open_sftp()
+#    sftp.put(copy_dir,src_dir) 
+    client.close()
+
+
+
+def invoke_scripts(compute_host, compute_uplink, compute_user, compute_passwd):
+    client = create_sshClient(compute_host,  compute_user, compute_passwd)
+    for script in script_list:
+      print "invoking script " + script + " on " + compute_host 
+      ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(script)
+      ssh_stdin.write(compute_passwd)
+      ssh_stdin.write('\n')
+      for line in ssh_stdout:
+        print line
+      for line in ssh_stderr:
+        print line 
+    client.close()
+
+def generate_uplink_file(compute_uplink):
+ 
+    uplink_file_str=src_dir + '/'+uplink_file 
+
+    if ("auto" in compute_uplink.lower()):
+       if (os.path.isfile(uplink_file_str)):
+         os.remove(uplink_file_str)
+    else:
+      file=open(uplink_file_str, "w")
+      file.write(compute_uplink)
+      file.close()
+def setup_control():
+#    os.system("chmod -R +w %s" % src_dir)
+    output, returncode=run_cmd_line(script1 + " control")
+    print output
+    output, returncode=run_cmd_line(script2, shell=True)
+    print output
+    
+def setup_compute(input_compute_name, input_compute_uplink):
+
+    compute_user, compute_passwd, compute_list, compute_uplinks = parse_config();
+    if (input_compute_name != None):
+       compute_list=[]
+       compute_list.append(input_compute_name)
+    if (input_compute_uplink != None):
+       compute_uplinks=[]
+       compute_uplinks.append(input_compute_uplink)
+    if(compute_user != None):
+      if compute_list == None:
+        print "The user did not specify compute list, will auto detect\n" 
+        compute_list = find_computes()
+
+    if(compute_uplinks==None):
+      compute_uplinks=['auto']  
+    while (len(compute_uplinks) < len(compute_list)):
+      print "Will use the last uplink ports for the rest of compute nodes"
+      compute_uplinks.append(compute_uplinks[-1])
+    print compute_user
+    print compute_passwd 
+    print compute_list
+    print compute_uplinks
+    for compute_host, compute_uplink in zip(compute_list, compute_uplinks):
+        generate_uplink_file(compute_uplink)
+        copy_dir(compute_host, compute_uplink, compute_user, compute_passwd)
+        invoke_scripts(compute_host, compute_uplink, compute_user, compute_passwd)       
+
+if __name__ == '__main__':
+    if (os.geteuid() == 0):
+       print "Please don't run the script as root!! \n"
+       exit(0)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--compute_name", help="compute name or ip")
+    parser.add_argument("--uplink",help="compute uplink to leaf switch")
+    args = parser.parse_args()
+    input_compute_name=args.compute_name
+    input_uplink=args.uplink
+    if (input_uplink == None):
+       input_uplink_converted="auto"
+
+    if (input_compute_name == None):
+        print "This script will setup nexus fabric on control node and compute nodes"
+    else:
+       print "This script will setup nexus fabric compute node %s with uplink %s" % (input_compute_name,input_uplink_converted) 
+    user_answer = raw_input("Would you like to continue(y/n)? ").lower()
+    if user_answer.startswith('n'):
+       sys.exit(1)
+    os.chdir("../")
+
+    if (input_compute_name==None):     
+        setup_control()
+        print "restarting keystone"
+        run_cmd_line('sudo service apache2 stop',check_result=False)
+        time.sleep(5)
+        run_cmd_line('sudo service apache2 start',check_result=False)
+        time.sleep(10)
+        restart_neutron_processes()
+        time.sleep(10)
+        run_cmd_line('sudo stop fabric_enabler_server', check_result=False)
+        time.sleep(5)
+        run_cmd_line('sudo start fabric_enabler_server' )
+    setup_compute(input_compute_name, input_uplink)
