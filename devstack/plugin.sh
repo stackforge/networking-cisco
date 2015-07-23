@@ -21,12 +21,20 @@ if is_service_enabled net-cisco; then
             source $DIR_CISCO/devstack/csr1kv/cisco_fwaas
             install_cisco_fwaas
         fi
+        if is_service_enabled cisco-vpn; then
+            echo "Installing neutron-vpnaas"
+            source $DIR_CISCO/devstack/csr1kv/cisco_vpn
+            install_cisco_vpn
+        fi
 
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
         if is_service_enabled q-ciscorouter && is_service_enabled ciscocfgagent; then
             source $DIR_CISCO/devstack/csr1kv/cisco_neutron
             if is_service_enabled cisco-fwaas; then
                 configure_cisco_fwaas
+            fi
+            if is_service_enabled cisco-vpn; then
+                configure_cisco_vpn
             fi
             configure_cisco_csr_router
         fi
@@ -35,6 +43,9 @@ if is_service_enabled net-cisco; then
         if is_service_enabled q-ciscorouter && is_service_enabled ciscocfgagent; then
            if is_service_enabled cisco-fwaas; then
                start_cisco_fwaas
+           fi
+           if is_service_enabled cisco-vpn; then
+               start_cisco_vpn
            fi
            start_cisco_csr_router
         fi

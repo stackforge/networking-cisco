@@ -16,4 +16,8 @@ localrc.csr1kv_and_n1kv
 directory, include the following line:
 enable_service cisco-fwaas
 
-4. run "stack.sh"
+4. To enable CSR1kv VPNaaS, in file localrc or local.conf in the root DevStack
+directory, include the following line:
+enable_service cisco-vpn
+
+5. run "stack.sh"

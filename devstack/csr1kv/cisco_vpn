@@ -1,0 +1,74 @@
+# cisco_vpn
+# -------------
+
+# This file implements functions required to configure the Cisco VPN drivers
+# for use with DevStack. To include this file, specify the following
+# variables in localrc/local.conf:
+#
+# * enable_service cisco-vpn
+#
+# This cannot be used with the q-l3 or q-vpn services and should be used with
+# the ciscocfgagent and q-ciscorouter services.
+#
+
+
+# Save trace setting
+CISCO_XTRACE=$(set +o | grep xtrace)
+set +o xtrace
+
+function install_cisco_vpn {
+    git_clone $NEUTRON_VPNAAS_REPO $NEUTRON_VPNAAS_DIR $NEUTRON_VPNAAS_BRANCH
+    setup_develop $NEUTRON_VPNAAS_DIR
+}
+
+function configure_cisco_vpn {
+    echo "Checking preconditions for Cisco VPN..."
+    if is_service_enabled q-vpn q-l3; then
+        echo "Cannot use Cisco VPN service, when q-vpn or q-l3 are enabled."
+        echo "Aborting..."
+        die $LINENO "Cannot use cisco-vpn with q-vpn or q-l3. Exiting!"
+    fi
+    if ! is_service_enabled ciscocfgagent; then
+       echo "Must have ciscocfgagent service enabled to use cisco-vpn service."
+       echo "Aborting..."
+       die $LINENO "Missing required ciscocfgagent service. Exiting!"
+    fi
+    if ! is_service_enabled q-ciscorouter; then
+       echo "Must have q-ciscorouter service enabled to use cisco-vpn service."
+       echo "Aborting..."
+       die $LINENO "Missing required q-ciscorouter service. Exiting!"
+    fi
+
+    echo "Configuring VPN Plugin..."
+    Q_SERVICE_PLUGIN_CLASSES="$Q_SERVICE_PLUGIN_CLASSES,$VPN_PLUGIN"
+    iniset $NEUTRON_CONF DEFAULT service_plugins $Q_SERVICE_PLUGIN_CLASSES
+    echo "Configuring Cisco VPN service driver..."
+    iniset_multiline $NEUTRON_CONF service_providers service_provider "VPN:cisco:neutron_vpnaas.services.vpn.service_drivers.cisco_ipsec.CiscoCsrIPsecVPNDriver:default"
+    # The VPN agent is a subclass of the L3 agent and needs INI file
+    echo "Configuring L3 Agent..."
+    _configure_neutron_l3_agent
+    echo "Configuring Cisco VPN device driver..."
+    cp $NEUTRON_VPNAAS_DIR/etc/vpn_agent.ini $Q_VPN_CONF_FILE
+    iniset $Q_VPN_CONF_FILE vpnagent vpn_device_driver "neutron_vpnaas.services.vpn.device_drivers.cisco_ipsec.CiscoCsrIPsecDriver"
+}
+
+function init_cisco_vpn {
+    :
+}
+
+function start_cisco_vpn {
+    echo "Starting Cisco VPN agent..."
+    local cfg_files="--config-file $NEUTRON_CONF --config-file=$Q_L3_CONF_FILE --config-file=$Q_VPN_CONF_FILE"
+    screen_it cisco-vpn "cd $NEUTRON_DIR && python $AGENT_VPN_BINARY $cfg_files"
+}
+
+function stop_cisco_vpn {
+    :
+}
+
+function check_cisco_vpn {
+    :
+}
+
+# Restore xtrace
+$CISCO_XTRACE

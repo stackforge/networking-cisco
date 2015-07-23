@@ -58,10 +58,7 @@ enable_service q-ciscorouter
 
 # Add networking-cisco Repo
 enable_plugin networking-cisco https://github.com/openstack/networking-cisco.git master
-enable_service net-ciscoA
-
-# Enable CSR
-enable_service cisco-csr
+enable_service net-cisco
 
 # Destination path for installation of the OpenStack components.
 # There is no need to specify it unless you want the code in
