@@ -1,0 +1,8 @@
+build/*
+build-stamp
+ChangeLog
+dist/
+*.pyc
+*.egg-info/
+*~
+*.log
