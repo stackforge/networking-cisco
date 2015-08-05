@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Code-Review+2: Kyle Mestery <mestery@mestery.com>
+Code-Review+2: garyk <gkotton@vmware.com>
+Workflow+1: garyk <gkotton@vmware.com>
+Code-Review+1: Henry Gessau <gessau@cisco.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 05 Aug 2015 15:09:13 +0000
+Reviewed-on: https://review.openstack.org/209230
+Project: openstack/networking-cisco
+Branch: refs/heads/stable/kilo
