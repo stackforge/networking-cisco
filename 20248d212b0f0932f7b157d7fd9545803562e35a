@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Code-Review+2: Henry Gessau <gessau@cisco.com>
+Workflow+1: Henry Gessau <gessau@cisco.com>
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Code-Review+1: Vladislav Belogrudov <vladislav.belogrudov@oracle.com>
+Submitted-by: Jenkins
+Submitted-at: Fri, 07 Aug 2015 13:24:57 +0000
+Reviewed-on: https://review.openstack.org/192213
+Project: openstack/networking-cisco
+Branch: refs/heads/master
