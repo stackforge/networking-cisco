@@ -336,7 +336,7 @@ class TestCiscoNexusDevice(testlib_api.SqlTestCase):
         self._create_port(port_config)
         self._delete_port(port_config)
 
-    def _config_side_effects(self, match_config, exc):
+    def _config_side_effects_on_count(self, start, count, match_config, exc):
         """Generates config-dependent side effect for ncclient.
 
         This method was written to configure side_effects for both
@@ -346,16 +346,59 @@ class TestCiscoNexusDevice(testlib_api.SqlTestCase):
         filter is passed into _side_effect_method.  For the sake of
         simplicity, the _side_effect_method was written to handle
         either case.
+
+        Additionally, arguments start and count were passed in to
+        handle the number of times to raise exception for a given
+        match.  Also match_config if passed in as an empty string,
+        is interpreted as match not desired.
+
+        Usage Examples:
+
+        First 2 times for the given mock side-effect, throw an exception.
+        _config_side_effects_on_count(0, 2, '', Exception(test_id))
+
+        Two times after 4th attempt for the given mock side-effect,
+        throw an exception.
+        _config_side_effects_on_count(4, 3, '', Exception(test_id))
+
+        First 2 time, for the given mock side-effect which the call
+        matches 'match string', throw an exception.
+        _config_side_effects_on_count(0, 2, 'match string',
+                                      Exception(test_id))
+
+        do 'no range check' and for the given mock side-effect which the call
+        matches 'match string', throw an exception.
+        _config_side_effects_on_count(0, 0, 'match string',
+                                      Exception(test_id))
         """
         keywords = match_config.split()
+        no_range_check = True if count == 0 else False
+        max = count
+        begin = start
 
         def _side_effect_method(target=None, config=None, filter=None):
+            if not hasattr(_side_effect_method, "start"):
+                _side_effect_method.start = 0
+
+            # Set match True if caller didn't provide a match list
+            # of match list doesn't match
             if config is None:
                 config = filter[1]
-            if all(word in config for word in keywords):
+            match = True if not keywords else all(
+                word in config for word in keywords)
+
+            # If there is a match, check count in range; otherwise
+            # mark as unmatch
+            if match:
+                in_range = True if (_side_effect_method.start >= begin
+                    and _side_effect_method.start < max) else False
+                match = True if no_range_check or in_range else False
+                _side_effect_method.start += 1
+            if match:
                 raise exc
             else:
                 return mock.DEFAULT
+
         return _side_effect_method
 
     def _create_port_failure(self, attr, match_str, test_case, test_id):
@@ -377,7 +420,7 @@ class TestCiscoNexusDevice(testlib_api.SqlTestCase):
         """
 
         config = {attr:
-            self._config_side_effects(match_str,
+            self._config_side_effects_on_count(0, 0, match_str,
             Exception(test_id))}
         self.mock_ncclient.configure_mock(**config)
         e = self.assertRaises(
@@ -407,7 +450,7 @@ class TestCiscoNexusDevice(testlib_api.SqlTestCase):
         self._create_port(
             TestCiscoNexusDevice.test_configs[test_case])
         config = {attr:
-            self._config_side_effects(match_str,
+            self._config_side_effects_on_count(0, 0, match_str,
             Exception(test_id))}
         self.mock_ncclient.configure_mock(**config)
         e = self.assertRaises(
@@ -423,6 +466,10 @@ class TestCiscoNexusDevice(testlib_api.SqlTestCase):
 
         self._create_delete_port(
             TestCiscoNexusDevice.test_configs['test_config2'])
+
+        # Verify we attempt to connect once
+        self.assertEqual(self.mock_ncclient.connect.call_count,
+                         const.NO_RETRY)
 
     def test_create_delete_duplicate_ports(self):
         """Tests creation and deletion of two new virtual Ports."""
@@ -507,6 +554,10 @@ class TestCiscoNexusDevice(testlib_api.SqlTestCase):
             'test_config1',
             __name__)
 
+        # Verify we attempt to connect once. This is a special case
+        self.assertEqual(self.mock_ncclient.connect.call_count,
+                         const.NO_RETRY)
+
     def test_get_interface_failure(self):
         """Verifies exception during ncclient get interface. """
 
@@ -515,6 +566,10 @@ class TestCiscoNexusDevice(testlib_api.SqlTestCase):
             'show running-config interface ethernet',
             'test_config1',
             __name__)
+
+        # Verify we attempt to connect twice
+        self.assertEqual(self.mock_ncclient.connect.call_count,
+                         const.RETRY_ONCE)
 
     def test_enable_vxlan_feature_failure(self):
         """Verifies exception during enable VXLAN driver. """
@@ -569,6 +624,10 @@ class TestCiscoNexusDevice(testlib_api.SqlTestCase):
             'test_config1',
             __name__)
 
+        # Verify we attempt to connect twice
+        self.assertEqual(self.mock_ncclient.connect.call_count,
+                         const.RETRY_ONCE)
+
     def test_delete_vlan_failure(self):
         """Verifies exception during edit vlan delete driver. """
 
@@ -596,6 +655,37 @@ class TestCiscoNexusDevice(testlib_api.SqlTestCase):
             'test_config1',
             __name__)
 
+    def test_get_interface_fail_on_try_1(self):
+        """Verifies reconnect during ncclient get. """
+
+        config = {'connect.return_value.get.side_effect':
+            self._config_side_effects_on_count(0, 1,
+            'show running-config interface ethernet',
+            Exception(__name__))}
+
+        self.mock_ncclient.configure_mock(**config)
+        self._create_delete_port(
+            TestCiscoNexusDevice.test_configs['test_config1'])
+
+        # Verify we connected twice
+        self.assertEqual(self.mock_ncclient.connect.call_count,
+                         const.RETRY_ONCE)
+
+    def test_edit_fail_on_try_1(self):
+        """Verifies reconnect during ncclient edit. """
+
+        config = {'connect.return_value.edit_config.side_effect':
+            self._config_side_effects_on_count(0, 1,
+            'vlan-id-create-delete vlan-name',
+            Exception(__name__))}
+
+        self.mock_ncclient.configure_mock(**config)
+        self._create_delete_port(
+            TestCiscoNexusDevice.test_configs['test_config1'])
+
+        # Verify we connected twice
+        self.assertEqual(self.mock_ncclient.connect.call_count,
+                         const.RETRY_ONCE)
 
 RP_NEXUS_IP_ADDRESS_1 = '1.1.1.1'
 RP_NEXUS_IP_ADDRESS_2 = '2.2.2.2'
@@ -1147,10 +1237,18 @@ class TestCiscoNexusReplay(testlib_api.SqlTestCase):
         successful.
         """
 
+        # Due to 2 retries in driver to deal with stale ncclient
+        # handle, the results are doubled.
         unique_driver_result1 = [
+            '\<vlan\-name\>q\-267\<\/vlan\-name>',
             '\<vlan\-name\>q\-267\<\/vlan\-name>',
         ]
         unique_driver_result2 = [
+            '\<vlan\-name\>q\-267\<\/vlan\-name>',
+            '\<vlan\-name\>q\-267\<\/vlan\-name>',
+            '\<vlan\-name\>q\-267\<\/vlan\-name>',
+            '\<vlan\-name\>q\-267\<\/vlan\-name>',
+            '\<vlan\-name\>q\-267\<\/vlan\-name>',
             '\<vlan\-name\>q\-267\<\/vlan\-name>',
             '\<vlan\-name\>q\-267\<\/vlan\-name>',
             '\<vlan\-name\>q\-267\<\/vlan\-name>',
