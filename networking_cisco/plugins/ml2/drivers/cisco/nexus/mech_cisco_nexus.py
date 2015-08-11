@@ -836,6 +836,9 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         LOG.debug("Attempting to bind port %(port)s on network %(network)s",
                   {'port': context.current['id'],
                    'network': context.network.current['id']})
+        # To get pass tox errors
+        if context.segments_to_bind is None:
+            return
         for segment in context.segments_to_bind:
             if self._is_segment_nexus_vxlan(segment):
 
