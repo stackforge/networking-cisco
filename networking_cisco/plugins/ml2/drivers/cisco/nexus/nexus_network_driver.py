@@ -77,20 +77,43 @@ class CiscoNexusDriver(object):
            :returns: Configuration requested in string format
 
            """
-        try:
-            # If exception raised in connect, mgr left unassigned
-            # resulting in error during exception handling
-            mgr = None
-            mgr = self.nxos_connect(nexus_host)
-            data_xml = mgr.get(filter=('subtree', filter)).data_xml
-            return data_xml
-        except Exception as e:
+
+        # For loop added to handle stale ncclient handle after switch reboot.
+        # If the attempt fails,
+        #     close the session, save first exception
+        #     loop back around
+        #     try again
+        #     then quit
+        for retry_count in range(const.RETRY_ONCE):
             try:
-                self._close_session(mgr, nexus_host)
-            except Exception:
-                pass
-            raise cexc.NexusConfigFailed(nexus_host=nexus_host, config=filter,
-                                         exc=e)
+                # If exception raised in connect, mgr left unassigned
+                # resulting in error during exception handling
+                mgr = None
+                mgr = self.nxos_connect(nexus_host)
+                data_xml = mgr.get(filter=('subtree', filter)).data_xml
+                return data_xml
+            except Exception as e:
+                try:
+                    self._close_session(mgr, nexus_host)
+                except Exception:
+                    pass
+
+                # if transaction is snipp.EXEC_GET_INVENTORY_SNIPPET,
+                # don't retry since this is used as a ping to
+                # validate connection and retry is already built
+                # into replay code.
+                if snipp.EXEC_GET_INVENTORY_SNIPPET == filter:
+                    raise cexc.NexusConfigFailed(nexus_host=nexus_host,
+                                                 config=filter,
+                                                 exc=e)
+
+                # if first try, save first exception and retry
+                if retry_count == 0:
+                    first_exc = e
+                else:
+                    raise cexc.NexusConfigFailed(nexus_host=nexus_host,
+                                                 config=filter,
+                                                 exc=first_exc)
 
     def _edit_config(self, nexus_host, target='running', config='',
                      allowed_exc_strs=None, check_to_close_session=True):
@@ -111,27 +134,39 @@ class CiscoNexusDriver(object):
         """
         if not allowed_exc_strs:
             allowed_exc_strs = []
-        try:
-            # If exception raised in connect, mgr left unassigned
-            # resulting in error during exception handling
-            mgr = None
-            mgr = self.nxos_connect(nexus_host)
-            LOG.debug("NexusDriver edit config: %s", config)
-            if mgr:
-                mgr.edit_config(target=target, config=config)
-        except Exception as e:
-            for exc_str in allowed_exc_strs:
-                if exc_str in unicode(e):
-                    return
-            try:
-                self._close_session(mgr, nexus_host)
-            except Exception:
-                pass
 
-            # Raise a Neutron exception. Include a description of
-            # the original ncclient exception.
-            raise cexc.NexusConfigFailed(nexus_host=nexus_host, config=config,
-                                         exc=e)
+        # For loop added to handle stale ncclient handle after switch reboot.
+        # If the attempt fails and not an allowed exception,
+        #     close the session, save first exception
+        #     loop back around
+        #     try again
+        #     then quit
+        for retry_count in range(const.RETRY_ONCE):
+            try:
+                # If exception raised in connect, mgr left unassigned
+                # resulting in error during exception handling
+                mgr = None
+                mgr = self.nxos_connect(nexus_host)
+                LOG.debug("NexusDriver edit config: %s", config)
+                if mgr:
+                    mgr.edit_config(target=target, config=config)
+                break
+            except Exception as e:
+                for exc_str in allowed_exc_strs:
+                    if exc_str in unicode(e):
+                        return
+                try:
+                    self._close_session(mgr, nexus_host)
+                except Exception:
+                    pass
+                if retry_count == 0:
+                    first_exc = e
+                else:
+                    # Raise a Neutron exception. Include a description of
+                    # the original ncclient exception.
+                    raise cexc.NexusConfigFailed(nexus_host=nexus_host,
+                                                 config=config,
+                                                 exc=first_exc)
 
         # if configured, close the ncclient ssh session.
         if check_to_close_session and self._get_close_ssh_session():
