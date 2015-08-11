@@ -629,13 +629,15 @@ class TestCiscoPortsV2(CiscoML2MechanismTestCase,
         """
 
         with self._patch_ncclient(
-            'connect.return_value.edit_config.side_effect',
+            'connect.return_value.get.side_effect',
             [IOError, None, None]):
             with self._create_resources() as result:
                 self._assertExpectedHTTP(result.status_int,
                                          c_exc.NexusConfigFailed)
-            #on deleting the resources, connect should be called a second time
-            self.assertEqual(self.mock_ncclient.connect.call_count, 2)
+            # on deleting the resources, connect called 3 times
+            # +1 1st connect during Create vlan + 1 connect during get
+            # during loop after failure + 1 connect during delete
+            self.assertEqual(self.mock_ncclient.connect.call_count, 3)
 
     def test_ncclient_fail_on_second_connect(self):
         """Test that other errors during connect() sequences are still handled.
@@ -811,6 +813,7 @@ class TestCiscoPortsV2(CiscoML2MechanismTestCase,
             mock_edit_config_a):
             with self._create_resources() as result:
                 self.assertEqual(result.status_int, wexc.HTTPOk.code)
+                self.assertEqual(self.mock_ncclient.connect.call_count, 1)
 
         def mock_edit_config_b(target, config):
             if all(word in config for word in ['no', 'shutdown']):
@@ -821,6 +824,7 @@ class TestCiscoPortsV2(CiscoML2MechanismTestCase,
             mock_edit_config_b):
             with self._create_resources() as result:
                 self.assertEqual(result.status_int, wexc.HTTPOk.code)
+                self.assertEqual(self.mock_ncclient.connect.call_count, 1)
 
     def test_nexus_vlan_config_rollback(self):
         """Test rollback following Nexus VLAN state config failure.
