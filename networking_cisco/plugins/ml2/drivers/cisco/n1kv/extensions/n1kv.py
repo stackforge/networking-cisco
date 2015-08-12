@@ -25,6 +25,11 @@ EXTENDED_ATTRIBUTES_2_0 = {
         'allow_post': True,
         'allow_put': False,
         'default': attributes.ATTR_NOT_SPECIFIED,
+        'is_visible': True}},
+    'networks': {PROFILE: {
+        'allow_post': True,
+        'allow_put': False,
+        'default': attributes.ATTR_NOT_SPECIFIED,
         'is_visible': True}}}
 
 
