@@ -158,6 +158,7 @@ class TestN1KVMechDriverNetworkProfiles(TestN1KVMechanismDriver):
         self.assertEqual(p_const.TYPE_VXLAN, profile.segment_type)
         # Ensure no additional profiles are created (get by type returns one())
         mech = mech_cisco_n1kv.N1KVMechanismDriver()
+        mech.initialize()
         mech._ensure_network_profiles_created_on_vsm()
         profile = n1kv_db.get_network_profile_by_type(p_const.TYPE_VLAN)
         self.assertEqual(p_const.TYPE_VLAN, profile.segment_type)
