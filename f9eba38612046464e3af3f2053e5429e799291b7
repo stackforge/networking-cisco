@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Code-Review+2: Henry Gessau <gessau@cisco.com>
+Code-Review+2: Paul Michali <pc@michali.net>
+Workflow+1: Paul Michali <pc@michali.net>
+Code-Review+1: YAMAMOTO Takashi <yamamoto@midokura.com>
+Submitted-by: Jenkins
+Submitted-at: Mon, 24 Aug 2015 11:56:25 +0000
+Reviewed-on: https://review.openstack.org/215810
+Project: openstack/networking-cisco
+Branch: refs/heads/master
