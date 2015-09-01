@@ -30,7 +30,8 @@ from neutron import manager
 from neutron.plugins.cisco.db.l3 import l3_models
 from neutron.plugins.common import constants
 
-from networking_cisco.plugins.cisco.extensions import n1kv
+# Removing n1kv dependancy on monolithic plugin
+#from networking_cisco.plugins.cisco.extensions import n1kv
 import networking_cisco.plugins.cisco.l3.plugging_drivers as plug
 from networking_cisco.plugins.cisco.l3.plugging_drivers import (
     n1kv_plugging_constants as n1kv_const)
@@ -335,12 +336,12 @@ class N1kvTrunkingPlugDriver(plug.PluginSidePluggingDriver):
     def setup_logical_port_connectivity(self, context, port_db):
         # Add the VLAN to the VLANs that the hosting port trunks.
         self._perform_logical_port_connectivity_action(
-            context, port_db, 'Adding', n1kv.SEGMENT_ADD)
+            context, port_db, 'Adding', 'n1kv.SEGMENT_ADD')
 
     def teardown_logical_port_connectivity(self, context, port_db):
         # Remove the VLAN from the VLANs that the hosting port trunks.
         self._perform_logical_port_connectivity_action(
-            context, port_db, 'Removing', n1kv.SEGMENT_DEL)
+            context, port_db, 'Removing', 'n1kv.SEGMENT_DEL')
 
     def extend_hosting_port_info(self, context, port_db, hosting_info):
         hosting_info['segmentation_id'] = port_db.hosting_info.segmentation_id
