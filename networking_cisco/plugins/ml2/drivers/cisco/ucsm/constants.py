@@ -16,10 +16,14 @@
 # VIF_DETAILS attribute for port profile name used by the Nova VIF driver.
 VIF_DETAILS_PROFILEID = 'profileid'
 
+VIF_TYPE_802_QBG = '802.1qbg'
+VIF_TYPE_802_QBH = '802.1qbh'
+
 # Supported network interface cards
 PCI_INFO_CISCO_VIC_1240 = "1137:0071"
 PCI_INFO_INTEL_82599 = "8086:10c9"
 
+# Constants needed by UcsSdk
 VLAN_PATH = "fabric/lan"
 VLAN_COMPRESSION_TYPE = "included"
 DESCR = "Created by Openstack UCSM Mech Driver"
@@ -31,8 +35,6 @@ NONE = "none"
 
 # Max ports that this port profile can be applied to
 MAX_PORTS = 64
-
-VIF_TYPE_802_QBH = '802.1qbh'
 
 VNIC_PATH_PREFIX = "/vnic-"
 VLAN_PATH_PREFIX = "/if-"

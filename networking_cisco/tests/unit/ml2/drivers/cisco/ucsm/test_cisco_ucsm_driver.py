@@ -30,11 +30,7 @@ from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_network_driver
 from networking_cisco.tests.unit.ml2.drivers.cisco.ucsm import (
     test_cisco_ucsm_common as mocked)
 
-
 UCSM_IP_ADDRESS = '1.1.1.1'
-UCSM_USERNAME = 'username'
-UCSM_PASSWORD = 'password'
-
 VNIC_NORMAL = 'normal'
 VNIC_DIRECT = 'direct'
 VNIC_MACVTAP = 'macvtap'
@@ -53,7 +49,7 @@ PORT_NAME = 'port1'
 PORT_NAME2 = 'port2'
 PORT_ID = '100001'
 PORT_ID2 = '100002'
-HOST1 = "Hostname1"
+HOST1 = 'Hostname1'
 
 PCI_INFO_BAD_NIC = '1111:2222'
 PCI_INFO_INVALID = '1111'
@@ -113,7 +109,7 @@ class FakePortContext(object):
             'status': None,
             'id': port_id,
             'name': name,
-            'host_id': HOST1,
+            portbindings.HOST_ID: HOST1,
             portbindings.VNIC_TYPE: vnic_type,
             portbindings.PROFILE: profile
         }
@@ -160,14 +156,11 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         self.set_up_mocks()
 
         def new_ucsm_driver_init(mech_instance):
-
-            mech_instance.ucsm_ip = UCSM_IP_ADDRESS
-            mech_instance.username = UCSM_USERNAME
-            mech_instance.password = UCSM_PASSWORD
             mech_instance.ucsmsdk = None
             mech_instance.handles = {}
             mech_instance.supported_sriov_vnic_types = SRIOV_VNIC_TYPES
             mech_instance.supported_pci_devs = SUPPORTED_PCI_DEVS
+            mech_instance.ucsm_ip = UCSM_IP_ADDRESS
 
         mock.patch.object(ucsm_network_driver.CiscoUcsmDriver,
                           '__init__',
@@ -325,17 +318,20 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         # Port Profile name and Vlan id are written to DB.
         self.mech_driver.update_port_precommit(port_context)
         # Look for presence of above entry in the DB.
-        p_profile = self.db.get_port_profile_for_vlan(VLAN_ID_1)
+        p_profile = self.db.get_port_profile_for_vlan(VLAN_ID_1,
+            UCSM_IP_ADDRESS)
         self.assertEqual(profile_name, p_profile)
         # Look to see if flag is set for update_port_postcommit to
         # create Port Profile on UCS Manager.
-        self.assertFalse(self.db.is_port_profile_created(VLAN_ID_1))
+        self.assertFalse(self.db.is_port_profile_created(VLAN_ID_1,
+            UCSM_IP_ADDRESS))
 
     def test_sriov_update_port_precommit(self):
         """Verifies MD does not create Port Profiles for SR-IOV ports."""
         port_context = self._create_port_context_sriov()
         self.mech_driver.update_port_precommit(port_context)
-        p_profile = self.db.get_port_profile_for_vlan(VLAN_ID_1)
+        p_profile = self.db.get_port_profile_for_vlan(VLAN_ID_1,
+            UCSM_IP_ADDRESS)
         self.assertIsNone(p_profile)
 
     def test_update_port_postcommit_success(self):
@@ -350,13 +346,14 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
                                        profile, network_context)
         # Port Profile is added to DB and created on UCS Manager.
         self.mech_driver.update_port_precommit(port_context)
-        self.assertFalse(self.db.is_port_profile_created(VLAN_ID_1))
+        self.assertFalse(self.db.is_port_profile_created(VLAN_ID_1,
+            UCSM_IP_ADDRESS))
 
         # Call to UCS Manager driver top level method to create Port Profile
         # is mocked to a new method here. This method verifies input params
         # are correct.
-        def new_create_portprofile(mech_context, profile_name, vlan_id,
-                                   vnic_type):
+        def new_create_portprofile(mech_context, host_id, profile_name,
+                                   vlan_id, vnic_type):
             return True
 
         mock.patch.object(ucsm_network_driver.CiscoUcsmDriver,
@@ -364,7 +361,8 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
                           new=new_create_portprofile).start()
 
         self.mech_driver.update_port_postcommit(port_context)
-        self.assertTrue(self.db.is_port_profile_created(VLAN_ID_1))
+        self.assertTrue(self.db.is_port_profile_created(VLAN_ID_1,
+            UCSM_IP_ADDRESS))
 
     def test_update_port_postcommit_failure(self):
         """Verifies duplicate Port Profiles are not being created."""
@@ -378,13 +376,14 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
                                        profile, network_context)
         # Port Profile is added to DB and created on UCS Manager.
         self.mech_driver.update_port_precommit(port_context)
-        self.assertFalse(self.db.is_port_profile_created(VLAN_ID_1))
+        self.assertFalse(self.db.is_port_profile_created(VLAN_ID_1,
+            UCSM_IP_ADDRESS))
 
         # Call to UCS Manager driver top level method to create Port Profile
         # is mocked to a new method here. This method verifies input params
         # are correct.
-        def new_create_portprofile(mech_context, profile_name, vlan_id,
-                                   vnic_type):
+        def new_create_portprofile(mech_context, host_id, profile_name,
+                                   vlan_id, vnic_type):
             return False
 
         mock.patch.object(ucsm_network_driver.CiscoUcsmDriver,
@@ -392,7 +391,8 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
                           new=new_create_portprofile).start()
 
         self.mech_driver.update_port_postcommit(port_context)
-        self.assertFalse(self.db.is_port_profile_created(VLAN_ID_1))
+        self.assertFalse(self.db.is_port_profile_created(VLAN_ID_1,
+                                                         UCSM_IP_ADDRESS))
 
     def test_update_port_postcommit_direct(self):
         """Verifies UCS Manager driver is called with correct parameters."""
@@ -409,8 +409,8 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         # Call to UCS Manager driver top level method to create Port Profile
         # is mocked to a new method here. This method verifies input params
         # are correct.
-        def new_create_portprofile(mech_context, profile_name, vlan_id,
-                                   vnic_type):
+        def new_create_portprofile(mech_context, host_id, profile_name,
+                                   vlan_id, vnic_type):
             self.assertEqual("OS-PP-100", profile_name)
             self.assertEqual(100, vlan_id)
             self.assertEqual(VNIC_DIRECT, vnic_type)
@@ -436,8 +436,8 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         # Call to UCS Manager driver top level method to create Port Profile
         # is mocked to a new method here. This method verifies input params
         # are correct.
-        def new_create_portprofile(mech_context, profile_name, vlan_id,
-                                   vnic_type):
+        def new_create_portprofile(mech_context, host_id, profile_name,
+                                   vlan_id, vnic_type):
             self.assertEqual("OS-PP-100", profile_name)
             self.assertEqual(100, vlan_id)
             self.assertEqual(VNIC_MACVTAP, vnic_type)
@@ -489,9 +489,10 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         """Verifies UCS Manager driver is called with correct parameters."""
 
         handle = None
+        ucsm_ip = UCSM_IP_ADDRESS
         self.assertRaises(exceptions.UcsmDisconnectFailed,
                           self.ucsm_driver.ucs_manager_disconnect,
-                          handle)
+                          handle, ucsm_ip)
 
     def test_generic_create_profile(self):
         """Test to verify duplicate creation exceptions.
