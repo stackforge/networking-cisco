@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from networking_cisco.plugins.ml2.drivers.cisco.ucsm import config as config
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_db
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_network_driver
@@ -33,10 +34,11 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
     """ML2 Mechanism Driver for Cisco UCS Manager."""
 
     def initialize(self):
-        self.vif_type = const.VIF_TYPE_802_QBH
+        self.vif_type = None
         self.vif_details = {portbindings.CAP_PORT_FILTER: False}
         self.driver = ucsm_network_driver.CiscoUcsmDriver()
         self.ucsm_db = ucsm_db.UcsmDbModel()
+        self.ucsm_conf = config.UcsmConfig()
 
     def _get_vlanid(self, context):
         """Returns vlan_id associated with a bound VLAN segment."""
@@ -54,11 +56,16 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         4. If no, create a new port profile with this vlan_id and
         associate with this port
         """
-        LOG.debug("Inside update_port_precommit")
+        vlan_id = self._get_vlanid(context)
+        if not vlan_id:
+            LOG.warn(_LW("update_port_precommit: vlan_id is None."))
+            return
+
         vnic_type = context.current.get(portbindings.VNIC_TYPE,
                                         portbindings.VNIC_NORMAL)
 
         profile = context.current.get(portbindings.PROFILE, {})
+        host_id = context.current.get(portbindings.HOST_ID)
 
         if not self.driver.check_vnic_type_and_vendor_info(vnic_type,
                                                            profile):
@@ -72,18 +79,13 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
                       "sr-iov port")
             return
 
-        vlan_id = self._get_vlanid(context)
-
-        if not vlan_id:
-            LOG.warn(_LW("update_port_precommit: vlan_id is None."))
-            return
-
         p_profile_name = self.make_profile_name(vlan_id)
         LOG.debug("update_port_precommit: Profile: %s, VLAN_id: %d",
                   p_profile_name, vlan_id)
 
         # Create a new port profile entry in the db
-        self.ucsm_db.add_port_profile(p_profile_name, vlan_id)
+        ucsm_ip = self.ucsm_conf.get_ucsm_ip_for_host(host_id)
+        self.ucsm_db.add_port_profile(p_profile_name, vlan_id, ucsm_ip)
 
     def update_port_postcommit(self, context):
         """Creates a port profile on UCS Manager.
@@ -91,12 +93,13 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         Creates a Port Profile for this VLAN if it does not already
         exist.
         """
-        LOG.debug("Inside update_port_postcommit")
         vlan_id = self._get_vlanid(context)
 
         if not vlan_id:
             LOG.warn(_LW("update_port_postcommit: vlan_id is None."))
             return
+
+        host_id = context.current.get(portbindings.HOST_ID)
 
         # Check if UCS Manager needs to create a Port Profile.
         # 1. Make sure this is a vm_fex_port.(Port profiles are created
@@ -114,20 +117,22 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
 
             LOG.debug("update_port_postcommit: VM-FEX port updated for "
                       "vlan_id %d", vlan_id)
-
-            profile_name = self.ucsm_db.get_port_profile_for_vlan(vlan_id)
-            if self.ucsm_db.is_port_profile_created(vlan_id):
+            ucsm_ip = self.ucsm_conf.get_ucsm_ip_for_host(host_id)
+            profile_name = self.ucsm_db.get_port_profile_for_vlan(vlan_id,
+                                                                  ucsm_ip)
+            if self.ucsm_db.is_port_profile_created(vlan_id, ucsm_ip):
                 LOG.debug("update_port_postcommit: Port Profile %s for "
-                          "vlan_id %d already exists. Nothing to do.",
-                          profile_name, vlan_id)
+                          "vlan_id %d already exists on UCSM %s.",
+                          profile_name, vlan_id, str(ucsm_ip))
                 return
 
             # Ask the UCS Manager driver to create the above Port Profile.
             # Connection to the UCS Manager is managed from within the driver.
-            if self.driver.create_portprofile(profile_name, vlan_id,
+            if self.driver.create_portprofile(host_id, profile_name, vlan_id,
                                               vnic_type):
                 # Port profile created on UCS, record that in the DB.
-                self.ucsm_db.set_port_profile_created(vlan_id, profile_name)
+                self.ucsm_db.set_port_profile_created(vlan_id, profile_name,
+                    ucsm_ip)
             return
 
         else:
@@ -193,9 +198,11 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
                     profile_name = self.make_profile_name(vlan_id)
                     self.vif_details[
                         const.VIF_DETAILS_PROFILEID] = profile_name
+                    self.vif_type = const.VIF_TYPE_802_QBH
                 else:
                     self.vif_details[
                         portbindings.VIF_DETAILS_VLAN] = str(vlan_id)
+                    self.vif_type = const.VIF_TYPE_802_QBG
 
                 context.set_binding(segment[api.ID],
                                     self.vif_type,

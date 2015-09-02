@@ -13,17 +13,27 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import mock
+from oslo_config import cfg
+
 from neutron.common import config as neutron_config
 from neutron.plugins.ml2 import config as ml2_config
 from neutron.tests import base
 
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import config
 
-UCSM_IP_ADDRESS = '1.1.1.1'
-UCSM_USERNAME = 'username'
-UCSM_PASSWORD = 'password'
-UCSM_PHY_NETS = ['test_physnet']
-HOST_CONFIG1 = ['Hostname1:Service_profile1']
+UCSM_IP_ADDRESS_1 = '1.1.1.1'
+UCSM_USERNAME_1 = 'username1'
+UCSM_PASSWORD_1 = 'password1'
+HOST_LIST_1 = 'Hostname1', 'Hostname2'
+
+UCSM_USERNAME_2 = 'username2'
+UCSM_PASSWORD_2 = 'password2'
+HOST_LIST_2 = 'Hostname3', 'Hostname4'
+
+UCSM_PHY_NETS = 'test_physnet'
+UCSM_HOST_MAPPING = ['Hostname1:Serviceprofile1', 'Hostname2:Serviceprofile2',
+    'Hostname3:Serviceprofile3', 'Hostname4:Serviceprofile4']
 
 
 class ConfigMixin(object):
@@ -47,12 +57,26 @@ class ConfigMixin(object):
             ml2_config.cfg.CONF.set_override(opt, val, 'ml2')
 
         # Configure the Cisco UCS Manager mechanism driver
-        ucsm_test_config = {
-            'ucsm_ip': UCSM_IP_ADDRESS,
-            'ucsm_username': UCSM_USERNAME,
-            'ucsm_password': UCSM_PASSWORD,
-            'ucsm_host_list': HOST_CONFIG1,
+        test_config = {
+            'ucsm_host_mapping': UCSM_HOST_MAPPING,
         }
 
-        for opt, val in ucsm_test_config.items():
+        for opt, val in test_config.items():
             config.cfg.CONF.set_override(opt, val, 'ml2_cisco_ucsm')
+
+        ucsm_test_config = {
+            'ucsm_ip:1.1.1.1': {
+                'ucsm_username': UCSM_USERNAME_1,
+                'ucsm_password': UCSM_PASSWORD_1,
+                'ucsm_host_list': HOST_LIST_1,
+            },
+            'ucsm_ip:2.2.2.2': {
+                'ucsm_username': UCSM_USERNAME_2,
+                'ucsm_password': UCSM_PASSWORD_2,
+                'ucsm_host_list': HOST_LIST_2,
+            },
+        }
+        self.mocked_parser = mock.patch.object(
+            cfg, 'MultiConfigParser').start()
+        self.mocked_parser.return_value.read.return_value = [ucsm_test_config]
+        self.mocked_parser.return_value.parsed = [ucsm_test_config]
