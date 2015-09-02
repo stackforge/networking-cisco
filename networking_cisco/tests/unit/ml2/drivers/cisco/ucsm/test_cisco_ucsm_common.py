@@ -19,11 +19,13 @@ from neutron.tests import base
 
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import config
 
-UCSM_IP_ADDRESS = '1.1.1.1'
-UCSM_USERNAME = 'username'
-UCSM_PASSWORD = 'password'
-UCSM_PHY_NETS = ['test_physnet']
-HOST_CONFIG1 = ['Hostname1:Service_profile1']
+UCSM_IP_ADDRESS_1 = '1.1.1.1'
+UCSM_USERNAME_1 = 'username1'
+UCSM_PASSWORD_1 = 'password1'
+HOST_LIST_1 = 'Hostname1', 'Hostname2'
+
+UCSM_PHY_NETS = 'test_physnet'
+UCSM_HOST_MAPPING = 'Hostname1:Serviceprofile1', 'Hostname2:Serviceprofile2'
 
 
 class ConfigMixin(object):
@@ -48,10 +50,11 @@ class ConfigMixin(object):
 
         # Configure the Cisco UCS Manager mechanism driver
         ucsm_test_config = {
-            'ucsm_ip': UCSM_IP_ADDRESS,
-            'ucsm_username': UCSM_USERNAME,
-            'ucsm_password': UCSM_PASSWORD,
-            'ucsm_host_list': HOST_CONFIG1,
+            'ucsm_ip': UCSM_IP_ADDRESS_1,
+            'ucsm_username': UCSM_USERNAME_1,
+            'ucsm_password': UCSM_PASSWORD_1,
+            'ucsm_host_list': HOST_LIST_1,
+            'ucsm_host_mapping': UCSM_HOST_MAPPING,
         }
 
         for opt, val in ucsm_test_config.items():
