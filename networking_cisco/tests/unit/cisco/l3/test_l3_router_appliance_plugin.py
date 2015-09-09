@@ -288,6 +288,11 @@ class RouterSchedulingTestCase(L3RouterApplianceTestCaseBase,
             self, fcn, wait_time=CHK_INTERVAL, max_attempts=10, **kwargs):
         routers = []
         for attempts in range(max_attempts):
+            cfg.CONF.set_override('csr1kv_username', 'username',
+                'hosting_devices')
+            cfg.CONF.set_override('csr1kv_password', 'password',
+                'hosting_devices')
+
             routers = fcn(**kwargs)
             if routers:
                 if fcn == self.plugin.get_sync_data_ext:
