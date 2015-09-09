@@ -49,9 +49,18 @@ class CSR1kvHostingDeviceDriver(hosting_device_drivers.HostingDeviceDriver):
             context, mgmtport['fixed_ips'][0]['subnet_id'],
             ['cidr', 'gateway_ip', 'dns_nameservers'])
         netmask = str(netaddr.IPNetwork(subnet_data['cidr']).netmask)
+        if (not cfg.CONF.hosting_devices.csr1kv_username or
+            not cfg.CONF.hosting_devices.csr1kv_password):
+            LOG.exception(_LE('Failed to create config file'
+                              'username or password not set.'))
+            raise SystemExit('Exiting neutron, device username'
+                             ' and password required')
+
         params = {'<ip>': mgmt_ip, '<mask>': netmask,
                   '<gw>': subnet_data['gateway_ip'],
-                  '<name_server>': '8.8.8.8'}
+                  '<name_server>': '8.8.8.8',
+                  '<username>': cfg.CONF.hosting_devices.csr1kv_username,
+                  '<password>': cfg.CONF.hosting_devices.csr1kv_password}
         try:
             cfg_template_filename = (
                 cfg.CONF.general.templates_path + "/" +

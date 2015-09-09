@@ -80,9 +80,9 @@ CSR1KV_OPTS = [
     cfg.IntOpt('csr1kv_booting_time', default=420,
                help=_('Booting time in seconds before a CSR1kv '
                       'becomes operational.')),
-    cfg.StrOpt('csr1kv_username', default='stack',
+    cfg.StrOpt('csr1kv_username',
                help=_('Username to use for CSR1kv configurations.')),
-    cfg.StrOpt('csr1kv_password', default='cisco', secret=True,
+    cfg.StrOpt('csr1kv_password', secret=True,
                help=_('Password to use for CSR1kv configurations.'))
 ]
 
@@ -284,6 +284,13 @@ class DeviceHandlingMixin(object):
             their resources with information about the device hosting their
             logical resource.
         """
+        if (not cfg.CONF.hosting_devices.csr1kv_username or
+            not cfg.CONF.hosting_devices.csr1kv_password):
+            LOG.exception(_LE('Failed to create config file'
+                              'username or password not set.'))
+            raise SystemExit('Exiting neutron, device username'
+                             ' and password required')
+
         credentials = {'username': cfg.CONF.hosting_devices.csr1kv_username,
                        'password': cfg.CONF.hosting_devices.csr1kv_password}
         mgmt_ip = (hosting_device.management_port['fixed_ips'][0]['ip_address']
