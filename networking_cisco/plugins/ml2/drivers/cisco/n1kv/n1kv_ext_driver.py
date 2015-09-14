@@ -62,34 +62,49 @@ class CiscoN1kvExtensionDriver(api.ExtensionDriver):
         """Implementation of abstract method from ExtensionDriver class."""
         port_id = result.get('id')
         policy_profile_attr = data.get(constants.N1KV_PROFILE)
+        tenant_id = context.tenant_id
         if not attributes.is_attr_set(policy_profile_attr):
             policy_profile_attr = (cfg.CONF.ml2_cisco_n1kv.
                                    default_policy_profile)
         with context.session.begin(subtransactions=True):
             try:
-                n1kv_db.get_policy_binding(port_id, context.session)
-            except n1kv_exc.PortBindingNotFound:
                 if not uuidutils.is_uuid_like(policy_profile_attr):
                     policy_profile = n1kv_db.get_policy_profile_by_name(
                         policy_profile_attr,
                         context.session)
-                    if policy_profile:
-                        policy_profile_attr = policy_profile.id
-                    else:
-                        LOG.error(_LE("Policy Profile %(profile)s does "
-                                      "not exist."),
-                                  {"profile": policy_profile_attr})
-                        raise ml2_exc.ExtensionDriverError()
-                elif not (n1kv_db.get_policy_profile_by_uuid(
-                             context.session,
-                             policy_profile_attr)):
-                    LOG.error(_LE("Policy Profile %(profile)s does not "
-                                  "exist."),
+                else:
+                    policy_profile = (n1kv_db.get_policy_profile_by_uuid(
+                        context.session,
+                        policy_profile_attr))
+                n1kv_db.get_profile_binding(db_session=context.session,
+                                            tenant_id=tenant_id,
+                                            profile_id=policy_profile.id)
+            except n1kv_exc.PolicyProfileNotFound:
+                LOG.error(_LE("Policy Profile %(profile)s does "
+                              "not exist."), {"profile": policy_profile_attr})
+                raise ml2_exc.ExtensionDriverError(driver='N1Kv ML2')
+            except n1kv_exc.ProfileTenantBindingNotFound:
+                if context.is_admin:
+                    session = context.session
+                    n1kv_db.update_policy_profile_binding_with_tenant_id(
+                        policy_profile.id, tenant_id, session)
+                elif (policy_profile.name ==
+                        constants.DEFAULT_POLICY_PROFILE_NAME):
+                    n1kv_db.add_profile_tenant_binding(
+                        profile_type='policy',
+                        profile_id=policy_profile.id,
+                        tenant_id=tenant_id,
+                        db_session=context.session)
+                elif not cfg.CONF.ml2_cisco_n1kv.restrict_policy_profiles:
+                    pass
+                else:
+                    LOG.error(_LE("Policy Profile %(profile)s is "
+                                  "not owned by this tenant."),
                               {"profile": policy_profile_attr})
-                    raise ml2_exc.ExtensionDriverError()
-                n1kv_db.add_policy_binding(port_id,
-                                           policy_profile_attr,
-                                           context.session)
+                    raise ml2_exc.ExtensionDriverError(driver='N1Kv ML2')
+            n1kv_db.add_policy_binding(port_id,
+                                       policy_profile.id,
+                                       context.session)
         result[constants.N1KV_PROFILE] = policy_profile_attr
 
     def extend_port_dict(self, session, model, result):
@@ -108,6 +123,9 @@ class CiscoN1kvExtensionDriver(api.ExtensionDriver):
         net_id = result.get('id')
         prov_net_type = data.get(providernet.NETWORK_TYPE)
         net_prof_attr = data.get(constants.N1KV_PROFILE)
+        tenant_id = context.tenant_id
+        if not tenant_id:
+            tenant_id = data.get('tenant_id')
         if not attributes.is_attr_set(net_prof_attr):
             if not attributes.is_attr_set(prov_net_type):
                 network_type = cfg.CONF.ml2.tenant_network_types[0]
@@ -128,13 +146,29 @@ class CiscoN1kvExtensionDriver(api.ExtensionDriver):
                 else:
                     net_prof_attr = n1kv_db.get_network_profile_by_uuid(
                         net_prof_attr, context.session)
-                # TODO(sopatwar) Handle restrict_network_profiles = True
-                # Add logic to check for network profile :: tenant binding
+                n1kv_db.get_profile_binding(db_session=context.session,
+                                            tenant_id=tenant_id,
+                                            profile_id=net_prof_attr.id)
             except n1kv_exc.NetworkProfileNotFound:
                 LOG.error(_LE("Network Profile %(profile)s does "
-                              "not exist."), {"profile":
-                               net_prof_attr})
-                raise ml2_exc.ExtensionDriverError()
+                              "not exist."), {"profile": net_prof_attr})
+                raise ml2_exc.ExtensionDriverError(driver='N1Kv ML2')
+            except n1kv_exc.ProfileTenantBindingNotFound:
+                if (net_prof_attr.name in [
+                        constants.DEFAULT_VLAN_NETWORK_PROFILE_NAME,
+                        constants.DEFAULT_VXLAN_NETWORK_PROFILE_NAME]):
+                    n1kv_db.add_profile_tenant_binding(
+                        profile_type='network',
+                        profile_id=net_prof_attr.id,
+                        tenant_id=tenant_id,
+                        db_session=context.session)
+                elif not cfg.CONF.ml2_cisco_n1kv.restrict_network_profiles:
+                    pass
+                else:
+                    LOG.error(_LE("Network Profile %(profile)s is "
+                                  "not owned by this tenant."),
+                              {"profile": net_prof_attr.name})
+                    raise ml2_exc.ExtensionDriverError(driver='N1Kv ML2')
             segment_type = net_prof_attr.segment_type
             n1kv_db.add_network_binding(net_id, segment_type,
                                         0,

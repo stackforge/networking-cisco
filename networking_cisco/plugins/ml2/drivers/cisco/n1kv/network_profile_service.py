@@ -36,6 +36,8 @@ from networking_cisco.plugins.ml2.drivers.cisco.n1kv import (
 from networking_cisco.plugins.ml2.drivers.cisco.n1kv import (
     n1kv_client)
 from networking_cisco.plugins.ml2.drivers.cisco.n1kv import (
+    n1kv_db)
+from networking_cisco.plugins.ml2.drivers.cisco.n1kv import (
     n1kv_models)
 from networking_cisco.plugins.ml2.drivers.cisco.n1kv.extensions import (
     network_profile as network_profile_module)
@@ -62,6 +64,23 @@ class NetworkProfile_db_mixin(network_profile_module.NetworkProfilePluginBase,
         return self._fields(res, fields)
 
     def _get_network_collection_for_tenant(self, db_session, model, tenant_id):
+        # add bindings for default network profiles with this tenant if absent
+        for net_prof_name in [
+                n1kv_const.DEFAULT_VLAN_NETWORK_PROFILE_NAME,
+                n1kv_const.DEFAULT_VXLAN_NETWORK_PROFILE_NAME]:
+            net_prof = n1kv_db.get_network_profile_by_name(net_prof_name,
+                                                           db_session)
+            try:
+                n1kv_db.get_profile_binding(db_session=db_session,
+                                            tenant_id=tenant_id,
+                                            profile_id=net_prof.id)
+            except n1kv_exc.ProfileTenantBindingNotFound:
+                n1kv_db.add_profile_tenant_binding(
+                    profile_type='network',
+                    profile_id=net_prof.id,
+                    tenant_id=tenant_id,
+                    db_session=db_session)
+
         net_profile_ids = (db_session.query(n1kv_models.ProfileBinding.
                                             profile_id).
                            filter_by(tenant_id=tenant_id).
@@ -116,6 +135,9 @@ class NetworkProfile_db_mixin(network_profile_module.NetworkProfilePluginBase,
                         filter_by(id=nprofile_id).first())
             if nprofile:
                 db_session.delete(nprofile)
+            # also delete all bindings with this profile
+            db_session.query(n1kv_models.ProfileBinding).filter_by(
+                profile_id=nprofile_id).delete()
             return nprofile
 
     def _is_reserved_name(self, profile_name):
@@ -231,38 +253,24 @@ class NetworkProfile_db_mixin(network_profile_module.NetworkProfilePluginBase,
     def _create_profile_binding(self, db_session, tenant_id, profile_id):
         """Create Network Profile association with a tenant."""
         db_session = db_session or db.get_session()
-        if self._profile_binding_exists(db_session,
-                                        tenant_id,
-                                        profile_id):
-            return self._get_profile_binding(db_session, tenant_id, profile_id)
-
-        with db_session.begin(subtransactions=True):
-            binding = n1kv_models.ProfileBinding(profile_type='network',
-                                                 profile_id=profile_id,
-                                                 tenant_id=tenant_id)
-            db_session.add(binding)
-            return binding
-
-    def _profile_binding_exists(self, db_session, tenant_id, profile_id):
-        """Check if the profile-tenant binding exists."""
-        db_session = db_session or db.get_session()
-        return (db_session.query(n1kv_models.ProfileBinding).
-                filter_by(tenant_id=tenant_id, profile_id=profile_id,
-                          profile_type='network').first())
+        try:
+            binding = n1kv_db.get_profile_binding(db_session=db_session,
+                                                  tenant_id=tenant_id,
+                                                  profile_id=profile_id)
+        except n1kv_exc.ProfileTenantBindingNotFound:
+            with db_session.begin(subtransactions=True):
+                binding = n1kv_db.add_profile_tenant_binding(
+                    profile_type='network',
+                    profile_id=profile_id,
+                    tenant_id=tenant_id,
+                    db_session=db_session)
+        return binding
 
     def _network_profile_in_use(self, db_session, prof_id):
         """Verify whether a segment is allocated for given network profile."""
         with db_session.begin(subtransactions=True):
             return (db_session.query(n1kv_models.N1kvNetworkBinding).
                     filter_by(profile_id=prof_id)).first()
-
-    def _get_profile_binding(self, db_session, tenant_id, profile_id):
-        """Get Network Profile - Tenant binding."""
-        try:
-            return (db_session.query(n1kv_models.ProfileBinding).filter_by(
-                tenant_id=tenant_id, profile_id=profile_id).one())
-        except exc.NoResultFound:
-            raise n1kv_exc.ProfileTenantBindingNotFound(profile_id=profile_id)
 
     def get_network_profile(self, context, prof_id, fields=None):
         """
@@ -304,6 +312,15 @@ class NetworkProfile_db_mixin(network_profile_module.NetworkProfilePluginBase,
                                                        NetworkProfile,
                                                        context.tenant_id)
 
+    def get_network_profile_bindings(self, context, filters=None, fields=None):
+        network_profiles_collection = self.get_network_profiles(
+            context, filters, fields)
+        bindings = []
+        for net_prof in network_profiles_collection:
+            bindings.append({'profile_id': net_prof['id'], 'tenant_id':
+                context.tenant_id})
+        return bindings
+
     def create_network_profile(self, context, network_profile, fields=None):
         """
         Create a network profile.
@@ -317,8 +334,13 @@ class NetworkProfile_db_mixin(network_profile_module.NetworkProfilePluginBase,
         with context.session.begin(subtransactions=True):
             net_profile = self._add_network_profile(db_session=context.session,
                                                     network_profile=np)
-            # TODO(sopatwar): Add logic to handle profile :: tenant binding
-            # TODO(sopatwar): Add logic to handle add_tenants
+            self._create_profile_binding(context.session, context.tenant_id,
+                                         net_profile.id)
+            if np.get(n1kv_const.ADD_TENANTS):
+                for tenant in np[n1kv_const.ADD_TENANTS]:
+                    self._create_profile_binding(context.session,
+                                                 tenant,
+                                                 net_profile.id)
         return self._make_network_profile_dict(net_profile)
 
     def delete_network_profile(self, context, prof_id):
@@ -364,6 +386,13 @@ class NetworkProfilePlugin(NetworkProfile_db_mixin):
         return super(NetworkProfilePlugin, self).get_network_profile(context,
                                                                      prof_id,
                                                                      fields)
+
+    def get_network_profile_bindings(self, context,
+                                     filters=None,
+                                     fields=None):
+        return super(NetworkProfilePlugin,
+                     self).get_network_profile_bindings(context, fields,
+                                                        filters)
 
     def create_network_profile(self, context, network_profile, fields=None):
         """
