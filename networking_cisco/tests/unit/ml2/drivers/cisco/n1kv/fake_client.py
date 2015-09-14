@@ -99,6 +99,25 @@ class TestClientUpdateSharedNetwork(TestClient):
         self.upd_shared_net = True
 
 
+class TestClientGetDefaultppAsPortProfile(TestClient):
+    """Test cases where default policy profile has to be default-pp."""
+    def __init__(self, **kwargs):
+        super(TestClientGetDefaultppAsPortProfile, self).__init__()
+
+    def _do_request(self, method, action, body=None, headers=None,
+                    vsm_ip=None):
+        if method == 'GET' and 'virtual-port-profile' in action:
+            profiles = {}
+            default_pp_id = "00000000-0000-0000-0000-000000000001"
+            profiles['default-pp'] = {"properties": {"name": 'default-pp',
+                                                     "id": default_pp_id}}
+            return profiles
+        else:
+            return super(TestClientGetDefaultppAsPortProfile,
+                         self)._do_request(method, action, body, headers,
+                                           vsm_ip)
+
+
 class TestClientVSMRetry(n1kv_client.Client):
     """Base class for test client"""
     def __init__(self, **kwargs):
