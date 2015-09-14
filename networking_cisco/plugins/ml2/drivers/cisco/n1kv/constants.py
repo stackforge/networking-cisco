@@ -24,6 +24,9 @@ NEXUS_VXLAN_MAX = 16000000
 DEFAULT_VLAN_NETWORK_PROFILE_NAME = 'cisco_n1kv_default_vlan_network_profile'
 DEFAULT_VXLAN_NETWORK_PROFILE_NAME = 'cisco_n1kv_default_vxlan_network_profile'
 
+# Nexus1000V reserved default policy profile name
+DEFAULT_POLICY_PROFILE_NAME = 'default-pp'
+
 # Affix values
 VM_NETWORK_PREFIX = 'vmn_'
 BRIDGE_DOMAIN_SUFFIX = '_bd'
