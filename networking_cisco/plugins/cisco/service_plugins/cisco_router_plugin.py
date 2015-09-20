@@ -61,7 +61,7 @@ class CiscoRouterPlugin(common_db_mixin.CommonDbMixin,
     def __init__(self):
         self.setup_rpc()
         # for backlogging of non-scheduled routers
-        self._setup_backlog_handling()
+        #self._setup_backlog_handling()
         #self._setup_device_handling()
 
     def setup_rpc(self):
@@ -89,3 +89,7 @@ class CiscoRouterPlugin(common_db_mixin.CommonDbMixin,
         except AttributeError:
             self._plugin = manager.NeutronManager.get_plugin()
             return self._plugin
+
+    def notify_routers_updated(self, context, router_ids):
+        # ToDo(Hareesh): This needs to be revisted L or post L cycle
+        pass
