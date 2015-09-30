@@ -42,10 +42,7 @@ ml2_cisco_ucsm_opts = [
                 help=_('List of comma separated vendor_id:product_id of '
                        'SR_IOV capable devices supported by this MD. This MD '
                        'supports both VM-FEX and SR-IOV devices.')),
-    cfg.ListOpt('ucsm_host_list',
-                help=_('List of comma separated Host:Service Profile tuples '
-                       'providing the Service Profile associated with each '
-                       'Host to be supported by this MD.')),
+
 ]
 
 cfg.CONF.register_opts(ml2_cisco_ucsm_opts, "ml2_cisco_ucsm")
