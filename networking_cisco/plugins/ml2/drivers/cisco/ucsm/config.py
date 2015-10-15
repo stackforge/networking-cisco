@@ -14,8 +14,11 @@
 #    under the License.
 
 from oslo_config import cfg
+from oslo_log import log as logging
 
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const
+
+LOG = logging.getLogger(__name__)
 
 """ Cisco UCS Manager ML2 Mechanism driver specific configuration.
 
@@ -26,16 +29,6 @@ create UCS Manager port profiles.
 """
 
 ml2_cisco_ucsm_opts = [
-    cfg.StrOpt('ucsm_ip',
-               help=_('Cisco UCS Manager IP address. This is a required field '
-                      'to communicate with a Cisco UCS Manager.')),
-    cfg.StrOpt('ucsm_username',
-               help=_('Username for UCS Manager. This is a required field '
-                      'to communicate with a Cisco UCS Manager.')),
-    cfg.StrOpt('ucsm_password',
-               secret=True,  # do not expose value in the logs
-               help=_('Password for UCS Manager. This is a required field '
-                      'to communicate with a Cisco UCS Manager.')),
     cfg.ListOpt('supported_pci_devs',
                 default=[const.PCI_INFO_CISCO_VIC_1240,
                          const.PCI_INFO_INTEL_82599],
@@ -58,3 +51,43 @@ def parse_pci_vendor_config():
                               "config: %s") % vendor)
         vendor_list.append(vendor)
     return vendor_list
+
+
+class UcsmConfig(object):
+    """ML2 Cisco UCSM Mechanism Driver Configuration class."""
+    ucsm_dict = {}
+
+    def __init__(self):
+        self._create_ucsm_dict()
+
+    def _create_ucsm_dict(self):
+        """Create a dictionary of all UCS Manager data from the config file."""
+        multi_parser = cfg.MultiConfigParser()
+        read_ok = multi_parser.read(cfg.CONF.config_file)
+
+        if len(read_ok) != len(cfg.CONF.config_file):
+            raise cfg.Error(_('Some config files were not parsed properly'))
+
+        for parsed_file in multi_parser.parsed:
+            for parsed_item in parsed_file.keys():
+                dev_id, sep, dev_ip = parsed_item.partition(':')
+                if dev_id.lower() == 'ml2_cisco_ucsm_ip':
+                    for dev_key, value in parsed_file[parsed_item].items():
+                        self.ucsm_dict[dev_ip, dev_key] = value[0]
+                        LOG.debug('IP: Key : Value = %s : %s : %s',
+                            dev_ip, dev_key, value)
+
+    def get_credentials_for_ucsm_ip(self, ucsm_ip):
+        for (dev_ip, dev_key) in self.ucsm_dict:
+            if dev_ip == ucsm_ip:
+                LOG.debug('Found UCSM IP : %s', dev_ip)
+                username = self.ucsm_dict[dev_ip, 'ucsm_username']
+                password = self.ucsm_dict[dev_ip, 'ucsm_password']
+                return username, password
+
+    def get_all_ucsm_ips(self):
+        ucsm_ips = []
+        for (dev_ip, dev_key) in self.ucsm_dict:
+            if dev_ip not in ucsm_ips:
+                ucsm_ips.append(dev_ip)
+        return ucsm_ips
