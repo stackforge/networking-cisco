@@ -15,13 +15,10 @@
 #
 
 
-import socket
-
-from networking_cisco._i18n import _LE
-
 from keystoneclient.v3 import client
 from neutronclient.v2_0 import client as nc
 
+from networking_cisco._i18n import _LE
 from networking_cisco.apps.saf.common import config
 from networking_cisco.apps.saf.common import constants
 from networking_cisco.apps.saf.common import dfa_logger as logging
@@ -43,28 +40,25 @@ class EventsHandler(object):
         self._create_pri = c_pri
         self._update_pri = c_pri
         self._delete_pri = d_pri
-        self._cfg = config.CiscoDFAConfig(ser_name).cfg
+        self._cfg = config.CiscoDFAConfig().cfg
         self._q_agent = constants.DFA_AGENT_QUEUE
         self._url = self._cfg.dfa_rpc.transport_url
-        dfaq = self._cfg.dfa_notify.cisco_dfa_notify_queue % (
+        self._notify_queue = self._cfg.dfa_notify.cisco_dfa_notify_queue % (
             {'service_name': ser_name})
-        notify_queue = self._cfg.DEFAULT.notification_topics.split(',')
-        self._notify_queue = dfaq if dfaq in notify_queue else None
-        self._token = self._cfg.DEFAULT.admin_token
         if self._service_name == 'keystone':
-            endpoint = self._cfg.DEFAULT.admin_endpoint
-            admin_port = self._cfg.DEFAULT.admin_port
+            endpoint = self._cfg.keystone.admin_endpoint
+            admin_port = self._cfg.keystone.admin_port
             if endpoint:
                 self._endpoint_url = (endpoint + 'v3/') % (
                     {'admin_port': admin_port if admin_port else '35357'})
             else:
-                host = self._cfg.DEFAULT.admin_bind_host
-                proto = self._cfg.DEFAULT.auth_protocol
+                host = self._cfg.keystone.admin_bind_host
+                proto = self._cfg.keystone.auth_protocol
                 self._endpoint_url = '%(proto)s://%(host)s:%(port)s/v3/' % (
                     {'proto': proto if proto else 'http',
                      'host': host if host else 'localhost',
                      'port': admin_port if admin_port else '35357'})
-            self._service = client.Client(token=self._cfg.DEFAULT.admin_token,
+            self._service = client.Client(token=self._cfg.keystone.admin_token,
                                           endpoint=self._endpoint_url)
 
         # Setup notification listener for the events.
@@ -72,15 +66,15 @@ class EventsHandler(object):
 
     @property
     def nclient(self):
-        user = self._cfg.keystone_authtoken.admin_user
-        tenant = self._cfg.keystone_authtoken.admin_tenant_name
-        passw = self._cfg.keystone_authtoken.admin_password
-        if self._cfg.keystone_authtoken.auth_url:
-            uri = self._cfg.keystone_authtoken.auth_url + '/v2.0'
+        user = self._cfg.neutron.admin_user
+        tenant = self._cfg.neutron.admin_tenant_name
+        passw = self._cfg.neutron.admin_password
+        if self._cfg.neutron.auth_url:
+            uri = self._cfg.neutron.auth_url + '/v2.0'
         else:
-            proto = self._cfg.keystone_authtoken.auth_protocol
-            auth_host = self._cfg.keystone_authtoken.auth_host
-            auth_port = self._cfg.keystone_authtoken.auth_port
+            proto = self._cfg.neutron.auth_protocol
+            auth_host = self._cfg.neutron.auth_host
+            auth_port = self._cfg.neutron.auth_port
             uri = '%(proto)s://%(host)s:%(port)s/v2.0' % (
                 {'proto': proto if proto else 'http',
                  'host': auth_host if auth_host else 'localhost',
@@ -107,17 +101,12 @@ class EventsHandler(object):
     def create_rpc_client(self, thishost):
         clnt = self._clients.get(thishost)
         if clnt is None:
-            try:
-                host_ip = socket.gethostbyname(thishost)
-            except socket.gaierror:
-                LOG.error(_LE('Invalid host name for agent: %s'), thishost)
-            else:
-                clnt = rpc.DfaRpcClient(self._url,
-                                        '_'.join((self._q_agent, thishost)),
-                                        exchange=constants.DFA_EXCHANGE)
-                self._clients[thishost] = clnt
-                LOG.debug('Created client for agent: %(host)s:%(ip)s',
-                          {'host': thishost, 'ip': host_ip})
+            clnt = rpc.DfaRpcClient(self._url,
+                                    '_'.join((self._q_agent, thishost)),
+                                    exchange=constants.DFA_EXCHANGE)
+            self._clients[thishost] = clnt
+            LOG.debug('Created client for agent: %(host)s',
+                      {'host': thishost})
 
     def callback(self, timestamp, event_type, payload):
         """Callback method for processing events in notification queue.
@@ -156,7 +145,6 @@ class EventsHandler(object):
 
         LOG.debug('calling event handler for %s', self)
         self.start()
-        self.wait()
 
     def send_vm_info(self, thishost, msg):
         clnt = self._clients.get(thishost)

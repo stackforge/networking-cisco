@@ -15,6 +15,8 @@
 #
 
 
+import time
+
 from oslo_config import cfg
 import oslo_messaging as messaging
 
@@ -79,8 +81,8 @@ class DfaRpcServer(object):
             self._server.start()
 
     def wait(self):
-        if self._server:
-            self._server.wait()
+        while True:
+            time.sleep(1)
 
     def stop(self):
         pass
