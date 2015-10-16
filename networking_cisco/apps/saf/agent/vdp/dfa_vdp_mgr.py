@@ -334,7 +334,7 @@ class VdpMgr(object):
                 if self.veth_intf is None:
                     LOG.error(_LE("Incorrect state, Bug"))
                     return
-        ret = uplink_det.detect_uplink(self.veth_intf)
+        ret = uplink_det.detect_uplink(self.veth_intf, self.root_helper)
         if ret is 'down':
             if self.phy_uplink is None:
                 LOG.error(_LE("Wrong status down"))

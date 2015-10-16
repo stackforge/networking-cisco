@@ -184,7 +184,6 @@ class DfaFailureRecovery(object):
                     self.update_vm_db(vm.port_id, **params)
                     LOG.info(_LI('Created VM %(vm)s.'), {'vm': vm.name})
 
-        for vm in instances:
             if vm.result == constants.DELETE_FAIL:
                 vm_info['status'] = 'down'
                 try:

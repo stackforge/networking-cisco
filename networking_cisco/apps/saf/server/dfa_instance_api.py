@@ -16,7 +16,7 @@
 
 
 """
-This file provides a wrapper to novaclient API, for getting the instacne's
+This file provides a wrapper to novaclient API, for getting the instance's
 information such as display_name.
 """
 
@@ -39,10 +39,10 @@ class DFAInstanceAPI(object):
     """This class provides API to get information for a given instance."""
 
     def __init__(self):
-        self._cfg = config.CiscoDFAConfig('nova').cfg
-        self._tenant_name = self._cfg.keystone_authtoken.admin_tenant_name
-        self._user_name = self._cfg.keystone_authtoken.admin_user
-        self._admin_password = self._cfg.keystone_authtoken.admin_password
+        self._cfg = config.CiscoDFAConfig().cfg
+        self._tenant_name = self._cfg.nova.admin_tenant_name
+        self._user_name = self._cfg.nova.admin_user
+        self._admin_password = self._cfg.nova.admin_password
         self._timeout_respoonse = 10
         self._token = None
         self._project_id = None
@@ -50,11 +50,11 @@ class DFAInstanceAPI(object):
         self._token_id = None
         self._token = None
         self._novaclnt = None
-        self._url = self._cfg.keystone_authtoken.auth_uri
+        self._url = self._cfg.nova.auth_uri
         if not self._url:
-            proto = self._cfg.keystone_authtoken.auth_protocol
-            auth_host = self._cfg.keystone_authtoken.auth_host
-            auth_port = self._cfg.keystone_authtoken.auth_port
+            proto = self._cfg.nova.auth_protocol
+            auth_host = self._cfg.nova.auth_host
+            auth_port = self._cfg.nova.auth_port
             self._url = '%(proto)s://%(host)s:%(port)s/v2.0' % (
                 {'proto': proto if proto else 'http',
                  'host': auth_host if auth_host else 'localhost',
