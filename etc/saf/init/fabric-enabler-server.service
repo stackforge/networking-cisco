@@ -15,18 +15,17 @@
 #
 
 
-Description=Nexus Fabric Enabler Server.
-After=syslog.target network.target
+[Unit]
+Description=Nexus Fabric Enabler Server
+After=syslog.target network.target mysqld.service openstack-keystone.service neutron-server.service openstack-nova-api.service
 
 [Service]
 Type=simple
-Environment="OPTS1=--config-file"
-Environment="OPTS2=/etc/saf/enabler_conf.ini"
-ExecStart=/usr/bin/fabric-enabler-server $OPTS1  $OPTS2
+User=saf
+ExecStart=/usr/bin/fabric-enabler-server --config-file /etc/saf/enabler_conf.ini
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
 RestartSec=10s
 
 [Install]
 WantedBy=multi-user.target
-
