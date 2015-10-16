@@ -15,11 +15,13 @@
 #
 
 
+[Unit]
 Description=Nexus Fabric Enabler Server.
-After=syslog.target network.target
+After=neutron-server.service syslog.target network.target
 
 [Service]
 Type=simple
+User=saf
 Environment="OPTS1=--config-file"
 Environment="OPTS2=/etc/saf/enabler_conf.ini"
 ExecStart=/usr/bin/fabric-enabler-server $OPTS1  $OPTS2
@@ -29,4 +31,3 @@ RestartSec=10s
 
 [Install]
 WantedBy=multi-user.target
-
