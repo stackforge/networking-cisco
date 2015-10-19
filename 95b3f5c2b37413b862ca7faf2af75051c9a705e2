@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Code-Review+2: Paul Michali <pc@michali.net>
+Submitted-by: Jenkins
+Submitted-at: Mon, 19 Oct 2015 15:50:22 +0000
+Reviewed-on: https://review.openstack.org/233211
+Project: openstack/networking-cisco
+Branch: refs/heads/master
