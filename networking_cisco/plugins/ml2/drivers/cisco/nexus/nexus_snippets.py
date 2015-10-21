@@ -45,6 +45,12 @@ EXEC_SAVE_CONF_SNIPPET = """
             <cmd>copy running-config startup-config</cmd>
 """
 
+# 'show run vlan' was selected over 'show vlan' because the latter does not
+# show vn-segment information
+EXEC_GET_VLAN_SNIPPET = """
+    <cmd>show run vlan</cmd>
+"""
+
 CMD_VLAN_CONF_SNIPPET = """
             <vlan>
               <vlan-id-create-delete>
@@ -63,13 +69,18 @@ CMD_VLAN_CONF_VNSEGMENT_SNIPPET = """
               <vlan-id-create-delete>
                 <__XML__PARAM_value>%s</__XML__PARAM_value>
                 <__XML__MODE_vlan>
-                  <name>
-                    <vlan-name>%s</vlan-name>
-                  </name>
                   <vn-segment>
                     <vlan-vnsegment>%s</vlan-vnsegment>
                   </vn-segment>
                 </__XML__MODE_vlan>
+              </vlan-id-create-delete>
+            </vlan>
+"""
+
+CMD_VLAN_CREATE_SNIPPET = """
+            <vlan>
+              <vlan-id-create-delete>
+                <__XML__PARAM_value>%s</__XML__PARAM_value>
               </vlan-id-create-delete>
             </vlan>
 """
@@ -108,6 +119,20 @@ CMD_NO_VLAN_CONF_SNIPPET = """
             </vlan-id-create-delete>
           </vlan>
           </no>
+"""
+
+CMD_NO_VLAN_SEGMENT_SNIPPET = """
+          <vlan>
+            <vlan-id-create-delete>
+              <__XML__PARAM_value>%s</__XML__PARAM_value>
+                <__XML__MODE_vlan>
+                <no>
+                  <vn-segment>
+                  </vn-segment>
+                </no>
+                </__XML__MODE_vlan>
+            </vlan-id-create-delete>
+          </vlan>
 """
 
 CMD_INT_VLAN_HEADER = """
@@ -269,3 +294,10 @@ CMD_NO_FEATURE_VXLAN_SNIPPET = """
 <feature>no feature nv overlay</feature>
 <feature>no feature vn-segment-vlan-based</feature>
 """
+
+# REGEX SNIPPETS For extracting data from get calls
+
+RE_GET_VLAN_ID = "vlanid-utf\>(\d+)\<"
+RE_GET_VLAN_NAME = "vlanname\>([\x21-\x7e]+)\<"
+RE_GET_VLAN_STATE = "vlanstate\>(\w+)\<"
+RE_GET_VLAN_SHUT_STATE = "shutstate\>([a-z]+)\<"
