@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Code-Review+2: Sourabh Patwardhan <sopatwar@gmail.com>
+Workflow+1: Sourabh Patwardhan <sopatwar@gmail.com>
+Submitted-by: Jenkins
+Submitted-at: Fri, 23 Oct 2015 19:16:41 +0000
+Reviewed-on: https://review.openstack.org/223263
+Project: openstack/networking-cisco
+Branch: refs/heads/master
