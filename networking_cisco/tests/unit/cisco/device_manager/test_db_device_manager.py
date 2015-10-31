@@ -31,9 +31,10 @@ from networking_cisco.plugins.cisco.common import (cisco_constants as
                                                    c_constants)
 from networking_cisco.plugins.cisco.db.device_manager import (
     hosting_device_manager_db as hdm_db)
+from networking_cisco.plugins.cisco.device_manager.rpc import (
+    devmgr_rpc_cfgagent_api)
 from networking_cisco.plugins.cisco.device_manager import service_vm_lib
 from networking_cisco.plugins.cisco.extensions import ciscohostingdevicemanager
-
 from networking_cisco.tests.unit.cisco.device_manager import (
     device_manager_test_support)
 
@@ -435,6 +436,79 @@ class TestDeviceManagerDBPlugin(
                         self.assertEqual(res.status_int, 200)
                         self._devmgr.release_hosting_device_slots(ctx, hd_db,
                                                                   resource, 1)
+
+    def test_get_hosting_device_configuration(self):
+        with self.hosting_device_template() as hdt:
+            hdt_id = hdt['hosting_device_template']['id']
+            with self.port(subnet=self._mgmt_subnet) as mgmt_port:
+                mgmt_port_id = mgmt_port['port']['id']
+                with self.hosting_device(
+                        template_id=hdt_id,
+                        management_port_id=mgmt_port_id) as hd:
+                    hd_id = hd['hosting_device']['id']
+                    rpc = devmgr_rpc_cfgagent_api.DeviceMgrCfgAgentNotifyAPI(
+                        self._devmgr)
+                    self._devmgr.agent_notifiers = {
+                        c_constants.AGENT_TYPE_CFG: rpc}
+                    self._devmgr.get_cfg_agents_for_hosting_devices = None
+                    with mock.patch.object(rpc.client, 'prepare',
+                                           return_value=rpc.client) as (
+                            mock_prepare),\
+                        mock.patch.object(rpc.client, 'call') as mock_call,\
+                        mock.patch.object(
+                            self._devmgr,
+                            'get_cfg_agents_for_hosting_devices') as agt_mock:
+                        agt_mock.return_value = [mock.MagicMock()]
+                        agent_host = 'an_agent_host'
+                        agt_mock.return_value[0].host = agent_host
+                        fake_running_config = 'a fake running config'
+                        mock_call.return_value = fake_running_config
+                        ctx = n_context.Context(
+                            user_id=None, tenant_id=None, is_admin=False,
+                            overwrite=False)
+                        res = self._devmgr.get_hosting_device_config(ctx,
+                                                                     hd_id)
+                        self.assertEqual(res, fake_running_config)
+                        agt_mock.assert_called_once_with(
+                            mock.ANY, [hd_id], admin_state_up=True,
+                            schedule=True)
+                        mock_prepare.assert_called_with(server=agent_host)
+                        mock_call.assert_called_with(
+                            mock.ANY, 'get_hosting_device_configuration',
+                            payload={'hosting_device_id': hd_id})
+
+    def test_get_hosting_device_configuration_no_agent_found(self):
+        ctx = n_context.Context(user_id=None, tenant_id=None, is_admin=False,
+                                overwrite=False)
+        with self.hosting_device_template() as hdt:
+            hdt_id = hdt['hosting_device_template']['id']
+            with self.port(subnet=self._mgmt_subnet) as mgmt_port:
+                mgmt_port_id = mgmt_port['port']['id']
+                with self.hosting_device(
+                        template_id=hdt_id,
+                        management_port_id=mgmt_port_id) as hd:
+                    hd_id = hd['hosting_device']['id']
+                    rpc = devmgr_rpc_cfgagent_api.DeviceMgrCfgAgentNotifyAPI(
+                        self._devmgr)
+                    self._devmgr.agent_notifiers = {
+                        c_constants.AGENT_TYPE_CFG: rpc}
+                    self._devmgr.get_cfg_agents_for_hosting_devices = None
+                    with mock.patch.object(rpc.client, 'prepare',
+                                           return_value=rpc.client) as (
+                            mock_prepare),\
+                        mock.patch.object(rpc.client, 'call') as mock_call,\
+                        mock.patch.object(
+                            self._devmgr,
+                            'get_cfg_agents_for_hosting_devices') as agt_mock:
+                        agt_mock.return_value = []
+                        res = self._devmgr.get_hosting_device_config(ctx,
+                                                                     hd_id)
+                        self.assertIsNone(res)
+                        agt_mock.assert_called_once_with(
+                            mock.ANY, [hd_id], admin_state_up=True,
+                            schedule=True)
+                        self.assertEqual(mock_prepare.call_count, 0)
+                        self.assertEqual(mock_call.call_count, 0)
 
     def test_create_vm_hosting_device_template(self):
         attrs = self._get_test_hosting_device_template_attr()
