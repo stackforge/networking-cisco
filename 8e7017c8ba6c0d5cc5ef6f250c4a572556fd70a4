@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Code-Review+2: Henry Gessau <gessau@cisco.com>
+Code-Review+1: Carol Bouchard <caboucha@cisco.com>
+Code-Review+2: Timothy Swanson <tiswanso@cisco.com>
+Workflow+1: Timothy Swanson <tiswanso@cisco.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 04 Nov 2015 20:03:13 +0000
+Reviewed-on: https://review.openstack.org/241216
+Project: openstack/networking-cisco
+Branch: refs/heads/master
