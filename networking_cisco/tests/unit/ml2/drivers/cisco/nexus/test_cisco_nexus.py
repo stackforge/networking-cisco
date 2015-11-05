@@ -1178,22 +1178,19 @@ class TestCiscoNexusReplay(testlib_api.SqlTestCase):
     def test_replay_duplicate_vlan(self):
         """Provides replay data and result data for duplicate vlans. """
 
-        self.skipTest("temporarily disabled for scale changes")
-
         driver_result_duplvlan_add_vlan = [
-            '\<vlan\-name\>q\-267\<\/vlan\-name>',
-            '\<vstate\>active\<\/vstate>',
-            '\<no\>\s+\<shutdown\/\>\s+\<\/no\>',
+            'configure\>\s+\<vlan\>\s+<vlan-id-create-delete\>'
+            '\s+\<__XML__PARAM_value\>267',
         ]
         driver_result_duplvlan_add1 = [
             '\<interface\>1\/10\<\/interface\>\s+'
             '[\x20-\x7e]+\s+\<switchport\>\s+\<trunk\>\s+'
-            '\<allowed\>\s+\<vlan\>\s+\<vlan_id\>267',
+            '\<allowed\>\s+\<vlan\>\s+\<add\>\s+\<vlan_id\>267',
         ]
         driver_result_duplvlan_add2 = [
             '\<interface\>1\/20\<\/interface\>\s+'
             '[\x20-\x7e]+\s+\<switchport\>\s+\<trunk\>\s+'
-            '\<allowed\>\s+\<vlan\>\s+\<vlan_id\>267',
+            '\<allowed\>\s+\<vlan\>\s+\<add\>\s+\<vlan_id\>267',
         ]
         driver_result_duplvlan_del1 = [
             '\<interface\>1\/20\<\/interface\>\s+'
@@ -1224,10 +1221,11 @@ class TestCiscoNexusReplay(testlib_api.SqlTestCase):
 
         self._process_replay('test_replay_duplvlan1',
                              'test_replay_duplvlan2',
+                             [],
                              first_add, second_add,
-                             (driver_result_duplvlan_add_vlan +
-                              driver_result_duplvlan_add1 +
-                              driver_result_duplvlan_add2),
+                             (driver_result_duplvlan_add1 +
+                              driver_result_duplvlan_add2 +
+                              driver_result_duplvlan_add_vlan),
                              first_del, second_del)
 
     def test_replay_duplicate_ports(self):
