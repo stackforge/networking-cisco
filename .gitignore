@@ -29,3 +29,6 @@ setuptools*.egg/
 !/.pylintrc
 !/.testr.conf
 *.tar.gz
+
+# Files created by releasenotes build
+releasenotes/build
