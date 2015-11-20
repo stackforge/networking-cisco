@@ -1,0 +1,14 @@
+Verified+2: Jenkins
+Code-Review+2: Kyle Mestery <mestery@mestery.com>
+Code-Review+1: Henry Gessau <gessau@cisco.com>
+Code-Review+1: Abishek Subramanian <absubram@cisco.com>
+Code-Review+1: rcurran <rcurran@cisco.com>
+Code-Review+2: Ihar Hrachyshka <ihrachys@redhat.com>
+Workflow+1: Ihar Hrachyshka <ihrachys@redhat.com>
+Code-Review+1: Evgeny Bagdasaryan <ebagdasa@cisco.com>
+Code-Review+1: Timothy Swanson <tiswanso@cisco.com>
+Submitted-by: Jenkins
+Submitted-at: Fri, 20 Nov 2015 14:27:37 +0000
+Reviewed-on: https://review.openstack.org/241760
+Project: openstack/networking-cisco
+Branch: refs/heads/stable/kilo
