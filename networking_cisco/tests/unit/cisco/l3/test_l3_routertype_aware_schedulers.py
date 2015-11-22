@@ -96,9 +96,11 @@ class TestSchedulingCapableL3RouterServicePlugin(
         constants.L3_AGENT_SCHEDULER_EXT_ALIAS]
 
     def __init__(self):
+        # We don't include the l3 notifier as it is not set in most of the
+        # parent class' scheduling tests. Instead we add it for those few
+        # tests that need it.
         self.agent_notifiers.update(
-            {constants.AGENT_TYPE_L3: l3_rpc_agent_api.L3AgentNotifyAPI(),
-             c_const.AGENT_TYPE_L3_CFG:
+            {c_const.AGENT_TYPE_L3_CFG:
              l3_router_rpc_cfg_agent_api.L3RouterCfgAgentNotifyAPI(self)})
         self.router_scheduler = importutils.import_object(
             cfg.CONF.routing.router_type_aware_scheduler_driver)
@@ -264,11 +266,26 @@ class L3RoutertypeAwareChanceL3AgentSchedulerTestCase(
         super(L3RoutertypeAwareChanceL3AgentSchedulerTestCase,
               self).test_scheduler_auto_schedule_when_agent_added()
 
+    def test_random_scheduling(self):
+        # Need the l3 agent notifier for this test, otherwise the required
+        # scheduling of the routers to the l3 agent won't happen.
+        self.l3_plugin.agent_notifiers[constants.AGENT_TYPE_L3] = (
+            l3_rpc_agent_api.L3AgentNotifyAPI())
+        super(L3RoutertypeAwareChanceL3AgentSchedulerTestCase,
+              self).test_random_scheduling()
+
 
 class L3RoutertypeAwareLeastRoutersL3AgentSchedulerTestCase(
     test_l3_agent_scheduler.L3AgentLeastRoutersSchedulerTestCase,
         L3RoutertypeAwareL3AgentSchedulerTestCase):
-    pass
+
+    def test_scheduler(self):
+        # Need the l3 agent notifier for this test, otherwise the required
+        # scheduling of the routers to the l3 agent won't happen.
+        self.l3_plugin.agent_notifiers[constants.AGENT_TYPE_L3] = (
+            l3_rpc_agent_api.L3AgentNotifyAPI())
+        super(L3RoutertypeAwareLeastRoutersL3AgentSchedulerTestCase,
+              self).test_scheduler()
 
 
 #TODO(bobmel): Activate unit tests for DVR when we support DVR
