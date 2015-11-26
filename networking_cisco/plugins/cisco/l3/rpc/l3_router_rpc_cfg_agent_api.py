@@ -41,6 +41,31 @@ class L3RouterCfgAgentNotifyAPI(object):
         target = oslo_messaging.Target(topic=topic, version='1.0')
         self.client = n_rpc.get_client(target)
 
+    def _agent_notification_bulk(self, context, method, routers,
+                                 hosting_device, operation):
+        """Notify the Cisco cfg agent handling a particular hosting_device
+        about operation on routers. This results in a single notification.
+        """
+        admin_context = context.is_admin and context or context.elevated()
+        dmplugin = manager.NeutronManager.get_service_plugins().get(
+            cisco_constants.DEVICE_MANAGER)
+        if (hosting_device is not None and utils.is_extension_supported(
+                dmplugin, CFGAGENT_SCHED)):
+            agents = dmplugin.get_cfg_agents_for_hosting_devices(
+                admin_context, [hosting_device['id']], admin_state_up=True,
+                schedule=True)
+            if agents:
+                agent = agents[0]
+                LOG.debug('Notify %(agent_type)s at %(topic)s.%(host)s the '
+                          'message %(method)s [BULK]',
+                          {'agent_type': agent.agent_type,
+                           'topic': CFG_AGENT_L3_ROUTING,
+                           'host': agent.host,
+                           'method': method})
+                cctxt = self.client.prepare(server=agent.host,
+                                            version='1.1')
+                cctxt.cast(context, method, routers=routers)
+
     def _agent_notification(self, context, method, routers, operation,
                             shuffle_agents):
         """Notify individual Cisco cfg agents."""
@@ -103,3 +128,15 @@ class L3RouterCfgAgentNotifyAPI(object):
         """Notification that router has been added to hosting device."""
         self._notification(context, 'router_added_to_hosting_device',
                            [router], operation=None, shuffle_agents=False)
+
+    def routers_removed_from_hosting_device(self, context, router_ids,
+                                            hosting_device):
+        """Notification that one or several routers have been removed from
+        hosting device.
+        @param: context - information about tenant, user etc
+        @param: router-ids - list of ids
+        @param: hosting_device - device hosting the routers
+        """
+        self._agent_notification_bulk(
+            context, 'router_removed_from_hosting_device', router_ids,
+            hosting_device, operation=None)
