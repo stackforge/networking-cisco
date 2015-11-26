@@ -38,11 +38,14 @@ from networking_cisco.plugins.cisco.common import cisco_constants as c_const
 from networking_cisco.plugins.cisco.db.l3 import ha_db
 from networking_cisco.plugins.cisco.db.scheduler import (
     l3_routertype_aware_schedulers_db as router_sch_db)
+from networking_cisco.plugins.cisco.extensions import ciscohostingdevicemanager
 from networking_cisco.plugins.cisco.extensions import ha
 from networking_cisco.plugins.cisco.extensions import routerhostingdevice
 from networking_cisco.plugins.cisco.extensions import routertype
 from networking_cisco.plugins.cisco.extensions import routertypeawarescheduler
 from networking_cisco.plugins.cisco.l3.rpc import l3_router_rpc_cfg_agent_api
+from networking_cisco.plugins.cisco.l3.schedulers import (
+    l3_router_hosting_device_scheduler as scheduler)
 from networking_cisco.tests.unit.cisco.device_manager import (
     device_manager_test_support)
 from networking_cisco.tests.unit.cisco.device_manager import (
@@ -65,6 +68,7 @@ HA_L3_PLUGIN_KLASS = ('networking_cisco.tests.unit.cisco.l3.'
 
 _uuid = uuidutils.generate_uuid
 HOSTING_DEVICE_ATTR = routerhostingdevice.HOSTING_DEVICE_ATTR
+HARDWARE_CATEGORY = ciscohostingdevicemanager.HARDWARE_CATEGORY
 
 
 class TestSchedulingL3RouterApplianceExtensionManager(
@@ -342,7 +346,7 @@ class L3RoutertypeAwareHostingDeviceSchedulerTestCaseBase(
     configure_routertypes = False
 
     def setUp(self, core_plugin=None, l3_plugin=None, dm_plugin=None,
-              ext_mgr=None):
+              ext_mgr=None, use_ini_files=True):
         # save possible test_lib.test_config 'config_files' dict entry so we
         # can restore it after tests since we will change its value
         self._old_config_files = copy.copy(test_lib.test_config.get(
@@ -353,11 +357,12 @@ class L3RoutertypeAwareHostingDeviceSchedulerTestCaseBase(
             ext_mgr = TestSchedulingL3RouterApplianceExtensionManager()
         super(L3RoutertypeAwareHostingDeviceSchedulerTestCaseBase, self).setUp(
             core_plugin, l3_plugin, dm_plugin, ext_mgr)
-        # include config files for device manager service plugin and router
-        # service plugin since we define a number of hosting device templates,
-        # hosting devices and routertypes there
-        self._add_device_manager_plugin_ini_file()
-        self._add_router_plugin_ini_file()
+        if use_ini_files is True:
+            # include config files for device manager service plugin and router
+            # service plugin since we define a number of hosting device
+            # templates, hosting devices and routertypes there
+            self._add_device_manager_plugin_ini_file()
+            self._add_router_plugin_ini_file()
         #TODO(bobmel): Fix bug in test_extensions.py and we can remove the
         # below call to setup_config()
         self.setup_config()
@@ -1174,3 +1179,92 @@ class L3RouterHostingDeviceHARandomSchedulerTestCase(
                     self.assertIsNotNone(hd_id)
                     self.assertNotIn(hd_id, hd_ids)
                     hd_ids.add(hd_id)
+
+
+class L3RouterHostingDeviceBaseSchedulerTestCase(
+        L3RoutertypeAwareHostingDeviceSchedulerTestCaseBase):
+
+    def setUp(self, core_plugin=None, l3_plugin=None, dm_plugin=None,
+              ext_mgr=None):
+
+        super(L3RouterHostingDeviceBaseSchedulerTestCase, self).setUp(
+            use_ini_files=False)
+
+    def _update_hosting_device_statuses(self, hosting_devices, statuses):
+        adm_ctxt = n_context.get_admin_context()
+        core_plugin = manager.NeutronManager.get_plugin()
+        for (hosting_device, status) in zip(hosting_devices, statuses):
+            hd = hosting_device['hosting_device']
+            core_plugin.update_hosting_device(
+                adm_ctxt, hd['id'], {'hosting_device': {'status': status}})
+
+    def _test_get_candidates(self, templates_id, slot_capacity=5,
+                             share_hosting_device=True,
+                             slot_need=2, expected_candidates=None):
+        r_hd_b_db = mock.MagicMock()
+        r_hd_b_db.__getitem__ = lambda obj, name: fake_attrs[name]
+        r_hd_b_db.share_hosting_device = share_hosting_device
+        r_hd_b_db.router = mock.MagicMock()
+        fake_attrs = {'template_id': templates_id,
+                      'tenant_id': 'some_tenant'}
+        r_hd_b_db.router.__getitem__ = lambda obj, name: fake_attrs[name]
+        r_hd_b_db.router_type = mock.MagicMock()
+        r_hd_b_db.router_type.slot_need = slot_need
+        r_hd_b_db.router_type.__getitem__ = lambda obj, name: fake_attrs[name]
+        r_hd_b_db.router_type.template = mock.MagicMock()
+        r_hd_b_db.router_type.template.slot_capacity = slot_capacity
+        adm_ctx = n_context.get_admin_context()
+        sched_obj = scheduler.L3RouterHostingDeviceLongestRunningScheduler()
+        candidates = sched_obj.get_candidates(None, adm_ctx, r_hd_b_db)
+        expected_candidates = expected_candidates or []
+        self.assertEqual(len(candidates), len(expected_candidates))
+        # candidates must be in correct order
+        for i in range(len(candidates)):
+            self.assertEqual(candidates[i][0], expected_candidates[i])
+
+    def test_get_candidates_excludes_non_active(self):
+        with self.hosting_device_template(
+                host_category=HARDWARE_CATEGORY) as hdt:
+            template_id = hdt['hosting_device_template']['id']
+            credentials = device_manager_test_support._uuid()
+            with self.hosting_device(template_id=template_id,
+                                     credentials_id=credentials) as hd1,\
+                self.hosting_device(template_id=template_id,
+                                    credentials_id=credentials) as hd2,\
+                self.hosting_device(template_id=template_id,
+                                    credentials_id=credentials) as hd3,\
+                self.hosting_device(template_id=template_id,
+                                    credentials_id=credentials) as hd4,\
+                self.hosting_device(template_id=template_id,
+                                    credentials_id=credentials) as hd5,\
+                self.hosting_device(template_id=template_id,
+                                    credentials_id=credentials) as hd6:
+                self._update_hosting_device_statuses(
+                    [hd2, hd4, hd5],
+                    [c_const.HD_DEAD, c_const.HD_ERROR,
+                     c_const.HD_NOT_RESPONDING])
+                expected = [hd1['hosting_device']['id'],
+                            hd3['hosting_device']['id'],
+                            hd6['hosting_device']['id']]
+                self._test_get_candidates(template_id,
+                                          expected_candidates=expected)
+
+    def test_get_candidates_excludes_admin_down(self):
+        with self.hosting_device_template(
+                host_category=HARDWARE_CATEGORY) as hdt:
+            template_id = hdt['hosting_device_template']['id']
+            credentials = device_manager_test_support._uuid()
+            with self.hosting_device(template_id=template_id,
+                                     credentials_id=credentials) as hd1,\
+                    self.hosting_device(template_id=template_id,
+                                        credentials_id=credentials,
+                                        admin_state_up=False),\
+                    self.hosting_device(template_id=template_id,
+                                        credentials_id=credentials,
+                                        admin_state_up=False),\
+                    self.hosting_device(template_id=template_id,
+                                        credentials_id=credentials) as hd4:
+                expected = [hd1['hosting_device']['id'],
+                            hd4['hosting_device']['id']]
+                self._test_get_candidates(template_id,
+                                          expected_candidates=expected)
