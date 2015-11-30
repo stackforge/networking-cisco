@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Kyle Mestery <mestery@mestery.com>
+Workflow+1: Kyle Mestery <mestery@mestery.com>
+Code-Review+2: Ihar Hrachyshka <ihrachys@redhat.com>
+Submitted-by: Jenkins
+Submitted-at: Mon, 30 Nov 2015 17:41:24 +0000
+Reviewed-on: https://review.openstack.org/248996
+Project: openstack/networking-cisco
+Branch: refs/heads/stable/kilo
