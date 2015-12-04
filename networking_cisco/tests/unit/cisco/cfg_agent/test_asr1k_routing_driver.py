@@ -92,6 +92,7 @@ class ASR1kRoutingDriver(base.BaseTestCase):
                                         'gateway_ip': self.ex_gw_gateway_ip}],
                            'device_owner': l3_constants.DEVICE_OWNER_ROUTER_GW,
                            'mac_address': 'ca:fe:de:ad:be:ef',
+                           'admin_state_up': True,
                            'hosting_info':
                                {'physical_interface': self.phy_infc,
                                 'segmentation_id': self.vlan_ext},
@@ -137,6 +138,7 @@ class ASR1kRoutingDriver(base.BaseTestCase):
             'id': FAKE_ID,
             l3_constants.INTERFACE_KEY: int_ports,
             'enable_snat': True,
+            'admin_state_up': True,
             'routes': [],
             routerrole.ROUTER_ROLE_ATTR: 'Logical',
             ha.ENABLED: True,
