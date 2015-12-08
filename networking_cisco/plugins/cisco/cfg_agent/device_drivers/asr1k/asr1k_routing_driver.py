@@ -17,15 +17,14 @@ import netaddr
 
 from oslo_config import cfg
 
-from networking_cisco._i18n import _, _LE, _LI
-
 from neutron.common import constants
 
+from networking_cisco._i18n import _, _LE, _LI
 from networking_cisco.plugins.cisco.cfg_agent import cfg_exceptions as cfg_exc
 from networking_cisco.plugins.cisco.cfg_agent.device_drivers.asr1k import (
-    asr1k_cfg_syncer)
-from networking_cisco.plugins.cisco.cfg_agent.device_drivers.asr1k import (
     asr1k_snippets)
+from networking_cisco.plugins.cisco.cfg_agent.device_drivers.asr1k \
+    import asr1k_cfg_syncer
 from networking_cisco.plugins.cisco.cfg_agent.device_drivers.csr1kv import (
     cisco_csr1kv_snippets as snippets)
 from networking_cisco.plugins.cisco.cfg_agent.device_drivers.csr1kv import (
@@ -38,7 +37,6 @@ LOG = logging.getLogger(__name__)
 
 
 DEVICE_OWNER_ROUTER_GW = constants.DEVICE_OWNER_ROUTER_GW
-HA_INFO = 'ha_info'
 ROUTER_ROLE_ATTR = routerrole.ROUTER_ROLE_ATTR
 ROUTER_ROLE_HA_REDUNDANCY = cisco_constants.ROUTER_ROLE_HA_REDUNDANCY
 ROUTER_ROLE_GLOBAL = cisco_constants.ROUTER_ROLE_GLOBAL
@@ -130,11 +128,33 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
                                            ext_gw_port,
                                            itfc_deleted)
 
+    def enable_router_interface(self, ri, port):
+
+        # Enable the router interface
+        interface = self._get_interface_name_from_hosting_port(port)
+        self._create_sub_interface_enable_only(interface)
+
+    def disable_router_interface(self, ri, port=None):
+
+        # Disable the router interface
+        if not port:
+            ex_gw_port = ri.router.get('gw_port', None)
+            if ex_gw_port:
+                ext_interface = \
+                    self._get_interface_name_from_hosting_port(ex_gw_port)
+                self._create_sub_interface_disable_only(ext_interface)
+            internal_ports = ri.router.get(constants.INTERFACE_KEY, [])
+            for port in internal_ports:
+                internal_interface = \
+                    self._get_interface_name_from_hosting_port(port)
+                self._create_sub_interface_disable_only(internal_interface)
+        else:
+            interface = self._get_interface_name_from_hosting_port(port)
+            self._create_sub_interface_disable_only(interface)
+
     def cleanup_invalid_cfg(self, hd, routers):
 
-        cfg_syncer = asr1k_cfg_syncer.ConfigSyncer(routers,
-                                                   self,
-                                                   hd)
+        cfg_syncer = asr1k_cfg_syncer.ConfigSyncer(routers, self, hd)
         cfg_syncer.delete_invalid_cfg()
 
     def get_configuration(self):
@@ -187,7 +207,7 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
         # TODO(bobmel): Get the HA virtual IP correctly
         # TODO(sridar):
         # This seems to work fine. Keeping this todo until more testing.
-        virtual_gw_port = ext_gw_port["ha_info"]["ha_port"]
+        virtual_gw_port = ext_gw_port[ha.HA_INFO]['ha_port']
         sub_itfc_ip = virtual_gw_port['fixed_ips'][0]['ip_address']
         if self._is_port_v6(ext_gw_port):
             LOG.debug("Adding IPv6 external network port: %(port)s for global "
@@ -215,7 +235,13 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
             LOG.debug("Adding IPv4 external network port: %(port)s for tenant "
                       "router %(r_id)s", {'port': ext_gw_port['id'],
                                           'r_id': ri.id})
-            self._create_ext_sub_interface_enable_only(sub_interface)
+            if ri.router['admin_state_up'] is False:
+                self._create_sub_interface_disable_only(sub_interface)
+            else:
+                if ext_gw_port['admin_state_up'] is False:
+                    self._create_sub_interface_disable_only(sub_interface)
+                else:
+                    self._create_sub_interface_enable_only(sub_interface)
         if ex_gw_ip:
             # Set default route via this network's gateway ip
             if self._is_port_v6(ext_gw_port):
@@ -237,7 +263,14 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
         self._do_create_sub_interface(sub_interface, vlan, vrf_name, hsrp_ip,
                                       net_mask, is_external)
         # Always do HSRP
-        self._add_ha_hsrp(ri, port)
+        if ri.router.get(ha.ENABLED, False):
+            if port.get(ha.HA_INFO) is not None:
+                self._add_ha_hsrp(ri, port)
+            else:
+                # We are missing HA data, candidate for retrying
+                params = {'r_id': ri.router_id, 'p_id': port['id'],
+                          'port': port}
+                raise cfg_exc.HAParamsMissingException(**params)
 
     def _do_create_sub_interface(self, sub_interface, vlan_id, vrf_name, ip,
                                  mask, is_external=False):
@@ -278,10 +311,17 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
         conf_str = snippets.ENABLE_INTF % sub_interface
         self._edit_running_config(conf_str, 'ENABLE_INTF')
 
+    def _create_sub_interface_disable_only(self, sub_interface):
+        LOG.debug("Disabling network sub interface: %s",
+                  sub_interface)
+        conf_str = snippets.DISABLE_INTF % sub_interface
+        self._edit_running_config(conf_str, 'DISABLE_INTF')
+
     def _set_nat_pool(self, ri, gw_port, is_delete):
         vrf_name = self._get_vrf_name(ri)
         if ri.router.get(ROUTER_ROLE_ATTR) == ROUTER_ROLE_HA_REDUNDANCY:
-            pool_ip = gw_port[HA_INFO]['ha_port']['fixed_ips'][0]['ip_address']
+            pool_ip = gw_port[ha.HA_INFO]['ha_port']['fixed_ips'][0][
+                'ip_address']
             pool_ip_prefix_len = gw_port['fixed_ips'][0]['prefixlen']
         else:
             pool_ip = gw_port['fixed_ips'][0]['ip_address']
@@ -354,7 +394,7 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
                     priority = router[ha.PRIORITY]
         else:
             priority = ri.router[ha.DETAILS][ha.PRIORITY]
-        port_ha_info = port[HA_INFO]
+        port_ha_info = port[ha.HA_INFO]
         group = port_ha_info['group']
         ip = port_ha_info['ha_port']['fixed_ips'][0]['ip_address']
         vlan = port['hosting_info']['segmentation_id']
@@ -483,11 +523,13 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
         :raises: networking_cisco.plugins.cisco.cfg_agent.cfg_exceptions.
         CSR1kvConfigException
         """
-        conf_str = snippets.CREATE_ACL % (acl_no, network, netmask)
-        try:
-            self._edit_running_config(conf_str, 'CREATE_ACL')
-        except Exception as acl_e:
-            LOG.debug("Ignore exception for CREATE_ACL: %s", acl_e)
+        acl_present = self._check_acl(acl_no, network, netmask)
+        if not acl_present:
+            conf_str = snippets.CREATE_ACL % (acl_no, network, netmask)
+            try:
+                self._edit_running_config(conf_str, 'CREATE_ACL')
+            except Exception as acl_e:
+                LOG.debug("Ignore exception for CREATE_ACL: %s", acl_e)
 
         pool_name = "%s_nat_pool" % vrf_name
         conf_str = asr1k_snippets.SET_DYN_SRC_TRL_POOL % (acl_no, pool_name,
@@ -495,8 +537,9 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
         try:
             self._edit_running_config(conf_str, 'SET_DYN_SRC_TRL_POOL')
         except Exception as dyn_nat_e:
-            LOG.error(_LE("Ignore exception for SET_DYN_SRC_TRL_POOL: %s"),
-                      dyn_nat_e)
+            LOG.info(_LI("Ignore exception for SET_DYN_SRC_TRL_POOL: %s. "
+                         "The config seems to be applied properly but netconf "
+                         "seems to report an error."), dyn_nat_e)
 
         conf_str = snippets.SET_NAT % (inner_itfc, 'inside')
         self._edit_running_config(conf_str, 'SET_NAT')
@@ -574,7 +617,7 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
         is applied to the redundancy parameter for setting the IP NAT.
         """
         vlan = ex_gw_port['hosting_info']['segmentation_id']
-        hsrp_grp = ex_gw_port['ha_info']['group']
+        hsrp_grp = ex_gw_port[ha.HA_INFO]['group']
 
         LOG.debug("add floating_ip: %(fip)s, fixed_ip: %(fixed_ip)s, "
                   "vrf: %(vrf)s, ex_gw_port: %(port)s",
@@ -595,7 +638,7 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
     def _asr_do_remove_floating_ip(self, floating_ip,
                                    fixed_ip, vrf, ex_gw_port):
         vlan = ex_gw_port['hosting_info']['segmentation_id']
-        hsrp_grp = ex_gw_port['ha_info']['group']
+        hsrp_grp = ex_gw_port[ha.HA_INFO]['group']
 
         confstr = (asr1k_snippets.REMOVE_STATIC_SRC_TRL_NO_VRF_MATCH %
             (fixed_ip, floating_ip, vrf, hsrp_grp, vlan))

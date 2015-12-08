@@ -30,11 +30,13 @@ from networking_cisco._i18n import _LI
 from networking_cisco.plugins.cisco.cfg_agent.device_drivers.asr1k import (
     asr1k_snippets as asr_snippets)
 from networking_cisco.plugins.cisco.common import cisco_constants
+from networking_cisco.plugins.cisco.extensions import ha
 from networking_cisco.plugins.cisco.extensions import routerrole
 
 ciscoconfparse = importutils.try_import('ciscoconfparse')
 
 LOG = logging.getLogger(__name__)
+
 
 ROUTER_ROLE_ATTR = routerrole.ROUTER_ROLE_ATTR
 
@@ -635,7 +637,7 @@ class ConfigSyncer(object):
             gw_port = router['gw_port']
             #gw_net_id = gw_port['network_id']
             #gw_hsrp_num = self._get_hsrp_grp_num_from_net_id(gw_net_id)
-            gw_hsrp_num = int(gw_port['ha_info']['group'])
+            gw_hsrp_num = int(gw_port[ha.HA_INFO]['group'])
             gw_segment_id = gw_port['hosting_info']['segmentation_id']
             if segment_id != gw_segment_id:
                 LOG.info(_LI("snat segment_id does not match router's"
@@ -928,7 +930,7 @@ class ConfigSyncer(object):
 
     def subintf_hsrp_ip_check(self, intf_list, is_external, ip_addr):
         for target_intf in intf_list:
-            ha_intf = target_intf['ha_info']['ha_port']
+            ha_intf = target_intf[ha.HA_INFO]['ha_port']
             target_ip = ha_intf['fixed_ips'][0]['ip_address']
             LOG.info(_LI("target_ip: %(target_ip)s, actual_ip: %(ip_addr)s") %
                      {'target_ip': target_ip,
@@ -1123,7 +1125,7 @@ class ConfigSyncer(object):
 
             # self.existing_cfg_dict['interfaces'][intf.segment_id] = intf
 
-            correct_grp_num = int(db_intf['ha_info']['group'])
+            correct_grp_num = int(db_intf[ha.HA_INFO]['group'])
 
             if intf.has_ipv6 is False:
                 if self.clean_interfaces_nat_check(intf,
