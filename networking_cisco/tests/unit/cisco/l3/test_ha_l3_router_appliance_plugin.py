@@ -13,22 +13,28 @@
 #    under the License.
 
 import copy
+import mock
 
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import uuidutils
+from sqlalchemy.orm import exc
 import webob.exc
 
 from neutron.common import constants as l3_constants
 from neutron import context
+from neutron.db import l3_db
 from neutron.extensions import extraroute
 from neutron.extensions import l3
+from neutron import manager
+from neutron.plugins.common import constants as service_constants
 from neutron.tests import fake_notifier
 
 import networking_cisco.plugins
+from networking_cisco.plugins.cisco.common import (
+    cisco_constants as cisco_const)
 from networking_cisco.plugins.cisco.db.l3 import ha_db
 from networking_cisco.plugins.cisco.extensions import ha
-from networking_cisco.plugins.cisco.extensions import routertype
 from networking_cisco.tests.unit.cisco.device_manager import (
     device_manager_test_support)
 from networking_cisco.tests.unit.cisco.l3 import (
@@ -47,6 +53,8 @@ L3_PLUGIN_KLASS = (
     "networking_cisco.tests.unit.cisco.l3.test_ha_l3_router_appliance_plugin."
     "TestApplianceHAL3RouterServicePlugin")
 extensions_path = networking_cisco.plugins.__path__[0] + '/cisco/extensions'
+
+DEVICE_OWNER_ROUTER_INTF = l3_constants.DEVICE_OWNER_ROUTER_INTF
 
 
 def _sort_routes(routes):
@@ -71,12 +79,12 @@ class TestApplianceHAL3RouterServicePlugin(
     ha_db.HA_db_mixin,
         test_l3_router_appliance_plugin.TestApplianceL3RouterServicePlugin):
 
-    supported_extension_aliases = ["router", "extraroute",
-                                   routertype.ROUTERTYPE_ALIAS,
-                                   ha.HA_ALIAS]
+        supported_extension_aliases = (
+            test_l3_router_appliance_plugin.TestApplianceL3RouterServicePlugin.
+            supported_extension_aliases + [ha.HA_ALIAS])
 
 
-#TODO(bobmel): Add tests that ensures that Cisco HA is not applied on
+# TODO(bobmel): Add tests that ensures that Cisco HA is not applied on
 # Namespace-based routers
 class HAL3RouterApplianceNamespaceTestCase(
         test_l3_router_appliance_plugin.L3RouterApplianceNamespaceTestCase):
@@ -116,9 +124,9 @@ class HAL3RouterTestsMixin(object):
         if probing_enabled:
             ha_details.update({
                 ha.PROBE_TARGET: (probe_target or
-                                 cfg.CONF.ha.default_ping_target),
+                                  cfg.CONF.ha.default_ping_target),
                 ha.PROBE_INTERVAL: (probe_interval or
-                                   cfg.CONF.ha.default_ping_interval)})
+                                    cfg.CONF.ha.default_ping_interval)})
         return {ha.ENABLED: ha_enabled, ha.DETAILS: ha_details}
 
     def _verify_ha_settings(self, router, expected_ha):
@@ -165,6 +173,44 @@ class HAL3RouterApplianceVMTestCase(
         cfg.CONF.set_override('default_ha_redundancy_level', 2, group='ha')
         super(HAL3RouterApplianceVMTestCase, self).setUp(
             l3_plugin=l3_plugin, ext_mgr=ext_mgr)
+
+    def test_router_add_interface_port(self):
+        orig_update_port = self.core_plugin.update_port
+        with self.router() as router, (
+            self.port()) as port, (
+                mock.patch.object(self.core_plugin,
+                                  'update_port')) as update_port:
+            update_port.side_effect = orig_update_port
+            r = router['router']
+            p = port['port']
+            body = self._router_interface_action('add', r['id'], None, p['id'])
+            self.assertIn('port_id', body)
+            self.assertEqual(p['id'], body['port_id'])
+            r_ids = [rr['id']
+                     for rr in [r] + r[ha.DETAILS][ha.REDUNDANCY_ROUTERS]]
+            # get ports for the user visible router and its two redundancy
+            # routers for which device_id attribute should have been updated
+            params = "&".join(["device_id=%s" % r_id for r_id in r_ids])
+            router_ports = self._list('ports', query_params=params)['ports']
+            self.assertEqual(len(router_ports), 3)
+            expected_calls = []
+            for port in router_ports:
+                expected_port_update = {
+                    'port': {'device_owner': DEVICE_OWNER_ROUTER_INTF,
+                             'device_id': port['device_id']}}
+                expected_calls.append(
+                    mock.call(mock.ANY, port['id'], expected_port_update))
+            update_port.assert_has_calls(expected_calls, any_order=True)
+            r_port_ids = {r_p['id'] for r_p in router_ports}
+            # get the extra port for the user visible router
+            other_router_ports = [r_p for r_p in self._list('ports')['ports']
+                                  if r_p['id'] not in r_port_ids]
+            # should only be one since we've created one router port
+            self.assertEqual(len(other_router_ports), 1)
+            self.assertEqual(other_router_ports[0]['device_owner'],
+                             DEVICE_OWNER_ROUTER_INTF)
+            # clean-up
+            self._router_interface_action('remove', r['id'], None, p['id'])
 
     def _test_create_ha_router(self, router, subnet, ha_settings=None):
         if ha_settings is None:
@@ -259,10 +305,10 @@ class HAL3RouterApplianceVMTestCase(
                       l3.EXTERNAL_GW_INFO: {'network_id':
                                             s['subnet']['network_id']}}
             res = self._create_router(self.fmt, _uuid(), 'ha_router1',
-                                  arg_list=(ha.ENABLED,
-                                            ha.DETAILS,
-                                            l3.EXTERNAL_GW_INFO),
-                                  **kwargs)
+                                      arg_list=(ha.ENABLED,
+                                                ha.DETAILS,
+                                                l3.EXTERNAL_GW_INFO),
+                                      **kwargs)
             self.assertEqual(res.status_int, webob.exc.HTTPBadRequest.code)
 
     def test_create_non_gw_ha_router_with_ha_specification_validation_fails(
@@ -287,10 +333,10 @@ class HAL3RouterApplianceVMTestCase(
                       l3.EXTERNAL_GW_INFO: {'network_id':
                                             s['subnet']['network_id']}}
             res = self._create_router(self.fmt, _uuid(), 'ha_router1',
-                                  arg_list=(ha.ENABLED,
-                                            ha.DETAILS,
-                                            l3.EXTERNAL_GW_INFO),
-                                  **kwargs)
+                                      arg_list=(ha.ENABLED,
+                                                ha.DETAILS,
+                                                l3.EXTERNAL_GW_INFO),
+                                      **kwargs)
             self.assertEqual(res.status_int, webob.exc.HTTPBadRequest.code)
 
     def test_create_non_gw_ha_router_with_ha_spec_invalid_HA_type_fails(self):
@@ -1132,13 +1178,13 @@ class HAL3RouterApplianceVMTestCase(
                     # Need to use 10.0.0.5 instead of 10.0.0.3 as the
                     # latter gets consumed by one of the redundancy routers
                     fp1 = self._make_floatingip(self.fmt, network_ex_id1,
-                                            private_port['port']['id'],
-                                            floating_ip='10.0.0.5')
+                                                private_port['port']['id'],
+                                                floating_ip='10.0.0.5')
                     # Need to use 11.0.0.5 instead of 11.0.0.3 as the
                     # latter gets consumed by one of the redundancy routers
                     fp2 = self._make_floatingip(self.fmt, network_ex_id2,
-                                            private_port['port']['id'],
-                                            floating_ip='11.0.0.5')
+                                                private_port['port']['id'],
+                                                floating_ip='11.0.0.5')
                     self.assertEqual(fp1['floatingip']['router_id'],
                                      r1['router']['id'])
                     self.assertEqual(fp2['floatingip']['router_id'],
@@ -1355,6 +1401,39 @@ class HAL3RouterApplianceVMTestCase(
             self._rr_routes_update_cleanup(p2['id'], None, r['id'], rr1_id, [])
             self._routes_update_cleanup(p1['id'], None, r['id'], [])
 
+    def test__notify_subnetpool_address_scope_update(self):
+        l3_plugin = manager.NeutronManager.get_service_plugins()[
+            service_constants.L3_ROUTER_NAT]
+
+        tenant_id = _uuid()
+        with mock.patch.object(
+                l3_plugin, 'notify_routers_updated') as chk_method, \
+                self.subnetpool(prefixes=['10.0.0.0/24'],
+                                admin=True, name='sp',
+                                tenant_id=tenant_id) as subnetpool, \
+                self.router(tenant_id=tenant_id) as router, \
+                self.network(tenant_id=tenant_id) as network:
+            subnetpool_id = subnetpool['subnetpool']['id']
+            data = {'subnet': {
+                    'network_id': network['network']['id'],
+                    'subnetpool_id': subnetpool_id,
+                    'prefixlen': 24,
+                    'ip_version': 4,
+                    'tenant_id': tenant_id}}
+            req = self.new_create_request('subnets', data)
+            subnet = self.deserialize(self.fmt, req.get_response(self.api))
+
+            admin_ctx = context.get_admin_context()
+            l3_plugin.add_router_interface(
+                admin_ctx,
+                router['router']['id'], {'subnet_id': subnet['subnet']['id']})
+            l3_db._notify_subnetpool_address_scope_update(
+                mock.ANY, mock.ANY, mock.ANY,
+                context=admin_ctx, subnetpool_id=subnetpool_id)
+            args, kwargs = chk_method.call_args
+            self.assertEqual(admin_ctx, args[0])
+            self.assertIn(router['router']['id'], args[1])
+
 
 class L3AgentHARouterApplianceTestCase(
         test_l3_router_appliance_plugin.L3AgentRouterApplianceTestCase):
@@ -1544,12 +1623,15 @@ class L3CfgAgentHARouterApplianceTestCase(
                         self.fmt,
                         s_ext['subnet']['network_id'],
                         port_id=private_p1['port']['id'])
+                    fip1['floatingip']['fixed_ip_address_scope'] = None
                     fip2 = self._make_floatingip(
                         self.fmt,
                         s_ext['subnet']['network_id'],
                         port_id=private_p2['port']['id'])
+                    fip2['floatingip']['fixed_ip_address_scope'] = None
                     fips_dict = {fip1['floatingip']['id']: fip1['floatingip'],
                                  fip2['floatingip']['id']: fip2['floatingip']}
+
                     e_context = context.get_admin_context()
                     query_params = """fixed_ips=ip_address%%3D%s""".strip() % (
                                    '10.0.1.2')
@@ -1565,6 +1647,8 @@ class L3CfgAgentHARouterApplianceTestCase(
                         ha_settings, ha_groups_dict, fips_dict)
                     rr_ids = [rr['id'] for rr in routers[0][ha.DETAILS][
                         ha.REDUNDANCY_ROUTERS]]
+                    del fip1['floatingip']['fixed_ip_address_scope']
+                    del fip2['floatingip']['fixed_ip_address_scope']
                     # redundancy routers should here have same ha settings
                     # as the user visible routers since the l3 cfg agent
                     # needs that information to configure the redundancy
@@ -1621,7 +1705,7 @@ class L3CfgAgentHARouterApplianceTestCase(
         self.assertEqual(len(ports_dict), len(interfaces))
         assemble_groups = len(ha_groups_dict) == 0
         for i in interfaces:
-            ha_info = i[ha_db.HA_INFO]
+            ha_info = i[ha.HA_INFO]
             self.assertIsNotNone(ha_info)
             if assemble_groups:
                 ha_groups_dict[ha_info[ha_db.HA_PORT]['id']] = ha_info[
@@ -1716,3 +1800,145 @@ class L3CfgAgentHARouterApplianceTestCase(
 
     def test_ha_floatingip_update_cfg_agent(self):
         self._test_notify_op_agent(self._test_ha_floatingip_update_cfg_agent)
+
+    def test_populate_port_ha_information_no_port(self):
+
+        with self.router(arg_list=(ha.ENABLED,)) as router:
+            r = router['router']
+            with self.port() as port:
+                p = port['port']
+                body = self._router_interface_action('add', r['id'], None,
+                                                     p['id'])
+                self.assertIn('port_id', body)
+                self.assertEqual(body['port_id'], p['id'])
+                adm_ctx = context.get_admin_context()
+                with mock.patch(
+                    'networking_cisco.plugins.cisco.db.l3.ha_db.HA_db_mixin.'
+                    '_populate_port_ha_information') as mock_port_ha:
+                    mock_port_ha.return_value = None
+                    routers = self.plugin.get_sync_data_ext(adm_ctx, [r['id']])
+                    for router in routers:
+                        self.assertEqual(cisco_const.ROUTER_INFO_INCOMPLETE,
+                            router['status'])
+
+    def test_populate_port_ha_information_red_router_no_port(self):
+
+        with self.router(arg_list=(ha.ENABLED,)) as router:
+            r = router['router']
+            with self.port() as port:
+                p = port['port']
+                body = self._router_interface_action('add', r['id'], None,
+                                                     p['id'])
+                self.assertIn('port_id', body)
+                self.assertEqual(body['port_id'], p['id'])
+                adm_ctx = context.get_admin_context()
+                with mock.patch(
+                    'networking_cisco.plugins.cisco.db.l3.ha_db.HA_db_mixin.'
+                    '_populate_port_ha_information') as mock_port_ha:
+                    mock_port_ha.return_value = None
+                    rr_ids = [rr['id'] for rr in r[ha.DETAILS][
+                        ha.REDUNDANCY_ROUTERS]]
+                    routers = self.plugin.get_sync_data_ext(adm_ctx, rr_ids)
+                    for router in routers:
+                        self.assertEqual(cisco_const.ROUTER_INFO_INCOMPLETE,
+                            router['status'])
+
+    def test_populate_port_ha_information_no_port_gw_port(self):
+
+        with self.router(arg_list=(ha.ENABLED,)) as router:
+            r = router['router']
+            with self.subnet() as s:
+                self._set_net_external(s['subnet']['network_id'])
+                self._add_external_gateway_to_router(
+                    r['id'],
+                    s['subnet']['network_id'])
+                adm_ctx = context.get_admin_context()
+                with mock.patch(
+                    'networking_cisco.plugins.cisco.db.l3.ha_db.HA_db_mixin.'
+                    '_populate_port_ha_information') as mock_port_ha:
+                    mock_port_ha.return_value = None
+                    routers = self.plugin.get_sync_data_ext(adm_ctx, [r['id']])
+                    for router in routers:
+                        body = self._show('routers', r['id'])
+                        r_after = body['router']
+                        gw_info = r_after['external_gateway_info']
+                        self.assertIsNotNone(gw_info)
+                        self.assertEqual(cisco_const.ROUTER_INFO_INCOMPLETE,
+                            router['status'])
+
+    def test_populate_port_ha_information_red_router_no_port_gw_port(self):
+
+        with self.router(arg_list=(ha.ENABLED,)) as router:
+            r = router['router']
+            with self.subnet() as s:
+                self._set_net_external(s['subnet']['network_id'])
+                self._add_external_gateway_to_router(
+                    r['id'],
+                    s['subnet']['network_id'])
+                adm_ctx = context.get_admin_context()
+                with mock.patch(
+                    'networking_cisco.plugins.cisco.db.l3.ha_db.HA_db_mixin.'
+                    '_populate_port_ha_information') as mock_port_ha:
+                    mock_port_ha.return_value = None
+                    rr_ids = [rr['id'] for rr in r[ha.DETAILS][
+                        ha.REDUNDANCY_ROUTERS]]
+                    routers = self.plugin.get_sync_data_ext(adm_ctx, rr_ids)
+                    for router in routers:
+                        body = self._show('routers', router['id'])
+                        r_after = body['router']
+                        gw_info = r_after['external_gateway_info']
+                        self.assertIsNotNone(gw_info)
+                        self.assertEqual(cisco_const.ROUTER_INFO_INCOMPLETE,
+                            router['status'])
+
+    def test_populate_port_ha_information_retries_succeed(self):
+
+        def fake_one():
+            if m.call_count == 3:
+                return hag
+            elif m.call_count == 4:
+                return extra_port
+            else:
+                raise exc.NoResultFound
+
+        with self.router(arg_list=(ha.ENABLED,)) as router:
+            r = router['router']
+            with self.port() as port:
+                p = port['port']
+                body = self._router_interface_action('add', r['id'], None,
+                                                     p['id'])
+                self.assertIn('port_id', body)
+                self.assertEqual(body['port_id'], p['id'])
+                adm_ctx = context.get_admin_context()
+                hags = {}
+                mod_itfcs = []
+                hag = self.plugin._get_ha_group_for_subnet_id(
+                    adm_ctx, r['id'], p['fixed_ips'][0]['subnet_id'])
+                extra_port = self._show('ports', hag.extra_port_id)['port']
+                with mock.patch('sqlalchemy.orm.query.Query.one') as m:
+                    m.side_effect = fake_one
+                    pop_p = self.plugin._populate_port_ha_information(
+                        adm_ctx, p, r['id'], hags, r['id'], mod_itfcs)
+                    self.assertEqual(m.call_count, 4)
+                    self.assertIn(ha.HA_INFO, pop_p)
+                    self.assertIsNotNone(pop_p[ha.HA_INFO]['group'])
+
+    def test_populate_port_ha_information_all_retries_fail(self):
+        with self.router(arg_list=(ha.ENABLED,)) as router:
+            r = router['router']
+            with self.port() as port:
+                p = port['port']
+                body = self._router_interface_action('add', r['id'], None,
+                                                     p['id'])
+                self.assertIn('port_id', body)
+                self.assertEqual(body['port_id'], p['id'])
+                adm_ctx = context.get_admin_context()
+                hags = {}
+                mod_itfcs = []
+                with mock.patch('sqlalchemy.orm.query.Query.one') as m:
+                    m.side_effect = exc.NoResultFound
+                    pop_p = self.plugin._populate_port_ha_information(
+                        adm_ctx, p, r['id'], hags, r['id'], mod_itfcs)
+                    self.assertIsNone(pop_p)
+                    self.assertEqual(len(mod_itfcs), 0)
+                    self.assertEqual(m.call_count, ha_db.LOOKUP_RETRIES)
