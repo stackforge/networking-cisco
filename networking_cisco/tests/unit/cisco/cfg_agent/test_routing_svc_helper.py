@@ -13,8 +13,8 @@
 #    under the License.
 
 import copy
-
 import mock
+
 from oslo_config import cfg
 import oslo_messaging
 from oslo_utils import uuidutils
@@ -29,6 +29,7 @@ from networking_cisco.plugins.cisco.cfg_agent.service_helpers import (
     routing_svc_helper)
 from networking_cisco.plugins.cisco.common import (cisco_constants as
                                                    c_constants)
+from networking_cisco.plugins.cisco.extensions import ha
 from networking_cisco.plugins.cisco.extensions import routerrole
 
 
@@ -36,13 +37,12 @@ _uuid = uuidutils.generate_uuid
 HOST = 'myhost'
 FAKE_ID = _uuid()
 
-ROUTER_ROLE_ATTR = routerrole.ROUTER_ROLE_ATTR
-
 
 def prepare_router_data(enable_snat=None, num_internal_ports=1):
     router_id = _uuid()
     ex_gw_port = {'id': _uuid(),
                   'network_id': _uuid(),
+                  'admin_state_up': True,
                   'fixed_ips': [{'ip_address': '19.4.4.4',
                                  'subnet_id': _uuid()}],
                   'subnets': [{'cidr': '19.4.4.0/24',
@@ -56,7 +56,7 @@ def prepare_router_data(enable_snat=None, num_internal_ports=1):
                                          'subnet_id': _uuid()}],
                           'mac_address': 'ca:fe:de:ad:be:ef',
                           'subnets': [{'cidr': '35.4.%s.0/24' % i,
-                                     'gateway_ip': '35.4.%s.1' % i}]})
+                                       'gateway_ip': '35.4.%s.1' % i}]})
     hosting_device = {'id': _uuid(),
                       "name": "CSR1kv_template",
                       "booting_time": 300,
@@ -64,7 +64,7 @@ def prepare_router_data(enable_snat=None, num_internal_ports=1):
                       'management_ip_address': '20.0.0.5',
                       'protocol_port': 22,
                       "credentials": {
-                          "user_name": "user",
+                          "username": "user",
                           "password": "4getme"},
                       }
     router = {
@@ -91,7 +91,7 @@ class TestRouterInfo(base.BaseTestCase):
                            'fixed_ips': [{'ip_address': '19.4.4.4',
                                           'subnet_id': _uuid()}],
                            'subnets': [{'cidr': '19.4.4.0/24',
-                                      'gateway_ip': '19.4.4.1'}]}
+                                        'gateway_ip': '19.4.4.1'}]}
         self.router = {'id': _uuid(),
                        'enable_snat': True,
                        'routes': [],
@@ -129,24 +129,27 @@ class TestBasicRoutingOperations(base.BaseTestCase):
         self.conf.register_opts(cfg_agent.OPTS, "cfg_agent")
         self.ex_gw_port = {'id': _uuid(),
                            'network_id': _uuid(),
+                           'admin_state_up': True,
                            'fixed_ips': [{'ip_address': '19.4.4.4',
                                          'subnet_id': _uuid()}],
                            'subnets': [{'cidr': '19.4.4.0/24',
-                                      'gateway_ip': '19.4.4.1'}]}
+                                        'gateway_ip': '19.4.4.1'}]}
         self.hosting_device = {'id': "100",
                                'name': "CSR1kv_template",
                                'booting_time': 300,
                                'host_category': "VM",
                                'management_ip_address': '20.0.0.5',
                                'protocol_port': 22,
-                               'credentials': {'user_name': 'user',
-                                               "password": '4getme'},
+                               'credentials': {'username': 'user',
+                                               'password': '4getme'},
                                }
         self.router = {
             'id': _uuid(),
             'enable_snat': True,
+            'admin_state_up': True,
             'routes': [],
             'gw_port': self.ex_gw_port,
+            routerrole.ROUTER_ROLE_ATTR: None,
             'hosting_device': self.hosting_device}
 
         self.agent = mock.Mock()
@@ -337,6 +340,27 @@ class TestBasicRoutingOperations(base.BaseTestCase):
         self.assertIn(
             router[l3_constants.INTERFACE_KEY][0], ri.internal_ports)
 
+    def test_process_router_internal_network_added_raises_HAMissingError(self):
+        router, ports = prepare_router_data()
+        router[ha.ENABLED] = True
+        ri = routing_svc_helper.RouterInfo(router['id'], router=router)
+        # raise RuntimeError to simulate that a HAParamsMissingException
+        params = {'r_id': FAKE_ID, 'p_id': FAKE_ID, 'port': ports[0]}
+        self.routing_helper._internal_network_added.side_effect = (
+            cfg_exceptions.HAParamsMissingException(**params))
+        self.routing_helper._process_router(ri)
+        self.assertIn(ri.router_id, self.routing_helper.updated_routers)
+        self.assertNotIn(
+            router[l3_constants.INTERFACE_KEY][0], ri.internal_ports)
+        # The unexpected exception has been fixed manually
+        self.routing_helper._internal_network_added.side_effect = None
+
+        # Failure will cause a retry next time, then were able to add the
+        # port to ri.internal_ports
+        self.routing_helper._process_router(ri)
+        self.assertIn(
+            router[l3_constants.INTERFACE_KEY][0], ri.internal_ports)
+
     def test_process_router_internal_network_removed_unexpected_error(self):
         router, ports = prepare_router_data()
         ri = routing_svc_helper.RouterInfo(router['id'], router=router)
@@ -407,8 +431,8 @@ class TestBasicRoutingOperations(base.BaseTestCase):
         self.assertEqual(2, configurations['total interfaces'])
         self.assertEqual(0, configurations['total floating_ips'])
         self.assertEqual(hd_exp_result, configurations['hosting_devices'])
-        self.assertEqual(
-            [], list(configurations['non_responding_hosting_devices']))
+        self.assertEqual([], list(
+            configurations['non_responding_hosting_devices']))
 
     def test_sort_resources_per_hosting_device(self):
         router1, port = prepare_router_data()
@@ -645,9 +669,9 @@ class TestBasicRoutingOperations(base.BaseTestCase):
         router1, port1 = prepare_router_data()
 
         router2 = {'id': _uuid(),
-                   ROUTER_ROLE_ATTR: None}
+                   routerrole.ROUTER_ROLE_ATTR: None}
         router_G = {'id': _uuid(),
-                   ROUTER_ROLE_ATTR: c_constants.ROUTER_ROLE_GLOBAL}
+                   routerrole.ROUTER_ROLE_ATTR: c_constants.ROUTER_ROLE_GLOBAL}
         removed_routers = [router_G, router2]
 
         self.routing_helper._adjust_router_list_for_global_router(
