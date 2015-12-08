@@ -1,0 +1,11 @@
+Verified+2: Jenkins
+Workflow+1: Sam Betts <sam@code-smash.net>
+Code-Review+2: Paul Michali <pc@michali.net>
+Code-Review+2: Sandhya Dasu <sadasu@cisco.com>
+Code-Review+1: YAMAMOTO Takashi <yamamoto@midokura.com>
+Code-Review+1: Ann Kamyshnikova <akamyshnikova@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 08 Dec 2015 15:27:30 +0000
+Reviewed-on: https://review.openstack.org/251529
+Project: openstack/networking-cisco
+Branch: refs/heads/master
