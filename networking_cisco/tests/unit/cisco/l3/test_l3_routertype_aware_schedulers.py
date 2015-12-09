@@ -19,6 +19,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import importutils
 from oslo_utils import uuidutils
+from sqlalchemy import exc as db_exc
 from webob import exc
 
 from neutron.api.rpc.agentnotifiers import l3_rpc_agent_api
@@ -518,6 +519,40 @@ class L3RoutertypeAwareHostingDeviceSchedulerBaseTestCase(
             self.assertEqual(2, len(r_ids))
             for r in [r2['router'], r3['router']]:
                 self.assertIn(r['id'], r_ids)
+
+    def test_router_scheduling_aborts_if_other_process_scheduled_router(self):
+
+        def fake_allocator(context, binding_info_db, target_hosting_device_id,
+                           slot_need, synchronized):
+            # here we mimic that another process has concurrently already
+            # completed the scheduling of the router so that the attempt here
+            # fails and raises an IntegrityError
+            res = orig_func(context, binding_info_db, selected_hd_id,
+                            slot_need, synchronized)
+            self.assertEqual(res, True)
+            self.assertEqual(len(self.plugin._backlogged_routers), 0)
+            # The call to orig_func removed the router from the one and only
+            # backlog we have in the test when it bound the router to the
+            # hosting device.
+            # However, in the real, non-simulated case each process would have
+            # its own backlog. We therefore put the router back in the backlog
+            # to mimic this.
+            self.plugin._backlogged_routers.add(binding_info_db.router_id)
+            # kaboom!
+            raise db_exc.IntegrityError("Invalid insert", params="", orig=None)
+
+        selected_hd_id = '00000000-0000-0000-0000-000000000002'
+        with self.router() as router:
+            r = router['router']
+            self.assertIn(r['id'], self.plugin._backlogged_routers)
+            orig_func = self.plugin._try_allocate_slots_and_bind_to_host
+            with mock.patch.object(
+                    self.plugin, '_try_allocate_slots_and_bind_to_host') as m:
+                m.side_effect = fake_allocator
+                self.plugin._process_backlogged_routers()
+            self.assertEqual(len(self.plugin._backlogged_routers), 1)
+            r_after = self._show('routers', r['id'])['router']
+            self.assertEqual(r_after[HOSTING_DEVICE_ATTR], selected_hd_id)
 
 
 class L3RoutertypeAwareHostingDeviceSchedulerTestCase(

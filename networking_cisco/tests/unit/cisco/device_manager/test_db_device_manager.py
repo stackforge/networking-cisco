@@ -931,6 +931,17 @@ class TestDeviceManagerDBPlugin(
                          num_to_release=VM_SLOT_CAPACITY + 1,
                          release_pool_maintenance_expected=False)
 
+    def test_release_all_slots_by_negative_num_argument_shared_hosting_device(
+            self):
+        self._test_slots(test_release=True, expected_final_allocation=0,
+                         num_to_release=-1)
+
+    def test_release_all_slots_by_negative_num_argument_owned_hosting_device(
+            self):
+        self._test_slots(expected_bind=REQUESTER, initial_bind=REQUESTER,
+                 bind=True, test_release=True, expected_release_bind=UNBOUND,
+                 expected_final_allocation=0, num_to_release=-1)
+
     # hosting device deletion test helper
     def _test_delete(self, to_delete=None, auto_delete=None, no_delete=None,
                      force_delete=True, expected_num_remaining=0):
