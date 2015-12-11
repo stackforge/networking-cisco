@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Code-Review+2: Paul Michali <pc@michali.net>
+Code-Review+2: Sandhya Dasu <sadasu@cisco.com>
+Workflow+1: Sandhya Dasu <sadasu@cisco.com>
+Code-Review+1: YAMAMOTO Takashi <yamamoto@midokura.com>
+Submitted-by: Jenkins
+Submitted-at: Fri, 11 Dec 2015 15:52:42 +0000
+Reviewed-on: https://review.openstack.org/214765
+Project: openstack/networking-cisco
+Branch: refs/heads/master
