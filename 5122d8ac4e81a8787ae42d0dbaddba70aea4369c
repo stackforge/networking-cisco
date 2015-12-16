@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Code-Review+2: Ihar Hrachyshka <ihrachys@redhat.com>
+Workflow+1: Ihar Hrachyshka <ihrachys@redhat.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 16 Dec 2015 12:59:47 +0000
+Reviewed-on: https://review.openstack.org/258034
+Project: openstack/networking-cisco
+Branch: refs/heads/stable/liberty
