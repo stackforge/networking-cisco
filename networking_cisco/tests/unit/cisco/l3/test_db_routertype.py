@@ -20,6 +20,8 @@ from oslo_config import cfg
 import six
 import webob.exc
 
+from neutron._i18n import _LE
+
 from neutron.common import constants as n_const
 from neutron import context as n_context
 from neutron import manager
