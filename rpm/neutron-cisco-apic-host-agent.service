@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenStack Neutron Cisco APIC Host Agent
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User=neutron
+ExecStart=/usr/bin/neutron-cisco-apic-host-agent --config-file /usr/share/neutron/neutron-dist.conf --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/conf.d/ml2_conf_cisco.ini --log-file=/var/log/neutron/cisco-apic-host-agent.log
+PrivateTmp=false
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenStack Neutron Cisco APIC Service Agent
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User=neutron
+ExecStart=/usr/bin/neutron-cisco-apic-service-agent --config-file /usr/share/neutron/neutron-dist.conf --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/conf.d/ml2_conf_cisco.ini --config-dir /etc/neutron/conf.d/common --config-dir /etc/neutron/conf.d/neutron-cisco-apic-service-agent --log-file /var/log/neutron/cisco-apic-service.log
+PrivateTmp=false
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
