@@ -376,7 +376,7 @@ class CiscoNexusDriver(object):
                 LOG.debug("GET call returned Nexus type %d",
                     int(nexus_type[0]))
                 return int(nexus_type[0])
-        LOG.warn(_LW("GET call failed to return Nexus type"))
+        LOG.warning(_LW("GET call failed to return Nexus type"))
         return -1
 
     def _extract_line_item_data(self, obj, which, re_str):
@@ -421,7 +421,7 @@ class CiscoNexusDriver(object):
                            obj, "shutstate", snipp.RE_GET_VLAN_SHUT_STATE)
                 vlan_list[vlanid] = [vlanname, vlanstate, vlanshut]
             return vlan_list
-        LOG.warn(_LW("GET call failed to response "))
+        LOG.warning(_LW("GET call failed to response "))
         return vlan_list
 
     def set_all_vlan_states(self, nexus_host, vlanid_range):
