@@ -88,6 +88,7 @@ def parse_ucsm_host_config():
 class UcsmConfig(object):
     """ML2 Cisco UCSM Mechanism Driver Configuration class."""
     ucsm_dict = {}
+    sp_template_dict = {}
 
     def __init__(self):
         """Create a single UCSM or Multi-UCSM dict."""
@@ -121,7 +122,10 @@ class UcsmConfig(object):
                 if dev_id.lower() == 'ml2_cisco_ucsm_ip':
                     ucsm_info = []
                     for dev_key, value in parsed_file[parsed_item].items():
-                        ucsm_info.append(value[0])
+                        if dev_key.lower() == 'sp_template_list':
+                            self._parse_sp_template_list(dev_ip, value)
+                        else:
+                            ucsm_info.append(value[0])
                     self.ucsm_dict[dev_ip] = ucsm_info
 
     def get_credentials_for_ucsm_ip(self, ucsm_ip):
@@ -130,3 +134,14 @@ class UcsmConfig(object):
 
     def get_all_ucsm_ips(self):
         return self.ucsm_dict.keys()
+
+    def _parse_sp_template_list(self, ucsm_ip, sp_template_config):
+        sp_template_list = []
+        for sp_template_temp in sp_template_config:
+            sp_template_list = sp_template_temp.split()
+            for sp_template in sp_template_list:
+                mapping = sp_template.split(':')
+                value = []
+                key = str(ucsm_ip) + "-" + str(mapping[0])
+                value = mapping[1].split(',')
+                self.sp_template_dict[key] = value

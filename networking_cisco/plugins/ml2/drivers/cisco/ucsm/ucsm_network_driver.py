@@ -120,6 +120,8 @@ class CiscoUcsmDriver(object):
             ucsm_ip)
         handle = self.ucsmsdk.UcsHandle()
         try:
+            LOG.debug('UCSM IP: %s, login: %s, password: %s',
+                      ucsm_ip, credentials[1], credentials[0])
             handle.Login(ucsm_ip, credentials[1], credentials[0])
         except Exception as e:
             # Raise a Neutron exception. Include a description of
