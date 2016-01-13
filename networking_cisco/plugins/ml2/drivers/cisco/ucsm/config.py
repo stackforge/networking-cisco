@@ -113,6 +113,9 @@ class UcsmConfig(object):
     """ML2 Cisco UCSM Mechanism Driver Configuration class."""
     ucsm_dict = {}
     ucsm_port_dict = {}
+    sp_template_dict = {}
+    multi_ucsm_mode = False
+    sp_template_mode = False
 
     def __init__(self):
         """Create a single UCSM or Multi-UCSM dict."""
@@ -153,15 +156,19 @@ class UcsmConfig(object):
                     eth_ports = []
                     eth_port_list = []
                     for dev_key, value in parsed_file[parsed_item].items():
-                        if dev_key != 'ucsm_virtio_eth_ports':
-                            ucsm_info.append(value[0])
-                        else:
+                        if dev_key.lower() == 'ucsm_virtio_eth_ports':
                             eth_ports = value[0].split(',')
                             for eth_port in eth_ports:
                                 eth_port_list.append(
                                     const.ETH_PREFIX + str(eth_port))
+                            self.ucsm_port_dict[dev_ip] = eth_port_list
+                        elif dev_key.lower() == 'sp_template_list':
+                            self._parse_sp_template_list(dev_ip, value)
+                            self.sp_template_mode = True
+                        else:
+                            ucsm_info.append(value[0])
                     self.ucsm_dict[dev_ip] = ucsm_info
-                    self.ucsm_port_dict[dev_ip] = eth_port_list
+                    self.multi_ucsm_mode = True
 
     def get_credentials_for_ucsm_ip(self, ucsm_ip):
         if ucsm_ip in self.ucsm_dict:
@@ -173,3 +180,29 @@ class UcsmConfig(object):
     def get_ucsm_eth_port_list(self, ucsm_ip):
         if ucsm_ip in self.ucsm_port_dict:
             return self.ucsm_port_dict[ucsm_ip]
+
+    def _parse_sp_template_list(self, ucsm_ip, sp_template_config):
+        sp_template_list = []
+        for sp_template_temp in sp_template_config:
+            sp_template_list = sp_template_temp.split()
+            for sp_template in sp_template_list:
+                mapping = sp_template.split(':')
+                host_list = mapping[1].split(',')
+                for host in host_list:
+                    value = str(ucsm_ip) + '-' + str(mapping[0])
+                    self.sp_template_dict[host] = value
+                    LOG.debug('SD: SP Template key: %s, value: %s',
+                        host, value)
+
+    def is_service_profile_template_configured(self):
+        return self.sp_template_mode
+
+    def get_sp_template_for_host(self, host):
+        value = self.sp_template_dict.get(host).split('-')
+        LOG.debug('SD: Host: %s SP_template : %s', host, value[1])
+        return value[1]
+
+    def get_ucsm_ip_for_sp_template_host(self, host):
+        value = self.sp_template_dict.get(host).split('-')
+        LOG.debug('SD: Host: %s UCSM_IP : %s', host, value[0])
+        return value[0]
