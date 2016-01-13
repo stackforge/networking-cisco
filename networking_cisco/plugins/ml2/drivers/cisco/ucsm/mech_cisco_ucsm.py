@@ -62,9 +62,27 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         profile = context.current.get(portbindings.PROFILE, {})
         host_id = context.current.get(portbindings.HOST_ID)
 
+        vlan_id = self._get_vlanid(context)
+        if not vlan_id:
+            LOG.warn(_LW("update_port_precommit: vlan_id is None."))
+            return
+
+        ucsm_ip = self.driver.get_ucsm_ip_for_host(host_id)
+        if not ucsm_ip:
+            LOG.error(_LE("update_port_precommit: Could not find UCSM IP for "
+                "host %s."), host_id)
+            return
+
+        LOG.debug("update_port_precommit: UCSM IP: %s", str(ucsm_ip))
         if not self.driver.check_vnic_type_and_vendor_info(vnic_type,
                                                            profile):
-            LOG.debug('update_port_precommit encountered a non-SR-IOV port')
+            # This is a neutron virtio port. Find the UCSM that controls
+            # this host and the Service Profile Template for this host.
+            sp_template = self.driver.get_sp_template_for_host(host_id)
+            LOG.debug("update_port_precommit: Sp_Template: %s, VLAN_id: %d",
+                  str(sp_template), vlan_id)
+            self.ucsm_db.add_service_profile_template(vlan_id,
+                                                      sp_template, ucsm_ip)
             return
 
         # If this is an Intel SR-IOV vnic, then no need to create port
@@ -74,18 +92,11 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
                       'sr-iov port')
             return
 
-        vlan_id = self._get_vlanid(context)
-
-        if not vlan_id:
-            LOG.warning(_LW("update_port_precommit: vlan_id is None."))
-            return
-
         p_profile_name = self.make_profile_name(vlan_id)
         LOG.debug("update_port_precommit: Profile: %s, VLAN_id: %d",
                   p_profile_name, vlan_id)
 
         # Create a new port profile entry in the db
-        ucsm_ip = self.driver.get_ucsm_ip_for_host(host_id)
         self.ucsm_db.add_port_profile(p_profile_name, vlan_id, ucsm_ip)
 
     def update_port_postcommit(self, context):
