@@ -90,6 +90,9 @@ def parse_ucsm_host_config():
 class UcsmConfig(object):
     """ML2 Cisco UCSM Mechanism Driver Configuration class."""
     ucsm_dict = {}
+    sp_template_dict = {}
+    multi_ucsm_mode = False
+    sp_template_mode = False
 
     def __init__(self):
         """Create a single UCSM or Multi-UCSM dict."""
@@ -123,8 +126,13 @@ class UcsmConfig(object):
                 if dev_id.lower() == 'ml2_cisco_ucsm_ip':
                     ucsm_info = []
                     for dev_key, value in parsed_file[parsed_item].items():
-                        ucsm_info.append(value[0])
+                        if dev_key.lower() == 'sp_template_list':
+                            self._parse_sp_template_list(dev_ip, value)
+                            sp_template_mode = True
+                        else:
+                            ucsm_info.append(value[0])
                     self.ucsm_dict[dev_ip] = ucsm_info
+                    multi_ucsm_mode = True
 
     def get_credentials_for_ucsm_ip(self, ucsm_ip):
         if ucsm_ip in self.ucsm_dict:
@@ -132,3 +140,31 @@ class UcsmConfig(object):
 
     def get_all_ucsm_ips(self):
         return self.ucsm_dict.keys()
+
+    def _parse_sp_template_list(self, ucsm_ip, sp_template_config):
+        sp_template_list = []
+        for sp_template_temp in sp_template_config:
+            sp_template_list = sp_template_temp.split()
+            for sp_template in sp_template_list:
+                mapping = sp_template.split(':')
+                host_list = mapping[1].split(',')
+                for host in host_list:
+                    value = str(ucsm_ip) + '-' + str(mapping[0])
+                    self.sp_template_dict[host] = value
+                    LOG.debug('SD: SP Template key: %s, value: %s',
+                        host, value)
+
+    def is_service_profile_template_configured(self):
+        return (self.sp_template_dict is not None)
+
+    def get_sp_template_for_host(self, host):
+        value = self.sp_template_dict.get(host).split('-')
+        LOG.debug('SD: Host: %s SP_template : %s', host, value[1])
+        return value[1]
+
+    def get_ucsm_ip_for_sp_template_host(self, host):
+        value = self.sp_template_dict.get(host).split('-')
+        LOG.debug('SD: Host: %s UCSM_IP : %s', host, value[0])
+        return value[0]
+       
+        
