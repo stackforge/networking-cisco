@@ -104,7 +104,7 @@ def parse_virtio_eth_ports():
                           "Neutron virtual ports on this setup."))
 
     for eth_port in cfg.CONF.ml2_cisco_ucsm.ucsm_virtio_eth_ports:
-        eth_port_list.append(const.ETH_PREFIX + str(eth_port))
+        eth_port_list.append(const.ETH_PREFIX + str(eth_port).strip())
 
     return eth_port_list
 
@@ -113,6 +113,11 @@ class UcsmConfig(object):
     """ML2 Cisco UCSM Mechanism Driver Configuration class."""
     ucsm_dict = {}
     ucsm_port_dict = {}
+    sp_template_dict = {}
+    vnic_template_dict = {}
+    multi_ucsm_mode = False
+    sp_template_mode = False
+    vnic_template_mode = False
 
     def __init__(self):
         """Create a single UCSM or Multi-UCSM dict."""
@@ -153,15 +158,22 @@ class UcsmConfig(object):
                     eth_ports = []
                     eth_port_list = []
                     for dev_key, value in parsed_file[parsed_item].items():
-                        if dev_key != 'ucsm_virtio_eth_ports':
-                            ucsm_info.append(value[0])
-                        else:
+                        if dev_key.lower() == 'ucsm_virtio_eth_ports':
                             eth_ports = value[0].split(',')
                             for eth_port in eth_ports:
                                 eth_port_list.append(
-                                    const.ETH_PREFIX + str(eth_port))
+                                    const.ETH_PREFIX + str(eth_port).strip())
+                            self.ucsm_port_dict[dev_ip] = eth_port_list
+                        elif dev_key.lower() == 'sp_template_list':
+                            self._parse_sp_template_list(dev_ip, value)
+                            self.sp_template_mode = True
+                        elif dev_key.lower() == 'vnic_template_list':
+                            self._parse_vnic_template_list(dev_ip, value)
+                            self.vnic_template_mode = True
+                        else:
+                            ucsm_info.append(value[0])
                     self.ucsm_dict[dev_ip] = ucsm_info
-                    self.ucsm_port_dict[dev_ip] = eth_port_list
+                    self.multi_ucsm_mode = True
 
     def get_credentials_for_ucsm_ip(self, ucsm_ip):
         if ucsm_ip in self.ucsm_dict:
@@ -173,3 +185,62 @@ class UcsmConfig(object):
     def get_ucsm_eth_port_list(self, ucsm_ip):
         if ucsm_ip in self.ucsm_port_dict:
             return self.ucsm_port_dict[ucsm_ip]
+
+    def _parse_sp_template_list(self, ucsm_ip, sp_template_config):
+        sp_template_list = []
+        for sp_template_temp in sp_template_config:
+            sp_template_list = sp_template_temp.split()
+            for sp_template in sp_template_list:
+                sp_template_path, sep, template_hosts = (
+                    sp_template.partition(':'))
+                if not sp_template_path or not sep or not template_hosts:
+                    raise cfg.Error(_('UCS Mech Driver: Invalid Service '
+                                      'Profile Template config %s')
+                                    % sp_template_config)
+
+                sp_temp, sep, hosts = template_hosts.partition(':')
+                LOG.debug('SD: SP Template Path: %s, SP Template: %s, '
+                    'Hosts: %s', sp_template_path, sp_temp, hosts)
+                host_list = hosts.split(',')
+                for host in host_list:
+                    value = (ucsm_ip, sp_template_path, sp_temp)
+                    self.sp_template_dict[host] = value
+                    LOG.debug('SD: SP Template key: %s, value: %s',
+                        host, value)
+
+    def is_service_profile_template_configured(self):
+        return self.sp_template_mode
+
+    def get_sp_template_path_for_host(self, host):
+        value = self.sp_template_dict.get(host)
+        LOG.debug('SD: Host: %s SP_template path: %s', host, value[1])
+        return value[1]
+
+    def get_sp_template_for_host(self, host):
+        value = self.sp_template_dict.get(host)
+        LOG.debug('SD: Host: %s SP_template : %s', host, value[2])
+        return value[2]
+
+    def get_ucsm_ip_for_sp_template_host(self, host):
+        value = self.sp_template_dict.get(host)
+        LOG.debug('SD: Host: %s UCSM_IP : %s', host, value[0])
+        return value[0]
+
+    def _parse_vnic_template_list(self, ucsm_ip, vnic_template_config):
+        LOG.debug('SD: vnic_template_config : %s', vnic_template_config)
+        vnic_template_mapping = []
+        for vnic_template_temp in vnic_template_config:
+            vnic_template_mapping = vnic_template_temp.split()
+            for mapping in vnic_template_mapping:
+                physnet, sep, vnic_templates = mapping.partition(':')
+                if not sep or not vnic_templates:
+                    raise cfg.Error(_("UCS Mech Driver: Invalid VNIC Template"
+                                      "config: %s") % physnet)
+                key = (ucsm_ip, physnet)
+                self.vnic_template_dict[key] = vnic_templates
+                LOG.debug('SD: VNIC Template key: %s, value: %s',
+                          key, vnic_templates)
+
+    def get_vnic_templates_for_physnet(self, ucsm_ip, physnet):
+        key = (ucsm_ip, physnet)
+        return self.vnic_template_dict.get(key)
