@@ -62,7 +62,8 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
 
         if not self.driver.check_vnic_type_and_vendor_info(vnic_type,
                                                            profile):
-            LOG.debug('update_port_precommit encountered a non-SR-IOV port')
+            # This is a neutron virtio port. Add code to support Service
+            # Profile Template.
             return
 
         # If this is an Intel SR-IOV vnic, then no need to create port
