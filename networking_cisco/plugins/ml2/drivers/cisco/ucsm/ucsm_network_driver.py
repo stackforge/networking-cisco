@@ -346,6 +346,9 @@ class CiscoUcsmDriver(object):
 
         return True
 
+    def get_sp_template_for_host(self, host_id):
+        return self.ucsm_conf.get_sp_template_for_host(host_id)
+
     def _update_service_profile(self, service_profile, vlan_id, ucsm_ip):
         """Updates Service Profile on the UCS Manager.
 
@@ -410,14 +413,6 @@ class CiscoUcsmDriver(object):
         ethernet ports and the Fabric Interconnect's network ports.
         """
         ucsm_ip = self.ucsm_host_dict.get(host_id)
-        service_profile = self.ucsm_sp_dict.get(ucsm_ip, host_id)
-        if service_profile:
-            LOG.debug("UCS Manager network driver Service Profile : %s",
-                service_profile)
-        else:
-            LOG.info(_LI('UCS Manager network driver does not support Host_id '
-                         '%s'), str(host_id))
-            return False
 
         # Create Vlan Profile
         if not self._create_vlanprofile(vlan_id, ucsm_ip):
@@ -425,11 +420,26 @@ class CiscoUcsmDriver(object):
                           'Vlan Profile for vlan %s'), str(vlan_id))
             return False
 
-        # Update Service Profile
-        if not self._update_service_profile(service_profile, vlan_id, ucsm_ip):
-            LOG.error(_LE('UCS Manager network driver failed to update '
-                          'Service Profile %s'), service_profile)
-            return False
+        # Based on user configuration, either a Service Profile or
+        # a Service Profile Template needs to be configured.
+        if config.is_service_profile_template_configured():
+            # Service profile Templates configured.
+            LOG.debug("UCS Manager network driver SPT configured")
+        else:
+            service_profile = self.ucsm_sp_dict.get(ucsm_ip, host_id)
+            if service_profile:
+                LOG.debug("UCS Manager network driver Service Profile : %s",
+                    service_profile)
+            else:
+                LOG.info(_LI('UCS Manager network driver does not support '
+                    'Host_id %s'), str(host_id))
+                return False
+            # Update Service Profile
+            if not self._update_service_profile(service_profile,
+                vlan_id, ucsm_ip):
+                LOG.error(_LE('UCS Manager network driver failed to update '
+                              'Service Profile %s'), service_profile)
+                return False
 
         return True
 

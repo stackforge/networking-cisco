@@ -71,3 +71,52 @@ class UcsmDbModel(object):
                     vlan_id=vlan_id).delete()
             except orm.exc.NoResultFound:
                 return
+
+    def get_sp_template_vlan_entry(self, vlan_id, sp_template, ucsm_ip):
+        entry = self.session.query(
+            ucsm_model.ServiceProfileTemplate).filter_by(
+            vlan_id=vlan_id, sp_template=sp_template, device_id=ucsm_ip).first()
+        return entry if entry else None
+
+    def add_service_profile_template(self, vlan_id, sp_template, ucsm_ip):
+        """Adds an entry for a vlan_id on a SP template to the table."""
+        if self.get_sp_template_vlan_entry(vlan_id, sp_template, ucsm_ip):
+            self.update_server_count_sp_template(vlan_id, sp_template,
+                                                  ucsm_ip, True)
+        else:
+            entry = ucsm_model.ServiceProfileTemplate(
+                                                  vlan_id=vlan_id,
+                                                  sp_template=sp_template,
+                                                  device_id=ucsm_ip,
+                                                  updated_on_ucs=False)
+            with self.session.begin(subtransactions=True):
+                self.session.add(entry)
+        return True
+
+    def update_server_count_sp_template(self, vlan_id, sp_template, ucsm_ip,
+                                        increment):
+        """Adds hostname to ServiceProfileTemplate entry."""
+        with self.session.begin(subtransactions=True):
+            entry = self.session.query(
+                ucsm_model.ServiceProfileTemplate).filter_by(
+                vlan_id=vlan_id, sp_template=sp_template,
+                    device_id=ucsm_ip).first()
+            if entry:
+                result = 1 if increment else -1
+                entry.server_count += result
+                self.session.merge(entry)
+            return entry
+
+    def set_sp_template_updated(self, vlan_id, sp_template, device_id):
+        """Sets update_on_ucs flag to True."""
+        with self.session.begin(subtransactions=True):
+            entry = self.session.query(
+                ucsm_model.ServiceProfileTemplate).filter_by(
+                    vlan_id=vlan_id, sp_template=sp_template,
+                    device_id=device_id).first()
+            if entry:
+                entry.updated_on_ucs = True
+                self.session.merge(entry)
+                return entry
+            else:
+                return False
