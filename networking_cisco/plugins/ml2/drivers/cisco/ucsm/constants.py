@@ -45,3 +45,6 @@ CLIENT_PROFILE_PATH_PREFIX = "/cl-"
 ETH0 = "/ether-eth0"
 ETH1 = "/ether-eth1"
 DUPLICATE_EXCEPTION = "object already exists"
+
+SP_TEMPLATE_PARENT_DN = "org-root/ls-"
+TRANSPORT = "ethernet"
