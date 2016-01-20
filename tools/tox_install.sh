@@ -6,6 +6,9 @@ set -ex
 
 ZUUL_CLONER=/usr/zuul-env/bin/zuul-cloner
 
+# This is required because of https://review.openstack.org/#/c/269954/
+pip install -U "pip<8"
+
 mkdir -p .test-tars
 
 if $(python -c "import neutronclient" 2> /dev/null); then
