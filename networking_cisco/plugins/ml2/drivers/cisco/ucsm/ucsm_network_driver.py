@@ -353,9 +353,12 @@ class CiscoUcsmDriver(object):
         the UCS Server, is updated with the VLAN profile corresponding
         to the vlan_id passed in.
         """
-        eth0 = str(service_profile) + const.ETH0
-        eth1 = str(service_profile) + const.ETH1
-        eth_port_paths = [eth0, eth1]
+        eth_port_paths = []
+        virtio_port_list = config.get_ucsm_eth_port_list(ucsm_ip)
+        for eth_port in virtio_port_list:
+            port_path = str(service_profile) + str(eth_port)
+            eth_port_paths.append(port_path)
+
         vlan_name = self.make_vlan_name(vlan_id)
 
         with self.ucsm_connect_disconnect(ucsm_ip) as handle:
@@ -371,6 +374,7 @@ class CiscoUcsmDriver(object):
                     return False
 
                 for eth_port_path in eth_port_paths:
+                    LOG.debug('SD: using eth_port_path: %s', eth_port_path)
                     eth = handle.GetManagedObject(
                         obj, self.ucsmsdk.VnicEther.ClassId(),
                         {self.ucsmsdk.VnicEther.DN: eth_port_path}, True)
