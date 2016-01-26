@@ -55,6 +55,11 @@ ml2_cisco_ucsm_opts = [
                 help=_('List of comma separated Host:Service Profile tuples '
                        'providing the Service Profile associated with each '
                        'Host to be supported by this MD.')),
+    cfg.ListOpt('virtio_eth_ports',
+                help=_('List of comma separated names of ports that could '
+                       'be used to configure VLANs for Neutron virtio '
+                       'ports. The names should match the names on the '
+                       'UCS Manager.')),
 ]
 
 cfg.CONF.register_opts(ml2_cisco_ucsm_opts, "ml2_cisco_ucsm")
@@ -85,6 +90,18 @@ def parse_ucsm_host_config():
             key = host_sp[0]
             host_dict[key] = host_sp[1]
         return host_dict
+
+
+@debtcollector.removals.remove(message=DEPRECATION_MESSAGE)
+def parse_virtio_eth_ports():
+    eth_port_list = []
+    if cfg.CONF.ml2_cisco_ucsm.virtio_eth_ports:
+        eth_port_list = cfg.CONF.ml2_cisco_ucsm.virtio_eth_ports
+        if len(eth_port_list) == 0:
+                raise cfg.Error(_("UCS Mech Driver: Ethernet Port List "
+                                  "not provided. Cannot properly support "
+                                  "Neutron virtual ports on this setup."))
+        return eth_port_list
 
 
 class UcsmConfig(object):
