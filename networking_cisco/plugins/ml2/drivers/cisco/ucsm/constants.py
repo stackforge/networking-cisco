@@ -44,4 +44,5 @@ CLIENT_PROFILE_PATH_PREFIX = "/cl-"
 
 ETH0 = "/ether-eth0"
 ETH1 = "/ether-eth1"
+ETH_PREFIX = "/ether-"
 DUPLICATE_EXCEPTION = "object already exists"

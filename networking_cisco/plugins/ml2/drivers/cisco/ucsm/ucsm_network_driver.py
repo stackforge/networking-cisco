@@ -46,6 +46,7 @@ class CiscoUcsmDriver(object):
         self.ucsm_conf = config.UcsmConfig()
         self.ucsm_host_dict = {}
         self.ucsm_sp_dict = {}
+        self.ucsm_eth_port_list = config.parse_virtio_eth_ports()
         # Check if Service Profile to Hostname mapping config has been provided
         if cfg.CONF.ml2_cisco_ucsm.ucsm_host_list:
             self.ucsm_host_dict = config.parse_ucsm_host_config()
@@ -353,9 +354,11 @@ class CiscoUcsmDriver(object):
         the UCS Server, is updated with the VLAN profile corresponding
         to the vlan_id passed in.
         """
-        eth0 = str(service_profile) + const.ETH0
-        eth1 = str(service_profile) + const.ETH1
-        eth_port_paths = [eth0, eth1]
+        eth_port_paths = []
+        for eth_port in self.ucsm_eth_port_list:
+            port_path = str(service_profile) + str(eth_port)
+            eth_port_paths.append(port_path)
+
         vlan_name = self.make_vlan_name(vlan_id)
 
         with self.ucsm_connect_disconnect(ucsm_ip) as handle:
