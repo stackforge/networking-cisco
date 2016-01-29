@@ -1,0 +1,10 @@
+Code-Review+1: Carol Bouchard <caboucha@cisco.com>
+Code-Review+2: Kyle Mestery <mestery@mestery.com>
+Code-Review+2: Doug Wiegley <dougwig@parkside.io>
+Workflow+1: Doug Wiegley <dougwig@parkside.io>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 29 Jan 2016 18:57:53 +0000
+Reviewed-on: https://review.openstack.org/274120
+Project: openstack/networking-cisco
+Branch: refs/heads/stable/liberty
