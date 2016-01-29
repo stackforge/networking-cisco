@@ -1,0 +1,12 @@
+Code-Review+2: Ihar Hrachyshka <ihrachys@redhat.com>
+Code-Review+1: Dipa Thakkar <dthakkar@cisco.com>
+Code-Review+1: Baodong (Robert) Li <baoli@cisco.com>
+Code-Review+2: Kyle Mestery <mestery@mestery.com>
+Workflow+1: Kyle Mestery <mestery@mestery.com>
+Code-Review+1: Paul Michali <pc@michali.net>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 29 Jan 2016 21:39:51 +0000
+Reviewed-on: https://review.openstack.org/265853
+Project: openstack/networking-cisco
+Branch: refs/heads/stable/liberty
