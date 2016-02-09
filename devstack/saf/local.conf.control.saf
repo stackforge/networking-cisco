@@ -34,19 +34,24 @@ MYSQL_PASSWORD=<mysql password>
 # changed if they are not desirable.
 #
 # DCNM credentials:
-#     ENABLER_DCNM_USER     : DCNM user id, default is root
-#     ENABLER_DCNM_AMQP_USER: DCNM rabbitmq user id, defualt is admin
+#    ENABLER_DCNM_USER     : DCNM user id, default: root
+#    ENABLER_DCNM_AMQP_USER: DCNM rabbitmq user id, defualt: admin
 # Segmentation ID range:
-#     ENABLER_SEG_ID_MIN    : segmentation ID minimum value, default is 10000
-#     ENABLER_SEG_ID_MAX    : segmentation ID maximum value, default is 20000
+#    ENABLER_SEG_ID_MIN  : segmentation ID minimum value, default: 10000
+#    ENABLER_SEG_ID_MAX  : segmentation ID maximum value, default: 20000
 # Debug settings:
-#     ENABLER_LOG_LEVEL     : debug level for enabler process, default is WARNING
-#     ENABLER_LOG_DIR       : debug log directory, default is ~/Logs
-#     ENABLER_LOG_FILE      : debug log file name, default is fabric_enabler.log
+#    ENABLER_LOG_LEVEL   : debug level for enabler process, default: WARNING
+#    ENABLER_LOG_DIR     : debug log directory, default: ~/Logs
+#    ENABLER_LOG_FILE    : debug log file name, default: fabric_enabler.log
 # Database settings:
-#     ENABLER_DB_NAME       : Enabler database name, default is cisco_dfa
-#     ENABLER_MYSQL_USER    : Enabler database user name, default is dfa
-#     ENABLER_DB_PASSWORD   : Enabler database password, default is MYSQL_PASSWORD
+#    ENABLER_DB_NAME     : Enabler database name, default: cisco_dfa
+#    ENABLER_MYSQL_USER  : Enabler database user name, default: dfa
+#    ENABLER_DB_PASSWORD : Enabler database password, default: MYSQL_PASSWORD
+# Default config profile:
+#    ENABLER_NETWORK_CFG_PROF: Network profile name,
+#                              default: defaultNetworkUniversalTfProfile
+#    ENABLER_VRF_CFG_PROF     : VRF profile name, default: vrf-common-universal
+#
 
 ENABLER_LOG_LEVEL=<debug level>
 ENABLER_DCNM_IP_ADDR=<DCNM IP address>
