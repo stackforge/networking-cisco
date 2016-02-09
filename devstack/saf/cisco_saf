@@ -25,6 +25,10 @@ ENABLER_MYSQL_USER=${ENABLER_MYSQL_USER:-dfa}
 ENABLER_MYSQL_HOST=${MYSQL_HOST}
 ENABLER_DB_PASSWORD=${MYSQL_PASSWORD}
 NETWORKING_CISCO_ETC_SAF_DIR="etc/saf"
+ENABLER_NETWORK_CFG_PROF=${ENABLER_NETWORK_CFG_PROF:-defaultNetworkUniversalTfProfile}
+ENABLER_VRF_CFG_PROF=${ENABLER_VRF_CFG_PROF:-vrf-common-universal}
+NOVA_ADMIN_USER=${NOVA_ADMIN_USER:-nova}
+SAF_USER=${SAF_USER:-$STACK_USER}
 
 
 # Setup configuration parameters in enabler_conf.ini
@@ -39,6 +43,8 @@ function setup_saf_config {
     iniset $cfgfile dcnm dcnm_password $ENABLER_DCNM_PASSWORD
     iniset $cfgfile dcnm segmentation_id_min $ENABLER_SEG_ID_MIN
     iniset $cfgfile dcnm segmentation_id_max $ENABLER_SEG_ID_MAX
+    iniset $cfgfile dcnm default_cfg_profile $ENABLER_NETWORK_CFG_PROF
+    iniset $cfgfile dcnm default_vrf_profile $ENABLER_VRF_CFG_PROF
 
     # RPC setting
     iniset $cfgfile dfa_rpc transport_url "rabbit://${RABBIT_USERID}:${RABBIT_PASSWORD}@${SERVICE_HOST}:5672//"
@@ -50,6 +56,28 @@ function setup_saf_config {
     iniset $cfgfile dfa_log log_dir $ENABLER_LOG_DIR
     iniset $cfgfile dfa_log log_file $ENABLER_LOG_FILE
     iniset $cfgfile dfa_log log_level $ENABLER_LOG_LEVEL
+
+    # sys setting
+    iniset $cfgfile sys root_helper "sudo /usr/local/bin/fabric-enabler-rootwrap /etc/saf/rootwrap.conf"
+
+    # Keystone setting
+    iniset $cfgfile keystone admin_token $SERVICE_TOKEN
+    iniset $cfgfile keystone admin_port $KEYSTONE_AUTH_PORT
+    iniset $cfgfile keystone admin_bind_host $KEYSTONE_SERVICE_HOST
+
+    # Neutron setting
+    iniset $cfgfile neutron admin_user $Q_ADMIN_USERNAME
+    iniset $cfgfile neutron admin_tenant_name $SERVICE_TENANT_NAME
+    iniset $cfgfile neutron admin_password $SERVICE_PASSWORD
+    iniset $cfgfile neutron auth_host $KEYSTONE_SERVICE_HOST
+    iniset $cfgfile neutron auth_port $KEYSTONE_SERVICE_PORT
+
+    # Nova setting
+    iniset $cfgfile nova admin_user $NOVA_ADMIN_USER
+    iniset $cfgfile nova admin_tenant_name $SERVICE_TENANT_NAME
+    iniset $cfgfile nova admin_password $SERVICE_PASSWORD
+    iniset $cfgfile nova auth_host $KEYSTONE_AUTH_HOST
+    iniset $cfgfile nova auth_port $KEYSTONE_AUTH_PORT
 }
 
 
@@ -86,8 +114,18 @@ function _config_database {
 
 # Copy the enabler ini file
 function _copy_fabric_enabler_config_file {
-    sudo mkdir -p /etc/saf
-    sudo cp $1/enabler_conf.ini /etc/saf
+    # Remove the existing
+    sudo rm -rf /etc/saf/enabler_conf.ini
+    sudo rm -rf /etc/saf/rootwrap.d
+
+    # Install enabler_conf.ini
+    sudo install -d -o $SAF_USER -m 755 /etc/saf
+    sudo install -o $SAF_USER -g $SAF_USER -m 644 $1/enabler_conf.ini /etc/saf/enabler_conf.ini
+
+    # Install rootwrap
+    sudo install -d -o root -g root -m 755 /etc/saf/rootwrap.d
+    sudo install -o root -g root -m 644 $1/rootwrap.d/*.filters /etc/saf/rootwrap.d
+    sudo install -o root -g root -m 644 $1/rootwrap.conf /etc/saf/rootwrap.conf
 }
 
 
