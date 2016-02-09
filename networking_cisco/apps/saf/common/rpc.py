@@ -15,6 +15,8 @@
 #
 
 
+import time
+
 from oslo_config import cfg
 import oslo_messaging as messaging
 
@@ -79,11 +81,17 @@ class DfaRpcServer(object):
             self._server.start()
 
     def wait(self):
-        if self._server:
-            self._server.wait()
+        try:
+            while True:
+                time.sleep(1)
+        except Exception as exc:
+            LOG.exception('RPC server: exception %s occurred.', str(exc))
+            self.stop_and_wait()
 
-    def stop(self):
-        pass
+    def stop_and_wait(self):
+        if self._server:
+            self._server.stop()
+            self._server.wait()
 
 
 class DfaNotificationEndpoints(object):

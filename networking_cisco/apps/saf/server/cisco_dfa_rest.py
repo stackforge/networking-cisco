@@ -105,7 +105,7 @@ class DFARESTClient(object):
                                             if self.is_iplus else
                                             'defaultNetworkIpv4EfProfile')
         except dexc.DfaClientRequestFailed:
-            LOG.error(_LE("Failed to send requst to DCNM."))
+            LOG.error(_LE("Failed to send request to DCNM."))
             self.default_cfg_profile = 'defaultNetworkIpv4EfProfile'
 
     def _create_network(self, network_info):
@@ -357,7 +357,7 @@ class DFARESTClient(object):
             # Need to add the vrf name to the network info
             prof = self._config_profile_get(network.config_profile)
             if prof and prof.get('profileSubType') == 'network:universal':
-                # For universal profile vrf has to e organization:partition
+                # For universal profile vrf has to be organization:partition
                 network_info["vrfName"] = ':'.join((tenant_name,
                                                     self._part_name))
             else:
