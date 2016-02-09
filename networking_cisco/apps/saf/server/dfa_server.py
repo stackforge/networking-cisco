@@ -15,7 +15,7 @@
 #
 
 
-"""This is the DFA enabler server module which is respnsible for processing
+"""This is the DFA enabler server module which is responsible for processing
 neutron, keystone and DCNM events. Also interacting with DFA enabler agent
 module for port events.
 """
@@ -75,7 +75,7 @@ class RpcCallBacks(object):
 
         if self.obj.neutron_event:
             self.obj.neutron_event.create_rpc_client(agent)
-        # Other option is to add the event to the queue for processig it later.
+        # Other option is to add the event to the queue for processing it later
 
         self.obj.update_agent_status(agent, when)
 
@@ -323,7 +323,8 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin):
         self.server.wait()
 
     def stop_rpc(self):
-        self.server.stop()
+        LOG.debug('stopping RPC server on the dfa server.')
+        self.server.stop_and_wait()
 
     def update_agent_status(self, agent, ts):
         self.agents_status_table[agent] = ts
@@ -377,14 +378,14 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin):
             return
 
         # In the project name, dci_id may be included. Check if this is the
-        # case and extact the dci_id from the name, and provide dci_id when
+        # case and extract the dci_id from the name, and provide dci_id when
         # creating the project.
         proj_name, dci_id = self._get_dci_id_and_proj_name(proj.name)
         # The default partition name is 'os' (i.e. openstack) which reflects
         # it is created by openstack.
         part_name = self.cfg.dcnm.default_partition_name
         if len(':'.join((proj_name, part_name))) > 32:
-            LOG.error(_LE('Invalid project name length: %s. The lenght of '
+            LOG.error(_LE('Invalid project name length: %s. The length of '
                           'org:part name is greater than 32'),
                       len(':'.join((proj_name, part_name))))
             return
@@ -563,7 +564,7 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin):
     def network_create_event(self, network_info):
         """Process network create event.
 
-        Save the network inforamtion in the database.
+        Save the network information in the database.
         """
         net = network_info['network']
         net_id = net['id']
@@ -818,7 +819,7 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin):
                                'tenant_id': tenant_id,
                                'enable_dhcp': False,
                                'allocation_pools': allocation_pools, }}
-            # Send requenst to create subnet in neutron.
+            # Send request to create subnet in neutron.
             LOG.debug('Creating subnet %(subnet)s for DCNM request.', body)
             dcnm_subnet = self.neutronclient.create_subnet(
                 body=body).get('subnet')
@@ -853,8 +854,9 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin):
             self.delete_network_db(query_net.network_id)
         except Exception as exc:
             # Failed to delete network.
-            # Put back the entry to the local cache???
-            self.network[query_net.network_id] = del_net
+            # Put back the entry to the local cache.
+            if del_net:
+                self.network[query_net.network_id] = del_net
             LOG.exception(_LE('dcnm_network_delete_event: Failed to delete '
                           '%(network)s. Reason %(err)s.'),
                           {'network': query_net.name, 'err': str(exc)})
@@ -1084,7 +1086,7 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin):
                       {'file': self.cfg.dcnm.dcnm_dhcp_leases})
 
     def update_port_ip_address(self):
-        """Find the ip address that assinged to a port via DHCP
+        """Find the ip address that assigned to a port via DHCP
 
         The port database will be updated with the ip address.
         """
@@ -1174,7 +1176,7 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin):
         """Get the uplink from the database and send the info to the agent."""
 
         # This request is received from an agent when it run for the first
-        # Send the uplink name (physical port name that connectes compute
+        # Send the uplink name (physical port name that connects compute
         #                          node and switch fabric),
         agent = payload.get('agent')
         config_res = self.get_agent_configurations(agent)
@@ -1356,9 +1358,10 @@ def dfa_server():
 
     except Exception as exc:
         LOG.exception(_LE("ERROR: %s"), exc)
+        dfa.stop_rpc
 
     except KeyboardInterrupt:
-        pass
+        dfa.stop_rpc()
 
 
 if __name__ == '__main__':

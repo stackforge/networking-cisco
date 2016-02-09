@@ -151,7 +151,7 @@ class DfaAgent(object):
         self.server.wait()
 
     def stop_rpc(self):
-        self.server.stop()
+        self.server.stop_and_wait
 
     def start_rpc_task(self):
         thrd = utils.EventProcessingThread('Agent_RPC_Server',
