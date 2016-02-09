@@ -26,7 +26,7 @@ from networking_cisco.apps.saf.agent.vdp import (
 from networking_cisco.apps.saf.common import utils
 
 
-default_neutron_opts = {
+default_saf_opts = {
     'DEFAULT': {
         'admin_port': 35357,
         'default_notification_level': 'INFO',
@@ -54,7 +54,7 @@ DEFAULT_LOG_LEVELS = (
 
 default_log_opts = {
     'dfa_log': {
-        'use_syslog': 'False',
+        'use_syslog': False,
         'syslog_lgo_facility': 'LOG_USER',
         'log_dir': '.',
         'log_file': 'fabric_enabler.log',
@@ -88,13 +88,45 @@ default_notify_opts = {
     },
 }
 
+default_keystone_opts = {
+    'keystone': {
+        'admin_token': '',
+        'admin_port': '35357',
+        'admin_bind_host': 'localhost',
+    },
+}
+
+default_neutron_opts = {
+    'neutron': {
+        'admin_user': 'neutron',
+        'admin_tenant_name': 'service',
+        'admin_password': 'password',
+        'auth_host': 'localhost',
+        'auth_port': '5000',
+    },
+}
+
+default_nova_opts = {
+    'nova': {
+        'admin_user': 'nova',
+        'admin_tenant_name': 'service',
+        'admin_password': 'password',
+        'auth_protocol': 'http',
+        'auth_host': 'localhost',
+        'auth_port': '35357',
+    },
+}
+
 default_opts_list = [
     default_log_opts,
-    default_neutron_opts,
+    default_saf_opts,
     default_vdp_opts,
     default_sys_opts,
     default_dcnm_opts,
     default_notify_opts,
+    default_keystone_opts,
+    default_neutron_opts,
+    default_nova_opts,
 ]
 
 
@@ -126,10 +158,18 @@ class CiscoDFAConfig(object):
                 if parsed_item not in self.dfa_cfg:
                     self.dfa_cfg[parsed_item] = {}
                 for key, value in parsed_file[parsed_item].items():
-                    self.dfa_cfg[parsed_item][key] = value[0]
+                    self.dfa_cfg[parsed_item][key] = (
+                        self._inspect_val(value[0]))
 
         # Convert it to object.
         self._cfg = utils.Dict2Obj(self.dfa_cfg)
+
+    def _inspect_val(self, val):
+
+        if isinstance(val, str):
+            return True if val.lower() == 'true' else False if (
+                val.lower() == 'false') else val
+        return val
 
     def _load_default_opts(self):
         """Load default options."""
