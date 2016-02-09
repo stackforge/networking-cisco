@@ -8,3 +8,4 @@ ncclient>=0.4.2;python_version<'3.0'
 lxml>=3.3.3
 UcsSdk<=0.8.2;python_version<'3.0'
 ciscoconfparse>=1.2.10;python_version<'3.0'
+apicapi
