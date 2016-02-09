@@ -58,14 +58,15 @@ def read_file(file_name):
     return file_content
 
 
-def find_uplink():
+def find_uplink(root_helper):
     intf_cmd_list = ("ip link |grep 'state UP' | awk '{print $2}' "
                      "| sed 's/://'|grep ^[epb]")
     intf_net_addr = "ifconfig %s | grep 'inet addr'"
-    en_rxtx = ('sudo /usr/sbin/lldptool -i %s -g "ncb" -L adminStatus=rxtx')
-    dis_rxtx = ('sudo /usr/sbin/lldptool -i %s -g "ncb" -L '
-                'adminStatus=disabled')
-    mod_brdg = ('sudo /usr/sbin/lldptool -i %s -g "ncb" -t -n -V evb | '
+    lldptoolbin = root_helper + ' lldptool' if root_helper else (
+        'lldptool')
+    en_rxtx = (lldptoolbin + ' -i %s -g "ncb" -L adminStatus=rxtx')
+    dis_rxtx = (lldptoolbin + ' -i %s -g "ncb" -L adminStatus=disabled')
+    mod_brdg = (lldptoolbin + ' -i %s -g "ncb" -t -n -V evb | '
                 'grep "mode:bridge"')
 
     intf_list, returncode = run_cmd_line(intf_cmd_list)
@@ -87,11 +88,13 @@ def detect_uplink_non_auto(input_string):
     return file_str
 
 
-def detect_uplink_auto(input_string):
+def detect_uplink_auto(input_string, root_helper):
     if input_string is None:
-        return_str = find_uplink()
+        return_str = find_uplink(root_helper)
     else:
-        cmd_str = ('sudo /usr/sbin/lldptool -i %s -g "ncb" -t -n -V evb | '
+        lldptoolbin = root_helper + ' lldptool' if root_helper else (
+            'lldptool')
+        cmd_str = (lldptoolbin + ' -i %s -g "ncb" -t -n -V evb | '
                    'grep "mode:bridge"') % input_string
         (output, returncode) = run_cmd_line(cmd_str,
                                             check_result=False)
@@ -104,12 +107,13 @@ def detect_uplink_auto(input_string):
     return return_str
 
 
-def detect_uplink(input_string=None):
+def detect_uplink(input_string=None, root_helper=None):
     auto_detect = False
+
     if os.path.isfile(uplink_file_path):
         detected_uplink = detect_uplink_non_auto(input_string)
     else:
-        detected_uplink = detect_uplink_auto(input_string)
+        detected_uplink = detect_uplink_auto(input_string, root_helper)
         auto_detect = True
     log_str = "auto detect = %s, input string %s, detected uplink is %s." % (
         auto_detect, input_string, detected_uplink)

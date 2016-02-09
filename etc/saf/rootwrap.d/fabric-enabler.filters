@@ -1,0 +1,26 @@
+# fabric-enabler-rootwrap command filters for nodes on which
+# fabric-enabler-server and fabric-enabler-agent are running
+#
+# This file should be owned by (and only-writeable by) the root user
+
+# format seems to be
+# cmd-name: filter-name, raw-command, user, args
+
+[Filters]
+
+# ip_lib
+ip: IpFilter, ip, root
+ip_exec: IpNetnsExecFilter, ip, root
+
+# iptables
+iptables-save: CommandFilter, iptables-save, root
+iptables-restore: CommandFilter, iptables-restore, root
+iptables: CommandFilter, iptables, root
+
+# ovs_lib (if OVSInterfaceDriver is used)
+ovs-vsctl: CommandFilter, ovs-vsctl, root
+ovs-ofctl: CommandFilter, ovs-ofctl, root
+
+# lldpad
+vdptool: CommandFilter, vdptool, root
+lldptool: CommandFilter, lldptool, root
