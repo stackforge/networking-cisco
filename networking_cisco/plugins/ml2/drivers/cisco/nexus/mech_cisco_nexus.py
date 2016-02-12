@@ -19,6 +19,7 @@ ML2 Mechanism Driver for Cisco Nexus platforms.
 
 import eventlet
 import os
+import string
 import threading
 import time
 
@@ -323,11 +324,15 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         :returns: returns suffix to interface name
         """
 
+        interface = interface.lower()
         if ch_grp != 0:
             intf_type = 'port-channel'
             port = str(ch_grp)
         elif ':' in interface:
             intf_type, port = interface.split(':')
+        elif interface.startswith('ethernet'):
+            interface = interface.translate(None, string.whitespace)
+            junk, intf_type, port = interface.rpartition('ethernet')
         else:
             intf_type, port = 'ethernet', interface
 
