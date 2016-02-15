@@ -38,3 +38,8 @@ class UcsmConfigFailed(exceptions.NeutronException):
 class UcsmDisconnectFailed(exceptions.NeutronException):
     message = _("Disconnect to UCS Manager %(ucsm_ip)s failed. "
                 "Reason: %(exc)s.")
+
+
+class UcsmHostConfigIncorrect(exceptions.NeutronException):
+    message = _("Incorrect format for ucsm_host_list: %(ucsm_host_config)s. "
+                "Reason: %(exc)s.")
