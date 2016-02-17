@@ -14,6 +14,7 @@
 
 import collections
 import eventlet
+from ncclient.transport import errors as ncc_errors
 import netaddr
 import pprint as pp
 
