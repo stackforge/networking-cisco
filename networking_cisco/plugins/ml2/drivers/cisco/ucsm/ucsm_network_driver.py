@@ -86,9 +86,8 @@ class CiscoUcsmDriver(object):
         It is important to distinguish between the two since Port Profiles
         on the UCS Manager are created only for the VM-FEX ports.
         """
-        vendor_info = profile.get('pci_vendor_info')
 
-        return vendor_info == const.PCI_INFO_CISCO_VIC_1240
+        return profile and profile.get('pci_vendor_info') == const.PCI_INFO_CISCO_VIC_1240
 
     def _import_ucsmsdk(self):
         """Imports the Ucsm SDK module.
@@ -377,8 +376,8 @@ class CiscoUcsmDriver(object):
                     {self.ucsmsdk.LsServer.DN: service_profile})
 
                 if not obj:
-                    LOG.error('UCS Manager network driver could not find '
-                              'Service Profile %s at', service_profile)
+                    LOG.error(_LE('UCS Manager network driver could not '
+                                  'find Service Profile %s'), service_profile)
                     return False
 
                 for eth_port_path in eth_port_paths:
@@ -428,9 +427,9 @@ class CiscoUcsmDriver(object):
                     self.ucsmsdk.LsServer.ClassId(),
                     {self.ucsmsdk.LsServer.DN: sp_template_path})
                 if not obj:
-                    LOG.error('UCS Manager network driver could not find '
-                              'Service Profile template %s at',
-                               sp_template_path)
+                    LOG.error(_LE('UCS Manager network driver could not '
+                              'find Service Profile template %s'),
+                        sp_template_path)
                     return False
 
                 for eth_port_path in eth_port_paths:
@@ -450,8 +449,9 @@ class CiscoUcsmDriver(object):
 
                         if not eth_if:
                             LOG.debug('UCS Manager network driver could not '
-                                      'update Service Profile Template %s with '
-                                      'vlan %s', sp_template, str(vlan_id))
+                                      'update Service Profile Template %s '
+                                      'with vlan %s',
+                                sp_template, str(vlan_id))
                             return False
                     else:
                         LOG.debug('UCS Manager network driver did not find '
@@ -481,7 +481,8 @@ class CiscoUcsmDriver(object):
         # Based on user configuration, either a Service Profile or
         # a Service Profile Template needs to be configured.
         if self.ucsm_conf.is_service_profile_template_configured():
-            return self._update_service_profile_template(vlan_id, host_id, ucsm_ip)
+            return self._update_service_profile_template(
+                vlan_id, host_id, ucsm_ip)
         else:
             service_profile = self.ucsm_sp_dict.get(ucsm_ip, host_id)
             if service_profile:
@@ -498,6 +499,11 @@ class CiscoUcsmDriver(object):
                 'Service Profile %s'), service_profile)
                 return False
 
+        return True
+
+    def update_vnic_template(self, host_id, vlan_id):
+        LOG.debug("UCS Manager network driver VNCI Template for host : %s "
+                  "and VLAN_id : %s", host_id, vlan_id)
         return True
 
     def _delete_vlan_profile(self, vlan_id, ucsm_ip):
