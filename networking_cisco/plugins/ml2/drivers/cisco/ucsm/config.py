@@ -91,6 +91,7 @@ class UcsmConfig(object):
     """ML2 Cisco UCSM Mechanism Driver Configuration class."""
     ucsm_dict = {}
     sp_template_dict = {}
+    vnic_template_dict = {}
     multi_ucsm_mode = False
     sp_template_mode = False
 
@@ -129,6 +130,8 @@ class UcsmConfig(object):
                         if dev_key.lower() == 'sp_template_list':
                             self._parse_sp_template_list(dev_ip, value)
                             self.sp_template_mode = True
+                        elif dev_key.lower() == 'vnic_template_list':
+                            self._parse_vnic_template_list(dev_ip, value)
                         else:
                             ucsm_info.append(value[0])
                     self.ucsm_dict[dev_ip] = ucsm_info
@@ -167,4 +170,16 @@ class UcsmConfig(object):
         LOG.debug('SD: Host: %s UCSM_IP : %s', host, value[0])
         return value[0]
        
+    def _parse_vnic_template_list(self, ucsm_ip, vnic_template_config):
+        LOG.debug('SD: vnic_template_config : %s', vnic_template_config)
+        vnic_template_mapping = []
+        for vnic_template_temp in vnic_template_config:
+            vnic_template_mapping = vnic_template_temp.split()
+            for mapping in vnic_template_mapping:
+                physnet, sep, vnic_templates = mapping.partition(':')
+                vnic_template_list = vnic_templates.split(',')
+                key = (ucsm_ip, physnet)
+                self.vnic_template_dict[key] = vnic_template_list
+                LOG.debug('SD: VNIC Template key: %s, value: %s',
+                          key, str(vnic_template_list))
         
