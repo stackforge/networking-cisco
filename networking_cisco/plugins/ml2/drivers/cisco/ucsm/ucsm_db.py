@@ -136,3 +136,73 @@ class UcsmDbModel(object):
                     device_id=ucsm_ip).delete()
             except orm.exc.NoResultFound:
                 return
+
+    def get_vnic_template_vlan_entry(self, vlan_id, vnic_template, ucsm_ip,
+                                     physnet):
+        entry = self.session.query(
+            ucsm_model.VnicTemplate).filter_by(
+                vlan_id=vlan_id, vnic_template=vnic_template, device_id=ucsm_ip,
+                physnet=physnet).first()
+        return entry if entry else None
+
+    def add_vnic_template(self, vlan_id, ucsm_ip, vnic_template, physnet):
+        """Adds an entry for a vlan_id on a SP template to the table."""
+        if self.get_vnic_template_vlan_entry(vlan_id, vnic_template, ucsm_ip,
+            physnet):
+            self.update_port_count_vnic_template(vlan_id, ucsm_ip,
+                vnic_template, physnet, True)
+        else:
+            entry = ucsm_model.VnicTemplate(vlan_id=vlan_id,
+                                            device_id=ucsm_ip,
+                                            vnic_template=vnic_template,
+                                            physnet=physnet,
+                                            updated_on_ucs=False,
+                                            port_count=1)
+            with self.session.begin(subtransactions=True):
+                self.session.add(entry)
+        return True
+
+    def update_port_count_vnic_template(self, vlan_id, ucsm_ip, vnic_template,
+                                        physnet, increment):
+        """Adds hostname to VnicTemplate entry."""
+        with self.session.begin(subtransactions=True):
+            entry = self.session.query(
+                ucsm_model.VnicTemplate).filter_by(
+                    vlan_id=vlan_id, vnic_template=vnic_template,
+                    device_id=ucsm_ip, physnet=physnet).first()
+            if entry:
+                result = 1 if increment else -1
+                entry.port_count += result
+                self.session.merge(entry)
+
+            if entry.port_count == 0:
+                # This VLAN is not being used on this SP Template.
+                # This entry can be deleted.
+                self.delete_vnic_template_for_vlan(vlan_id, ucsm_ip,
+                                                   vnic_template, physnet)
+            return entry
+
+    def set_vnic_template_updated(self, vlan_id, device_id, vnic_template,
+                                  physnet):
+        """Sets update_on_ucs flag to True for a Vnic Template entry."""
+        with self.session.begin(subtransactions=True):
+            entry = self.session.query(
+                ucsm_model.VnicTemplate).filter_by(
+                    vlan_id=vlan_id, device_id=device_id,
+                    vnic_template=vnic_template, physnet=physnet).first()
+            if entry:
+                entry.updated_on_ucs = True
+                self.session.merge(entry)
+                return entry
+            else:
+                return False
+
+    def delete_vnic_for_vlan(self, vlan_id, ucsm_ip, vnic_template, physnet):
+        """Deletes VNIC Template for a vlan_id and physnet if it exists."""
+        with self.session.begin(subtransactions=True):
+            try:
+                self.session.query(ucsm_model.VnicTemplate).filter_by(
+                    vlan_id=vlan_id, device_id=ucsm_ip,
+                    vnic_template=vnic_template, physnet=physnet).delete()
+            except orm.exc.NoResultFound:
+                return

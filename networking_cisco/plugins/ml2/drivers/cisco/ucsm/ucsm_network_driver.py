@@ -500,6 +500,11 @@ class CiscoUcsmDriver(object):
 
         return True
 
+    def update_vnic_template(self, host_id, vlan_id):
+        LOG.debug("UCS Manager network driver VNCI Template for host : %s "
+                  "and VLAN_id : %s", host_id, vlan_id)
+        return True
+
     def _delete_vlan_profile(self, vlan_id, ucsm_ip):
         """Deletes VLAN Profile from UCS Manager."""
         vlan_name = self.make_vlan_name(vlan_id)
