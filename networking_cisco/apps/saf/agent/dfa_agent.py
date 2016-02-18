@@ -84,9 +84,11 @@ class DfaAgent(object):
     """DFA agent."""
 
     def __init__(self, host, rpc_qn):
-        self._my_host = host
-        self._qn = '_'.join((rpc_qn, self._my_host))
+        self._host_name = host
         self._cfg = config.CiscoDFAConfig('neutron').cfg
+        self._my_host = self._cfg.DEFAULT.host if self._cfg.DEFAULT.host else (
+            utils.find_agent_host_id(host))
+        self._qn = '_'.join((rpc_qn, self._my_host))
         LOG.debug('Starting DFA Agent on %s', self._my_host)
 
         # List of task in the agent
@@ -104,11 +106,17 @@ class DfaAgent(object):
         self.setup_client_rpc()
 
         # Initialize VPD manager.
-        br_int = 'br-int'
-        br_ext = 'br-ethd'
-        root_helper = self._cfg.sys.root_helper
-        self._vdpm = vdpm.VdpMgr(br_int, br_ext, root_helper, self.clnt,
-                                 thishost)
+        br_int = self._cfg.dfa_agent.integration_bridge
+        br_ext = self._cfg.dfa_agent.external_dfa_bridge
+        config_dict = {}
+        config_dict['integration_bridge'] = br_int
+        config_dict['external_bridge'] = br_ext
+        config_dict['host_id'] = self._my_host
+        config_dict['root_helper'] = self._cfg.sys.root_helper
+        config_dict['node_list'] = self._cfg.general.node
+        config_dict['node_uplink_list'] = self._cfg.general.node_uplink
+
+        self._vdpm = vdpm.VdpMgr(config_dict, self.clnt, self._host_name)
         self.pool = eventlet.GreenPool()
         self.setup_rpc()
 
@@ -128,7 +136,7 @@ class DfaAgent(object):
     def request_uplink_info(self):
         context = {}
         msg = self.clnt.make_msg('request_uplink_info',
-                                 context, agent=thishost)
+                                 context, agent=self._my_host)
         try:
             resp = self.clnt.call(msg)
             LOG.debug("request_uplink_info: resp = %s", resp)
