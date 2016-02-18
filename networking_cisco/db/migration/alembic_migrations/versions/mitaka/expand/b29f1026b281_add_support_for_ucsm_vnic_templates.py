@@ -12,27 +12,28 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Add support for UCSM Service Profile Templates.
+"""Add support for UCSM VNIC Templates
 
-Revision ID: 13bd9ebffbf5
-Revises: 2e89171ea204
-Create Date: 2016-01-27 13:12:12.805860
+Revision ID: b29f1026b281
+Revises: 13bd9ebffbf5
+Create Date: 2016-02-18 15:12:31.294651
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '13bd9ebffbf5'
-down_revision = '2e89171ea204'
+revision = 'b29f1026b281'
+down_revision = '13bd9ebffbf5'
 
 from alembic import op
 import sqlalchemy as sa
 
 
 def upgrade():
-    op.create_table('ml2_ucsm_sp_templates',
+    op.create_table('ml2_ucsm_vnic_templates',
         sa.Column('vlan_id', sa.Integer(), nullable=False),
-        sa.Column('sp_template', sa.String(length=64), nullable=False),
+        sa.Column('vnic_template', sa.String(length=64), nullable=False),
         sa.Column('device_id', sa.String(length=64), nullable=False),
+        sa.Column('physnet', sa.String(length=32), nullable=False),
         sa.Column('updated_on_ucs', sa.Boolean(), nullable=False),
         sa.Column('port_count', sa.Integer(), nullable=False),
         sa.PrimaryKeyConstraint('vlan_id')

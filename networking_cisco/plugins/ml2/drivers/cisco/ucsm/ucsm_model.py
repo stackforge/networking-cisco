@@ -29,6 +29,7 @@ class PortProfile(model_base.BASEV2):
     device_id = sa.Column(sa.String(64), nullable=False)
     created_on_ucs = sa.Column(sa.Boolean(), nullable=False)
 
+
 class ServiceProfileTemplate(model_base.BASEV2):
 
     """Service Profile Templates modified on the UCS Manager."""
@@ -39,5 +40,19 @@ class ServiceProfileTemplate(model_base.BASEV2):
     sp_template = sa.Column(sa.String(64), nullable=False,
         primary_key=True)
     device_id = sa.Column(sa.String(64), nullable=False)
+    updated_on_ucs = sa.Column(sa.Boolean(), nullable=False)
+    port_count = sa.Column(sa.Integer(), nullable=False)
+
+
+class VnicTemplate(model_base.BASEV2):
+
+    """Vnic Templates modified on the UCS Manager."""
+
+    __tablename__ = 'ml2_ucsm_vnic_templates'
+
+    vlan_id = sa.Column(sa.Integer(), nullable=False, primary_key=True)
+    vnic_template = sa.Column(sa.String(64), nullable=False)
+    device_id = sa.Column(sa.String(64), nullable=False)
+    physnet = sa.Column(sa.String(32), nullable=False)
     updated_on_ucs = sa.Column(sa.Boolean(), nullable=False)
     port_count = sa.Column(sa.Integer(), nullable=False)
