@@ -1,0 +1,10 @@
+Code-Review+2: Paul Michali <pc@michali.net>
+Code-Review+1: Carol Bouchard <caboucha@cisco.com>
+Code-Review+2: Brian Demers <bdemers@apache.org>
+Workflow+1: Brian Demers <bdemers@apache.org>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 19 Feb 2016 16:09:46 +0000
+Reviewed-on: https://review.openstack.org/272657
+Project: openstack/networking-cisco
+Branch: refs/heads/master
