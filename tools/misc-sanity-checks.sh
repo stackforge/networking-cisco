@@ -62,7 +62,7 @@ check_pot_files_errors () {
 }
 
 # Add your checks here...
-check_opinionated_shell
+# check_opinionated_shell
 check_no_symlinks_allowed
 # check_pot_files_errors
 
