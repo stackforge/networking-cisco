@@ -324,6 +324,7 @@ class TestDFAServer(base.BaseTestCase):
         self._load_network_info()
         self.assertFalse(self.segid in self.dfa_server.segmentation_pool)
         network_info = {'network_id': FAKE_NETWORK_ID}
+        self.dfa_server.get_vms.return_value = []
         self.dfa_server.network_delete_event(network_info)
         self.assertTrue(self.dfa_server.dcnm_client.delete_network.called)
         dcall = self.dfa_server.dcnm_client.delete_network.call_args
@@ -396,6 +397,7 @@ class TestDFAServer(base.BaseTestCase):
         self._load_network_info()
         self.dfa_server._inst_api.get_instance_for_uuid.return_value = (
             FAKE_INSTANCE_NAME)
+        self.dfa_server.dcnm_dhcp = True
         self.dfa_server.port_create_event(port_info)
 
         # Check the output/calls
@@ -467,3 +469,28 @@ class TestDFAServer(base.BaseTestCase):
         self.assertTrue(cargs[0] == FAKE_HOST_ID)
         self.assertTrue(str(vm_info) == cargs[1])
         self.dfa_server.delete_vm_db.assert_called_with(vm.instance_id)
+
+    def test_add_dhcp_port(self):
+        """Test add dhcp port"""
+        self.dfa_server.get_vm.return_value = None
+        port_info = self._get_port_info().get("port")
+        self._load_network_info()
+        self.dfa_server._inst_api.get_instance_for_uuid.return_value = (
+            FAKE_INSTANCE_NAME)
+        self.dfa_server.dcnm_dhcp = False
+        self.dfa_server.add_dhcp_port(port_info)
+
+        # Check the output/calls
+
+        self.assertTrue(self.dfa_server.neutron_event.send_vm_info.called)
+        call_args = self.dfa_server.neutron_event.send_vm_info.call_args
+        cargs, ckwargs = call_args
+        self.assertTrue(cargs[0] == FAKE_HOST_ID)
+        self.assertTrue(str(self.dfa_server.port[FAKE_PORT_ID]) == cargs[1])
+        self.assertTrue(self.dfa_server.port[FAKE_PORT_ID]["oui"]["vm_name"]
+                        == "dhcp-10010-4")
+        self.assertTrue(self.dfa_server.add_vms_db.called)
+        call_args = self.dfa_server.add_vms_db.call_args
+        cargs, ckwargs = call_args
+        self.assertTrue(self.dfa_server.port[FAKE_PORT_ID] == cargs[0])
+        self.assertTrue(constants.RESULT_SUCCESS == cargs[1])
