@@ -108,6 +108,7 @@ class TestDFAServer(base.BaseTestCase):
 
         ds.DfaServer.get_all_projects.return_value = []
         ds.DfaServer.get_all_networks.return_value = []
+        ds.DfaServer.get_vms.return_value = []
         ds.DfaServer._setup_rpc = mock.Mock()
         # Setting DCNM parameters.
         config.default_dcnm_opts['dcnm']['dcnm_ip'] = FAKE_DCNM_IP
@@ -396,6 +397,7 @@ class TestDFAServer(base.BaseTestCase):
         self._load_network_info()
         self.dfa_server._inst_api.get_instance_for_uuid.return_value = (
             FAKE_INSTANCE_NAME)
+        self.dfa_server.dcnm_dhcp = True
         self.dfa_server.port_create_event(port_info)
 
         # Check the output/calls
