@@ -1,93 +1,120 @@
-===================================
+=============================
 Cisco Prime Network Registrar
-===================================
+=============================
 
 1. General
 ----------
 
-This is an installation guide for enabling cisco prime network registar support on OpenStack
+This is an installation guide for enabling
+Cisco Prime Network Registrar (PNR) support on OpenStack.
 
-Please refer to cisco prime network regustar installtion for how to install and bring up
-the CPNR. The Neutron dhcp agent in an OpenStack setup should be communicated to the CPNR DHCP 
-server to lease an IP address and communicated to CPNR DNS server to resolve a DNS query. 
+Please refer to PNR installation guide
+(http://www.cisco.com/c/en/us/support/cloud-systems-management/prime-network-registrar/tsd-products-support-series-home.html)
+for how to install and bring up the PNR.
+
+The Neutron DHCP agent in OpenStack environment needs to be setup to
+communicate with PNR DHCP server and PNR DNS server. The PNR DHCP server
+performs leasing operations and PNR DNS server resolves DNS queries, 
+replacing dnsmasq.
 
 This guide does not cover OpenStack installation.
 
-
 2. Prerequisites
 ----------------
-The prerequisites for installing CPNR OpenStack enabler are the
+
+The prerequisites for installing PNR OpenStack enabler are the
 following:
 
-    - Install CPNR plugins
-    - Disable Dnsmaq or other DNS/DHCP services
-	
-3. CPNR plugin Installation
-------------------------------
+    - Install PNR with required DNS and DHCP licenses.
+    - Disable dnsmasq or other DNS/DHCP services.
+
+3. PNR plugin Installation
+--------------------------
 
 :3.1 Using devstack:
 
-In this scenario,  will be installed along with openstack using devstack
+In this scenario, PNR plugin will be installed along with OpenStack
+using devstack.
 
-    1. Clone devstack.
+1. Clone devstack.
 
-    2. Add this repo as an external repository:
-		> cat local.conf
-		[[local|localrc]]
-		enable_plugin networking-cisco https://git.openstack.org/openstack/networking-cisco.git
-		enable_service net-cisco.
+2. Add this repo as an external repository:
 
-    3. Run ./stack.sh
+   ::
+
+    > cat local.conf
+    [[local|localrc]]
+    enable_plugin networking-cisco https://git.openstack.org/openstack/networking-cisco.git
+    enable_service net-cisco
+
+3. Run ``./stack.sh``
 
 :3.2 On a setup with OpenStack already installed:
 
-In this scenario, CPNR will be installed on a setup which has already OpenStack installed:
+In this scenario, PNR plugin will be installed on a setup which has
+OpenStack installed already:
 
 1. Clone networking-cisco_.
 
-   .. _networking-cisco: https://github.com/openstack/networking-cisco
-   
-2. The following modifications are needed in:
+    .. _networking-cisco: https://github.com/openstack/networking-cisco
+
+2. The following modifications are needed in dhcp_agent.ini file.
 
   ::
-   
-    2.1 dhcp_agent.ini
 
-	change the DHCP driver from dnsmasq to CPNR.
+    Change the DHCP driver from dnsmasq to PNR.
 
-	[DEFAULT]
-	#dhcp_driver = neutron.agent.linux.dhcp.Dnsmasq
-	dhcp_driver = neutron.plugins.cisco.cpnr.dhcp_driver.CpnrDriver
+    [DEFAULT]
+    #dhcp_driver = neutron.agent.linux.dhcp.Dnsmasq
+    dhcp_driver = neutron.plugins.cisco.cpnr.dhcp_driver.CpnrDriver
 
-	Add the folowing new section to the dhcp_agent.ini file with the details for contacting the CPNR local server.
+    Add the following new section to the dhcp_agent.ini file
+    with the details for contacting the PNR local server.
 
-	[cisco_pnr]
-	http_server = http://<cpnr_localcluster_ipaddress>:8080
-	http_username = <cpnr_localcluster_username>
-	http_password = <cpnr_localcluster_password>
-	external_interface = eth0
-	dhcp_server_addr = <cpnr_localcluster_ipaddress>
-	dhcp_server_port = 67
-	dns_server_addr = <cpnr_localcluster_ipaddress>
-	dns_server_port = 53
+    [cisco_pnr]
+    http_server = http://<pnr_localcluster_ipaddress>:8080
+    http_username = <pnr_localcluster_username>
+    http_password = <pnr_localcluster_password>
+    external_interface = eth0
+    dhcp_server_addr = <pnr_localcluster_ipaddress>
+    dhcp_server_port = 67
+    dns_server_addr = <pnr_localcluster_ipaddress>
+    dns_server_port = 53
 
-	Change the http_server and dhcp_server_addr to the IP address of the local PNR VM. Change the http_password to the same password as was provided in the answers file. If you are using HTTPS with a valid SSL certificate, change the scheme in http_server config variable to 'https' and the port number in the address to the appropriate port (usually 8443). If you do not want to verify SSL certificates, add a config variable to dhcp_agent.ini.
+      Change the <pnr_localcluster_ipaddress> to the IP
+      address of the local PNR VM.
 
-	[cisco_pnr]
-	insecure = True
+      Change the <pnr_localcluster_username> and
+      <pnr_localcluster_password> to the same username
+      and password provided during PNR installation.
 
-	Note that using the insecure variable is NOT recommended in production
+      If you are using HTTPS with a valid SSL certificate,
+      change the scheme in http_server config variable to
+      'https' and the port number in the address to the
+      appropriate port (default 8443).
 
-	
-4. ``cd networking-cisco``
+    If you do not want to verify SSL certificates, add a
+    config variable to dhcp_agent.ini file.
 
-5. Run ``sudo python  networking_cisco/plugins/cisco/cpnr/setup.py install``
-	
-6. After changing dhcp_agent.ini, restart the DHCP agent.
-	systemctl restart neutron-dhcp-agent
+    [cisco_pnr]
+    insecure = True
 
-7. Start the relay from the command line as a detached background process.
+    Note that using the insecure variable is NOT
+    recommended in production.
 
-	nohup python dhcp_relay.py --config-file /etc/neutron/dhcp_agent.ini --log-file /var/log/neutron/dhcp-relay.log &
-	nohup python dns_relay.py --config-file /etc/neutron/dhcp_agent.ini --log-file /var/log/neutron/dns-relay.log & 
-        
+3. ``cd networking-cisco``
+
+4. Run
+
+   ``sudo python networking_cisco/plugins/cisco/cpnr/setup.py install``
+
+5. After changing dhcp_agent.ini, restart the DHCP agent.
+
+   ``systemctl restart neutron-dhcp-agent``
+
+6. Start the relay from the command line as a detached background process.
+
+   ``nohup python dhcp_relay.py --config-file /etc/neutron/dhcp_agent.ini --log-file /var/log/neutron/dhcp-relay.log &``
+
+   ``nohup python dns_relay.py --config-file /etc/neutron/dhcp_agent.ini --log-file /var/log/neutron/dns-relay.log &``
+
