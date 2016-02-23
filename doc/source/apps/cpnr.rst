@@ -19,7 +19,7 @@ This guide does not cover OpenStack installation.
 The prerequisites for installing CPNR OpenStack enabler are the
 following:
 
-    - Install CPNR plugins
+    - Install CPNR with required DNS and DHCP licences 
     - Disable Dnsmaq or other DNS/DHCP services
 	
 3. CPNR plugin Installation
@@ -84,10 +84,11 @@ In this scenario, CPNR will be installed on a setup which has already OpenStack 
 5. Run ``sudo python  networking_cisco/plugins/cisco/cpnr/setup.py install``
 	
 6. After changing dhcp_agent.ini, restart the DHCP agent.
-	systemctl restart neutron-dhcp-agent
+	``systemctl restart neutron-dhcp-agent``
 
 7. Start the relay from the command line as a detached background process.
 
-	nohup python dhcp_relay.py --config-file /etc/neutron/dhcp_agent.ini --log-file /var/log/neutron/dhcp-relay.log &
-	nohup python dns_relay.py --config-file /etc/neutron/dhcp_agent.ini --log-file /var/log/neutron/dns-relay.log & 
+	``nohup python dhcp_relay.py --config-file /etc/neutron/dhcp_agent.ini --log-file /var/log/neutron/dhcp-relay.log &``
+
+	``nohup python dns_relay.py --config-file /etc/neutron/dhcp_agent.ini --log-file /var/log/neutron/dns-relay.log &``
         
