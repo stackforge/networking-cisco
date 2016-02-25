@@ -23,6 +23,7 @@ from neutron.extensions import portbindings
 from neutron.plugins.common import constants as p_const
 from neutron.plugins.ml2 import driver_api as api
 
+from networking_cisco.plugins.ml2.drivers.cisco.ucsm import config as config
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_db
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_network_driver
@@ -39,12 +40,19 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         self.vif_details = {portbindings.CAP_PORT_FILTER: False}
         self.ucsm_db = ucsm_db.UcsmDbModel()
         self.driver = ucsm_network_driver.CiscoUcsmDriver()
+        self.ucsm_config = config.UcsmConfig()
 
     def _get_vlanid(self, context):
         """Returns vlan_id associated with a bound VLAN segment."""
         segment = context.bottom_bound_segment
         if segment and self.check_segment(segment):
             return segment.get(api.SEGMENTATION_ID)
+
+    def _get_physnet(self, context):
+        """Returns physnet associated with a bound VLAN segment."""
+        segment = context.bottom_bound_segment
+        if segment and self.check_segment(segment):
+            return segment.get(api.PHYSICAL_NETWORK)
 
     def update_port_precommit(self, context):
         """Adds port profile and vlan information to the DB.
@@ -62,10 +70,57 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         profile = context.current.get(portbindings.PROFILE, {})
         host_id = context.current.get(portbindings.HOST_ID)
 
+        vlan_id = self._get_vlanid(context)
+        if not vlan_id:
+            LOG.warn(_LW("update_port_precommit: vlan_id is None."))
+            return
+
+        ucsm_ip = self.driver.get_ucsm_ip_for_host(host_id)
+        if not ucsm_ip:
+            LOG.error(_LE("update_port_precommit: Could not find UCSM IP for "
+                "host %s."), host_id)
+            return
+
+        LOG.debug("update_port_precommit: UCSM IP: %s", str(ucsm_ip))
         if not self.driver.check_vnic_type_and_vendor_info(vnic_type,
                                                            profile):
-            LOG.debug('update_port_precommit encountered a non-SR-IOV port')
-            return
+            # This is a neutron virtio port.
+            # If VNIC templates are configured, that config would
+            # take precedence and the VLAN is added to the VNIC template.
+            if self.ucsm_config.vnic_template_mode:
+                physnet = self._get_physnet(context)
+                if not physnet:
+                    LOG.debug('SD: physnet is None.')
+                    return
+                else:
+                    LOG.debug('SD: physnet : %s', str(physnet))
+
+                # Check if VNIC template is configured for this physnet
+                vnic_templates = (
+                    self.ucsm_config.get_vnic_templates_for_physnet(ucsm_ip,
+                    physnet))
+
+                if vnic_templates:
+                    vnic_template_list = vnic_templates.split(',')
+                    LOG.debug('SD: VNIC Template List : %s',
+                        vnic_template_list)
+                    for vnic_template in vnic_template_list:
+                        self.ucsm_db.add_vnic_template(vlan_id, ucsm_ip,
+                                                       vnic_template, physnet)
+                else:
+                    LOG.debug('SD: VNIC Templates not configured for '
+                              'physnet %s', physnet)
+                return
+            # In the absence of VNIC Templates, VLAN is directly added
+            # to vNIC(s) on the SP Template.
+            if self.ucsm_config.sp_template_mode:
+                sp_template = self.driver.get_sp_template_for_host(host_id)
+                LOG.debug("update_port_precommit: Sp_Template: %s, "
+                    "VLAN_id: %d", str(sp_template), vlan_id)
+                self.ucsm_db.add_service_profile_template(vlan_id,
+                                                          sp_template,
+                                                          ucsm_ip)
+                return
 
         # If this is an Intel SR-IOV vnic, then no need to create port
         # profile on the UCS manager. So no need to update the DB.
@@ -74,18 +129,11 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
                       'sr-iov port')
             return
 
-        vlan_id = self._get_vlanid(context)
-
-        if not vlan_id:
-            LOG.warning(_LW("update_port_precommit: vlan_id is None."))
-            return
-
         p_profile_name = self.make_profile_name(vlan_id)
         LOG.debug("update_port_precommit: Profile: %s, VLAN_id: %d",
                   p_profile_name, vlan_id)
 
         # Create a new port profile entry in the db
-        ucsm_ip = self.driver.get_ucsm_ip_for_host(host_id)
         self.ucsm_db.add_port_profile(p_profile_name, vlan_id, ucsm_ip)
 
     def update_port_postcommit(self, context):
@@ -144,7 +192,10 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         else:
             # Enable vlan-id for this regular Neutron virtual port.
             LOG.debug("update_port_postcommit: Host_id is %s", host_id)
-            self.driver.update_serviceprofile(host_id, vlan_id)
+            if self.ucsm_config.vnic_template_mode:
+                self.driver.update_vnic_template(host_id, vlan_id)
+            else:
+                self.driver.update_serviceprofile(host_id, vlan_id)
 
     def delete_network_precommit(self, context):
         """Delete entry corresponding to Network's VLAN in the DB."""
