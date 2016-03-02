@@ -46,3 +46,8 @@ ETH0 = "eth0"
 ETH1 = "eth1"
 ETH_PREFIX = "/ether-"
 DUPLICATE_EXCEPTION = "object already exists"
+
+SP_TEMPLATE_PARENT_DN = "org-root/ls-"
+VNIC_TEMPLATE_PARENT_DN = "org-root/lan-conn-templ-"
+VNIC_TEMPLATE_PREFIX = "/lan-conn-templ-"
+TRANSPORT = "ethernet"
