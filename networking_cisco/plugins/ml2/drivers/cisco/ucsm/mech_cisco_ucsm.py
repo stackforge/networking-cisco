@@ -1,4 +1,4 @@
-# Copyright 2015 Cisco Systems, Inc.
+# Copyright 2016 Cisco Systems, Inc.
 # All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -56,6 +56,12 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
     def _is_status_active(self, port):
         return port['status'] == constants.PORT_STATUS_ACTIVE
 
+    def _get_physnet(self, context):
+        """Returns physnet associated with a bound VLAN segment."""
+        segment = context.bottom_bound_segment
+        if segment and self.check_segment(segment):
+            return segment.get(api.PHYSICAL_NETWORK)
+
     def update_port_precommit(self, context):
         """Adds port profile and vlan information to the DB.
 
@@ -87,12 +93,38 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         if not self.driver.check_vnic_type_and_vendor_info(vnic_type,
                                                            profile):
             # This is a neutron virtio port.
+            # If VNIC templates are configured, that config would
+            # take precedence and the VLAN is added to the VNIC template.
+            physnet = self._get_physnet(context)
+            if not physnet:
+                LOG.debug('physnet is None. Not modifying VNIC '
+                          'Template config')
+            if self.ucsm_config.vnic_template_mode and physnet:
+                # Check if VNIC template is configured for this physnet
+                vnic_template_path, vnic_templates = (
+                    self.ucsm_config.get_vnic_templates_for_physnet(ucsm_ip,
+                    physnet))
+
+                if vnic_templates:
+                    vnic_template_list = vnic_templates.split(',')
+                    for vnic_template in vnic_template_list:
+                        LOG.debug('vnic_template %s', vnic_template)
+                        self.ucsm_db.add_vnic_template(vlan_id,
+                                                       ucsm_ip,
+                                                       vnic_template,
+                                                       physnet)
+                else:
+                    LOG.debug('VNIC Templates not configured for '
+                              'physnet %s', physnet)
+                    return
+            # In the absence of VNIC Templates, VLAN is directly added
+            # to vNIC(s) on the SP Template.
             # Check if SP Template config has been provided. If so, find
             # the UCSM that controls this host and the Service Profile
             # Template for this host.
+
             if self.ucsm_config.is_service_profile_template_configured():
-                sp_template = (
-                    self.ucsm_config.get_sp_template_for_host(host_id))
+                sp_template = self.driver.get_sp_template_for_host(host_id)
                 LOG.debug('SP Template: %s, VLAN_id: %d', sp_template,
                           vlan_id)
                 self.ucsm_db.add_service_profile_template(vlan_id,
@@ -175,17 +207,45 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
                     ucsm_ip)
             return
         else:
-            # Enable vlan-id for this regular Neutron virtual port.
-            if (self.driver.update_serviceprofile(host_id, vlan_id) and
-                self.ucsm_config.is_service_profile_template_configured()):
+            # Enable vlan-id for this Neutron virtual port.
+            LOG.debug('Host_id is %s', host_id)
+            physnet = self._get_physnet(context)
+            if self.ucsm_config.is_vnic_template_configured() and physnet:
+                LOG.debug('Update VNIC Template for physnet: %s', physnet)
+                vnic_template_path, vnic_templates = (
+                    self.ucsm_config.get_vnic_templates_for_physnet(ucsm_ip,
+                    physnet))
+
+                if vnic_templates:
+                    vnic_template_list = vnic_templates.split(',')
+                    for vnic_template in vnic_template_list:
+                        LOG.debug('vnic_template %s', vnic_template)
+                        if (self.driver.update_vnic_template(host_id,
+                                                             vlan_id,
+                                                             physnet)):
+                            LOG.debug('Setting ucsm_updated flag for '
+                                      'vlan : %(vlan)d, '
+                                      'vnic_template : %(vnic_template)s '
+                                      'on ucsm_ip: %(ucsm_ip)s',
+                                      {'vlan': vlan_id,
+                                      'vnic_template': vnic_template,
+                                      'ucsm_ip': ucsm_ip})
+                            self.ucsm_db.set_vnic_template_updated(
+                                vlan_id, ucsm_ip, vnic_template, physnet)
+
+            if (self.ucsm_config.is_service_profile_template_configured()
+                and self.driver.update_service_profile_template(
+                    vlan_id, host_id, ucsm_ip)):
                 sp_template = self.ucsm_config.get_sp_template_for_host(
-                    host_id)
+                        host_id)
                 LOG.debug('Setting ucsm_updated flag for vlan : %(vlan)d, '
                           'sp_template : %(sp_template)s on ucsm_ip: '
                           '%(ucsm_ip)s', {'vlan': vlan_id,
                           'sp_template': sp_template, 'ucsm_ip': ucsm_ip})
                 self.ucsm_db.set_sp_template_updated(vlan_id, sp_template,
                                                      ucsm_ip)
+            else:
+                self.driver.update_serviceprofile(host_id, vlan_id)
 
     def delete_network_precommit(self, context):
         """Delete entry corresponding to Network's VLAN in the DB."""
@@ -198,6 +258,8 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
             # For Neutron virtio ports
             if self.ucsm_config.is_service_profile_template_configured():
                 self.ucsm_db.delete_sp_template_for_vlan(vlan_id)
+            if self.ucsm_config.is_vnic_template_configured():
+                self.ucsm_db.delete_vnic_template_for_vlan(vlan_id)
 
     def delete_network_postcommit(self, context):
         """Delete all configuration added to UCS Manager for the vlan_id."""
@@ -205,7 +267,6 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         segments = context.network_segments
         vlan_id = segments[0]['segmentation_id']
         port_profile = self.make_profile_name(vlan_id)
-
         if vlan_id:
             self.driver.delete_all_config_for_vlan(vlan_id, port_profile)
 

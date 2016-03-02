@@ -1,4 +1,4 @@
-# Copyright 2015 Cisco Systems, Inc.
+# Copyright 2016 Cisco Systems, Inc.
 # All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -41,3 +41,17 @@ class ServiceProfileTemplate(model_base.BASEV2):
         primary_key=True)
     device_id = sa.Column(sa.String(64), nullable=False, primary_key=True)
     updated_on_ucs = sa.Column(sa.Boolean(), nullable=False)
+
+
+class VnicTemplate(model_base.BASEV2):
+
+    """Vnic Templates modified on the UCS Manager."""
+
+    __tablename__ = 'ml2_ucsm_vnic_templates'
+
+    vlan_id = sa.Column(sa.Integer(), nullable=False, primary_key=True)
+    vnic_template = sa.Column(sa.String(64), nullable=False, primary_key=True)
+    device_id = sa.Column(sa.String(64), nullable=False, primary_key=True)
+    physnet = sa.Column(sa.String(32), nullable=False)
+    updated_on_ucs = sa.Column(sa.Boolean(), nullable=False)
+    port_count = sa.Column(sa.Integer(), nullable=False)
