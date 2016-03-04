@@ -357,7 +357,7 @@ class CiscoUcsmDriver(object):
         to the vlan_id passed in.
         """
         eth_port_paths = []
-        virtio_port_list = config.get_ucsm_eth_port_list(ucsm_ip)
+        virtio_port_list = self.ucsm_conf.get_ucsm_eth_port_list(ucsm_ip)
         eth_port_paths = ["%s%s" % (service_profile, ep)
             for ep in virtio_port_list]
 
@@ -372,7 +372,8 @@ class CiscoUcsmDriver(object):
 
                 if not obj:
                     LOG.debug('UCS Manager network driver could not find '
-                              'Service Profile %s at', service_profile)
+                              'Service Profile %s in UCSM %s',
+                              service_profile, ucsm_ip)
                     return False
 
                 for eth_port_path in eth_port_paths:
@@ -415,7 +416,9 @@ class CiscoUcsmDriver(object):
         ethernet ports and the Fabric Interconnect's network ports.
         """
         ucsm_ip = self.ucsm_host_dict.get(host_id)
-        service_profile = self.ucsm_sp_dict.get(ucsm_ip, host_id)
+        key = (ucsm_ip, host_id)
+        service_profile = self.ucsm_sp_dict.get(key)
+
         if service_profile:
             LOG.debug("UCS Manager network driver Service Profile : %s",
                 service_profile)
