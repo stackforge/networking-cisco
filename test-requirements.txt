@@ -2,6 +2,9 @@
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
 
+-e git+https://github.com/noironetworks/aci-integration-module.git@f22d38fc47f79a9e6800b2208aac2de9be0cf560#egg=aim
+#-e git+https://github.com/noironetworks/aci-integration-module.git@master#egg=aim
+
 hacking>=0.10.0,<0.11
 
 coverage>=3.6
