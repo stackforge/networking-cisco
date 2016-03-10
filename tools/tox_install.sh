@@ -26,7 +26,7 @@ elif [ -x $ZUUL_CLONER ]; then
     pip install /tmp/openstack/python-neutronclient
 else
     # Download or update neutronclient-master tarball and install
-    ( cd .test-tars && curl -R -O http://tarballs.openstack.org/python-neutronclient/python-neutronclient-master.tar.gz )
+    ( cd .test-tars && curl -O http://tarballs.openstack.org/python-neutronclient/python-neutronclient-master.tar.gz -z python-neutronclient-master.tar.gz )
     pip install .test-tars/python-neutronclient-master.tar.gz
 fi
 
@@ -36,11 +36,13 @@ elif [ -x $ZUUL_CLONER ]; then
     # Use zuul-cloner to clone openstack/neutron, this will ensure the Depends-On
     # references are retrieved from zuul and rebased into the repo, then installed.
     $ZUUL_CLONER --cache-dir /opt/git --workspace /tmp git://git.openstack.org openstack/neutron
+    (cd /tmp/openstack/neutron && git checkout stable/mitaka)
     $install_cmd /tmp/openstack/neutron
 else
     # Download or update neutron-master tarball and install
-    ( cd .test-tars && curl -R -O http://tarballs.openstack.org/neutron/neutron-master.tar.gz )
-    $install_cmd .test-tars/neutron-master.tar.gz
+    #( cd .test-tars && curl -O http://tarballs.openstack.org/neutron/neutron-master.tar.gz -z neutron-master.tar.gz)
+    #$install_cmd .test-tars/neutron-master.tar.gz
+    $install_cmd -e git+https://git.openstack.org/openstack/neutron@stable/mitaka#egg=neutron
 fi
 
 # Install the rest of the requirements as normal
