@@ -46,6 +46,14 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         if segment and self.check_segment(segment):
             return segment.get(api.SEGMENTATION_ID)
 
+    def _is_supported_deviceowner(self, port):
+        return (port['device_owner'].startswith('compute') or
+                port['device_owner'] == constants.DEVICE_OWNER_DHCP or
+                port['device_owner'] == constants.DEVICE_OWNER_ROUTER_HA_INTF)
+
+    def _is_status_active(self, port):
+        return port['status'] == constants.PORT_STATUS_ACTIVE
+
     def update_port_precommit(self, context):
         """Adds port profile and vlan information to the DB.
 
@@ -98,6 +106,15 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
 
         if not vlan_id:
             LOG.warning(_LW("update_port_postcommit: vlan_id is None."))
+            return
+
+        if (not self._is_supported_deviceowner(context.current) or
+            not self._is_status_active(context.current)):
+            LOG.debug("update_port_postcommit: unsupported device_owner \'%s\' "
+                      "or port not active (vlan_id \'%d\', status %s)."
+                      "  Nothing to do.",
+                      context.current['device_owner'], vlan_id,
+                      context.current['status'])
             return
 
         # Checks to perform before UCS Manager can create a Port Profile.
