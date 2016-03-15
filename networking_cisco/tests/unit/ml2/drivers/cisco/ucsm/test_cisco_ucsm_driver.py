@@ -118,6 +118,8 @@ class FakePortContext(object):
             'status': None,
             'id': port_id,
             'name': name,
+            # set for _is_supported_deviceowner() to return True
+            'device_owner': n_const.DEVICE_OWNER_DHCP,
             portbindings.HOST_ID: HOST1,
             portbindings.VNIC_TYPE: vnic_type,
             portbindings.PROFILE: profile
@@ -241,6 +243,51 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         vendor2 = const.PCI_INFO_INTEL_82599
         self.assertNotIn(vendor1, self.ucsm_driver.supported_pci_devs)
         self.assertIn(vendor2, self.ucsm_driver.supported_pci_devs)
+
+    def test_port_supported_deviceowner(self):
+        """Verifies detection of supported set of device owners for ports."""
+        port_context = self._create_port_context_normal()
+        port = port_context._port
+        supported_owners = [n_const.DEVICE_OWNER_ROUTER_HA_INTF,
+                            n_const.DEVICE_OWNER_DHCP,
+                            'compute:nova']
+        for owner in supported_owners:
+            port['device_owner'] = owner
+            self.assertTrue(self.mech_driver._is_supported_deviceowner(port))
+
+    def test_port_unsupported_deviceowner(self):
+        """Verifies detection of unsupported device owners for ports."""
+        port_context = self._create_port_context_normal()
+        port = port_context._port
+        unsupported_owners = [n_const.DEVICE_OWNER_ROUTER_INTF,
+                              n_const.DEVICE_OWNER_ROUTER_GW,
+                              n_const.DEVICE_OWNER_FLOATINGIP,
+                              n_const.DEVICE_OWNER_ROUTER_SNAT,
+                              n_const.DEVICE_OWNER_LOADBALANCER,
+                              n_const.DEVICE_OWNER_LOADBALANCERV2,
+                              'controller:foobar']
+        for owner in unsupported_owners:
+            port['device_owner'] = owner
+            self.assertFalse(self.mech_driver._is_supported_deviceowner(port))
+
+    def test_port_supported_status(self):
+        """Verifies detection of supported status values for ports."""
+        port_context = self._create_port_context_normal()
+        port = port_context._port
+        port['status'] = n_const.PORT_STATUS_ACTIVE
+        self.assertTrue(self.mech_driver._is_status_active(port))
+
+    def test_port_unsupported_status(self):
+        """Verifies detection of unsupported status values for ports."""
+        port_context = self._create_port_context_normal()
+        port = port_context._port
+        unsupported_states = [n_const.PORT_STATUS_BUILD,
+                              n_const.PORT_STATUS_DOWN,
+                              n_const.PORT_STATUS_ERROR,
+                              n_const.PORT_STATUS_NOTAPPLICABLE]
+        for state in unsupported_states:
+            port['status'] = state
+            self.assertFalse(self.mech_driver._is_status_active(port))
 
     def test_vmfex_vnic_type_and_vendor_info(self):
         """Verifies VM-FEX port is recognized as a supported vendor."""
