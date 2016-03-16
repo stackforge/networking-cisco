@@ -1168,7 +1168,6 @@ class TestCiscoNetworksV2(CiscoML2MechanismTestCase,
                                                   *args, **kwargs)
                 patched_plugin.side_effect = side_effect
                 res = self._create_network_bulk(self.fmt, 2, 'test', True)
-                LOG.debug("response is %s" % res)
                 # We expect an internal server error as we injected a fault
                 self._validate_behavior_on_bulk_failure(
                     res,
