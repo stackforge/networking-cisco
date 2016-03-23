@@ -29,13 +29,14 @@ from networking_cisco._i18n import _, _LW
 from neutron.api.v2 import attributes as attrs
 from neutron.common import constants as l3_constants
 from neutron.common import exceptions as n_exc
-from neutron.common import utils
+from neutron.common import utils as n_utils
 from neutron.db import l3_db
 from neutron.db import model_base
 from neutron.db import models_v2
 from neutron.extensions import l3
 
 from networking_cisco.plugins.cisco.common import cisco_constants
+from networking_cisco.plugins.cisco.common import utils
 from networking_cisco.plugins.cisco.extensions import ha
 from networking_cisco.plugins.cisco.extensions import routerrole
 from networking_cisco.plugins.cisco.extensions import routertype
@@ -633,7 +634,7 @@ class HA_db_mixin(object):
                          if port['fixed_ips'] else None)
             r_ha_g = RouterHAGroup(
                 id=ha_group_uuid,
-                tenant_id=self._get_tenant_id_for_create(context, port),
+                tenant_id=utils.get_tenant_id_for_create(context, port),
                 ha_type=ha_settings_db.ha_type,
                 group_identity=group_id,
                 ha_port_id=port['id'],
@@ -701,7 +702,7 @@ class HA_db_mixin(object):
                 context.session.delete(hag)
 
     def _extend_router_dict_ha(self, router_res, router_db):
-        if utils.is_extension_supported(self, ha.HA_ALIAS):
+        if n_utils.is_extension_supported(self, ha.HA_ALIAS):
             ha_s = router_db.ha_settings
             rr_b = router_db.redundancy_binding
             if rr_b and rr_b.user_router:

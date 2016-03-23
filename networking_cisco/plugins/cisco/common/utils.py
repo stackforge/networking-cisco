@@ -77,3 +77,15 @@ def convert_validate_driver_class(driver_class_name):
             LOG.error(_LE('Failed to verify driver module %(name)s: %(err)s'),
                       {'name': driver_class_name, 'err': e})
     raise DriverNotFound(driver=driver_class_name)
+
+
+def get_tenant_id_for_create(context, resource):
+    if context.is_admin and 'tenant_id' in resource:
+        tenant_id = resource['tenant_id']
+    elif ('tenant_id' in resource and
+          resource['tenant_id'] != context.tenant_id):
+        reason = _('Cannot create resource for another tenant')
+        raise nexception.AdminRequired(reason=reason)
+    else:
+        tenant_id = context.tenant_id
+    return tenant_id

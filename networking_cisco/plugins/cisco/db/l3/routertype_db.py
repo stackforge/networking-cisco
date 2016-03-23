@@ -22,6 +22,7 @@ from sqlalchemy.orm import exc
 
 from networking_cisco._i18n import _LE
 
+from networking_cisco.plugins.cisco.common import utils
 from networking_cisco.plugins.cisco.db.l3 import l3_models
 import networking_cisco.plugins.cisco.extensions.routertype as routertype
 
@@ -38,7 +39,7 @@ class RoutertypeDbMixin(routertype.RoutertypePluginBase):
         """
         LOG.debug("create_routertype() called. Contents %s", routertype)
         rt = routertype['routertype']
-        tenant_id = self._get_tenant_id_for_create(context, rt)
+        tenant_id = utils.get_tenant_id_for_create(context, rt)
         with context.session.begin(subtransactions=True):
             routertype_db = l3_models.RouterType(
                 id=self._get_id(rt),

@@ -23,6 +23,7 @@ from sqlalchemy.orm import exc
 from neutron.db import common_db_mixin
 from neutron.plugins.common import constants as svc_constants
 
+from networking_cisco.plugins.cisco.common import utils
 from networking_cisco.plugins.cisco.db.device_manager import hd_models
 from networking_cisco.plugins.cisco.extensions import ciscohostingdevicemanager
 
@@ -39,7 +40,7 @@ class HostingDeviceDBMixin(
     def create_hosting_device(self, context, hosting_device):
         LOG.debug("create_hosting_device() called")
         hd = hosting_device['hosting_device']
-        tenant_id = self._get_tenant_id_for_create(context, hd)
+        tenant_id = utils.get_tenant_id_for_create(context, hd)
         with context.session.begin(subtransactions=True):
             credentials_id = hd.get('credentials_id')
             if credentials_id is None:
@@ -112,7 +113,7 @@ class HostingDeviceDBMixin(
     def create_hosting_device_template(self, context, hosting_device_template):
         LOG.debug("create_hosting_device_template() called")
         hdt = hosting_device_template['hosting_device_template']
-        tenant_id = self._get_tenant_id_for_create(context, hdt)
+        tenant_id = utils.get_tenant_id_for_create(context, hdt)
         #TODO(bobmel): check service types
         with context.session.begin(subtransactions=True):
             hdt_db = hd_models.HostingDeviceTemplate(
