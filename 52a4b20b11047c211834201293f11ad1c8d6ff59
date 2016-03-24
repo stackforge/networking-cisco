@@ -1,0 +1,11 @@
+Code-Review+2: Paul Michali <pc@michali.net>
+Code-Review+2: Brian Demers <bdemers@apache.org>
+Code-Review+1: Bradley Jones <jones.bradley@me.com>
+Code-Review+1: Yaroslav Morkovnikov <ymorkovn@cisco.com>
+Workflow+1: Brian Demers <bdemers@apache.org>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 24 Mar 2016 14:48:24 +0000
+Reviewed-on: https://review.openstack.org/291183
+Project: openstack/networking-cisco
+Branch: refs/heads/master
