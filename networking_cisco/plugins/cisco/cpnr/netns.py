@@ -27,12 +27,16 @@ from networking_cisco._i18n import _LW
 
 LOG = logging.getLogger(__name__)
 
-_libc = ctypes.CDLL('libc.so.6')
-
 NETNS_DIR = "/var/run/netns/"
 
 
 class Namespace(object):
+
+    try:
+        _libc = ctypes.CDLL('libc.so.6')
+    except OSError:
+        LOG.error("Failed to load libc.so.6", exc_info=True)
+
     def __init__(self, name):
         self.parent_fd = open("/proc/self/ns/net")
         self.parent_fileno = self.parent_fd.fileno()
