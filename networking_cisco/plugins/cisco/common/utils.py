@@ -13,10 +13,10 @@
 #    under the License.
 
 from functools import wraps
-import imp
 import time
 
 from oslo_log import log as logging
+from oslo_utils import importutils
 
 from neutron_lib import exceptions as nexception
 
@@ -71,11 +71,11 @@ def convert_validate_driver_class(driver_class_name):
         return driver_class_name
     else:
         parts = driver_class_name.split('.')
-        m_pathname = '/'.join(parts[:-1])
+
+        modulepath = '.'.join(parts[:-1])
         try:
-            info = imp.find_module(m_pathname)
-            mod = imp.load_module(parts[-2], *info)
-            if parts[-1] in dir(mod):
+            module = importutils.import_module(modulepath)
+            if parts[-1] in dir(module):
                 return driver_class_name
         except ImportError as e:
             LOG.error(_LE('Failed to verify driver module %(name)s: %(err)s'),

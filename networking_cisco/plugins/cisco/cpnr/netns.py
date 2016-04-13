@@ -27,8 +27,6 @@ from networking_cisco._i18n import _LW
 
 LOG = logging.getLogger(__name__)
 
-_libc = ctypes.CDLL('libc.so.6')
-
 NETNS_DIR = "/var/run/netns/"
 
 
@@ -38,12 +36,13 @@ class Namespace(object):
         self.parent_fileno = self.parent_fd.fileno()
         self.target_fd = open(NETNS_DIR + str(name))
         self.target_fileno = self.target_fd.fileno()
+        self._libc = ctypes.CDLL('libc.so.6')
 
     def __enter__(self):
-        _libc.setns(self.target_fileno, 0)
+        self._libc.setns(self.target_fileno, 0)
 
     def __exit__(self, type, value, tb):
-        _libc.setns(self.parent_fileno, 0)
+        self._libc.setns(self.parent_fileno, 0)
         try:
             self.target_fd.close()
         except Exception:
