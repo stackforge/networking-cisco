@@ -175,7 +175,7 @@ class TestBacklogHostingDevice(base.BaseTestCase):
         # mock out drv_mgr
         self.drv_mgr = mock.MagicMock()
         self.drv_mock = mock.MagicMock()
-        self.drv_mock.send_empty_cfg = mock.MagicMock() 
+        self.drv_mock.send_empty_cfg = mock.MagicMock()
         self.drv_mgr.get_driver_for_hosting_device.return_value = self.drv_mock
 
     def test_check_backlog_empty(self):
