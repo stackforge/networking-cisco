@@ -13,8 +13,10 @@
 #    under the License.
 
 import copy
-
 import mock
+
+from ncclient.transport import errors as ncc_errors
+
 from oslo_config import cfg
 import oslo_messaging
 from oslo_utils import uuidutils
@@ -208,6 +210,15 @@ class TestBasicRoutingOperations(base.BaseTestCase):
         router, ports = prepare_router_data()
         ri = routing_svc_helper.RouterInfo(router['id'], router)
         self.assertRaises(cfg_exceptions.CSR1kvConfigException,
+                          self.routing_helper._process_router, ri)
+
+    def test_process_router_throw_session_close(self):
+        params = {'in_buf': ''}
+        self.routing_helper._internal_network_added.side_effect = (
+            ncc_errors.SessionCloseError(**params))
+        router, ports = prepare_router_data()
+        ri = routing_svc_helper.RouterInfo(router['id'], router)
+        self.assertRaises(ncc_errors.SessionCloseError,
                           self.routing_helper._process_router, ri)
 
     def test_process_router(self):
