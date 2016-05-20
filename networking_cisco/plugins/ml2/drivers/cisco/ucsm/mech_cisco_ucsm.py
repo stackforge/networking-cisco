@@ -176,6 +176,16 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         vnic_type = context.current.get(portbindings.VNIC_TYPE,
                                         portbindings.VNIC_NORMAL)
 
+        # Start Temp code
+        network = context.network.current['name']
+        LOG.debug('SD : Network name : %s', network)
+        profile_name = "OS-PP-" + str(vlan_id)
+        trunk_vlans = self.ucsm_conf.get_sriov_multivlan_trunk_config(
+                network)
+        self.driver.create_portprofile(profile_name, vlan_id,
+            vnic_type, host_id, trunk_vlans)
+        # End Temp code 
+
         # 2. Make sure this is a vm_fex_port.(Port profiles are created
         # only for VM-FEX ports.)
         if (self.driver.check_vnic_type_and_vendor_info(vnic_type, profile) and
@@ -194,10 +204,18 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
                           'on UCSM %s.', profile_name, vlan_id, ucsm_ip)
                 return
 
+            # Multi VLAN trunk support
+            # Check if this network is a trunk network. If so pass the
+            # additional VLAN ids to the UCSM driver.
+            network = context.network.current['name']
+            LOG.debug('SD : Network name : %s', network)
+            trunk_vlans = self.ucsm_conf.get_sriov_multivlan_trunk_config(
+                network)
+
             # All checks are done. Ask the UCS Manager driver to create the
             # above Port Profile.
             if self.driver.create_portprofile(profile_name, vlan_id,
-                                              vnic_type, host_id):
+                                              vnic_type, host_id, trunk_vlans):
                 # Port profile created on UCS, record that in the DB.
                 self.ucsm_db.set_port_profile_created(vlan_id, profile_name,
                     ucsm_ip)
@@ -264,8 +282,12 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         segments = context.network_segments
         vlan_id = segments[0]['segmentation_id']
         port_profile = self.make_profile_name(vlan_id)
+        network_name = context.current['name']
+        trunk_vlans = self.ucsm_conf.get_sriov_multivlan_trunk_config(
+            network_name)
         if vlan_id:
-            self.driver.delete_all_config_for_vlan(vlan_id, port_profile)
+            self.driver.delete_all_config_for_vlan(vlan_id, port_profile,
+                trunk_vlans)
 
     def bind_port(self, context):
         """Binds port to current network segment.

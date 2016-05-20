@@ -61,6 +61,10 @@ ml2_cisco_ucsm_opts = [
                        'be used to configure VLANs for Neutron virtio '
                        'ports. The names should match the names on the '
                        'UCS Manager.')),
+    cfg.StrOpt('sriov_qos_policy',
+               help=_('Name of QoS Policy pre-defined in UCSM, to be '
+                      'applied to all VM-FEX Port Profiles. This is '
+                      'an optional parameter.')),
 ]
 
 cfg.CONF.register_opts(ml2_cisco_ucsm_opts, "ml2_cisco_ucsm")
@@ -116,9 +120,11 @@ class UcsmConfig(object):
     ucsm_port_dict = {}
     sp_template_dict = {}
     vnic_template_dict = {}
+    multivlan_trunk_dict = {}
     multi_ucsm_mode = False
     sp_template_mode = False
     vnic_template_mode = False
+    sriov_qos_policy = None
 
     def __init__(self):
         """Create a single UCSM or Multi-UCSM dict."""
@@ -145,6 +151,8 @@ class UcsmConfig(object):
 
     def _create_multi_ucsm_dicts(self):
         """Creates a dictionary of all UCS Manager data from config."""
+        username = None
+        password = None
         multi_parser = cfg.MultiConfigParser()
         read_ok = multi_parser.read(cfg.CONF.config_file)
 
@@ -171,14 +179,26 @@ class UcsmConfig(object):
                         elif config_item == 'vnic_template_list':
                             self._parse_vnic_template_list(dev_ip, value)
                             self.vnic_template_mode = True
+                        elif dev_key.lower() == 'sriov_qos_policy':
+                            self.sriov_qos_policy = value[0].strip()
+                        elif dev_key.lower() == 'ucsm_username':
+                            username = value[0].strip()
+                            LOG.debug('SD: Username: %s', username)
                         else:
-                            ucsm_info.append(value[0])
-                    self.ucsm_dict[dev_ip] = ucsm_info
-                    self.multi_ucsm_mode = True
+                            password = value[0].strip()
+                            LOG.debug('SD: Password %s', password)
+                        ucsm_info = (username, password)
+                        self.ucsm_dict[dev_ip] = ucsm_info
+                        self.multi_ucsm_mode = True
+                if dev_id.lower() == 'sriov_multivlan_trunk':
+                    for dev_key, value in parsed_file[parsed_item].items():
+                        self._parse_sriov_multivlan_trunk_config(dev_key,
+                                                                 value)
+
 
     def get_credentials_for_ucsm_ip(self, ucsm_ip):
         if ucsm_ip in self.ucsm_dict:
-            return self.ucsm_dict[ucsm_ip]
+            return self.ucsm_dict.get(ucsm_ip)
 
     def get_all_ucsm_ips(self):
         return self.ucsm_dict.keys()
@@ -286,3 +306,33 @@ class UcsmConfig(object):
                 vnic_template_info_list.append(
                     self.vnic_template_dict.get(key))
         return vnic_template_info_list
+
+    def _parse_sriov_multivlan_trunk_config(self, net_name, vlan_list):
+        LOG.debug('SD: Got Net name : %s, value : %s', net_name, vlan_list)
+        vlan_range_indicator = '-'
+        vlans = []
+        key = net_name
+        for vlan_entry in vlan_list[0].split(','):
+            if vlan_range_indicator in vlan_entry:
+                start_vlan, sep, end_vlan = (
+                    vlan_entry.partition(vlan_range_indicator))
+                vlans = vlans + range(int(start_vlan.strip()),
+                    int(end_vlan.strip()) + 1, 1)
+            else:
+                vlans.append(int(vlan_entry.strip()))
+        LOG.debug('SD: VLANs : %s', vlans)
+        self.multivlan_trunk_dict[key] = vlans
+
+    def get_sriov_multivlan_trunk_config(self, network):
+        if network in self.multivlan_trunk_dict:
+            return self.multivlan_trunk_dict[network]
+        else:
+            return None
+
+    def get_sriov_qos_policy(self):
+        if cfg.CONF.ml2_cisco_ucsm.sriov_qos_policy:
+            LOG.debug('SD: QOS Policy : %s',
+                cfg.CONF.ml2_cisco_ucsm.sriov_qos_policy)
+            return cfg.CONF.ml2_cisco_ucsm.sriov_qos_policy
+        else:
+            return self.sriov_qos_policy
