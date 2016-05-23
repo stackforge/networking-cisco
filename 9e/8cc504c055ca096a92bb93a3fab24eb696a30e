@@ -1,0 +1,9 @@
+Code-Review+2: Paul Michali <pc@michali.net>
+Code-Review+2: Sridar Kandaswamy <skandasw@cisco.com>
+Workflow+1: Sridar Kandaswamy <skandasw@cisco.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 23 May 2016 15:14:38 +0000
+Reviewed-on: https://review.openstack.org/319282
+Project: openstack/networking-cisco
+Branch: refs/heads/stable/liberty
