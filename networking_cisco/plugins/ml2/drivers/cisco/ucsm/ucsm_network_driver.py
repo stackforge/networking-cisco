@@ -169,10 +169,46 @@ class CiscoUcsmDriver(object):
                             if sp.PnDn != "":
                                 server_name = self._get_server_name(handle, sp,
                                     ucsm_ip)
-                                if server_name != "":
+                                if (server_name != "" and 
+                                    sp.OperSrcTemplName == ""):
+                                    LOG.debug('SD: Server %s info retrieved '
+                                    'from UCSM %s', server_name, ucsm_ip)
                                     key = (ucsm_ip, server_name)
                                     self.ucsm_sp_dict[key] = str(sp.Dn)
                                     self.ucsm_host_dict[server_name] = ucsm_ip
+                except Exception as e:
+                    # Raise a Neutron exception. Include a description of
+                    # the original  exception.
+                    raise cexc.UcsmConfigReadFailed(ucsm_ip=ucsm_ip, exc=e)
+
+    def _learn_sp_and_template_for_host(self, host_id):
+        LOG.debug("SD: Inside _learn_sp_and_template_for_host")
+        ucsm_ips = self.ucsm_conf.get_all_ucsm_ips()
+        for ucsm_ip in ucsm_ips:
+            with self.ucsm_connect_disconnect(ucsm_ip) as handle:
+                try:
+                    sp_list_temp = handle.ConfigResolveClass('lsServer', None,
+                        inHierarchical=False)
+                    if sp_list_temp and sp_list_temp.OutConfigs is not None:
+                        sp_list = sp_list_temp.OutConfigs.GetChild() or []
+                        for sp in sp_list:
+                            if sp.PnDn != "":
+                                server_name = self._get_server_name(handle, sp,
+                                    ucsm_ip)
+                                LOG.debug('SD: server_name = %s', server_name)
+                                if server_name == host_id:
+                                    self.ucsm_host_dict[server_name] = ucsm_ip
+                                    LOG.debug('SD: Found host %s with Service Profile %s at UCSM %s', server_name, str(sp.Dn), ucsm_ip)
+                                    LOG.debug('SD: %s', sp.OperSrcTemplName)
+                                    sp_template_with_path = sp.OperSrcTemplName
+                                    sp_template_info = sp_template_with_path.rsplit('/', 1)
+                                    LOG.debug('SD: SP Template path %s', sp_template_info[0])
+                                    LOG.debug('SD: SP Template %s', sp_template_info[1])
+                                    
+                                    self.ucsm_conf.add_sp_template_config_for_host(host_id, ucsm_ip,
+                                        sp_template_info[0], sp_template_info[1])
+                                else:
+                                    return None
                 except Exception as e:
                     # Raise a Neutron exception. Include a description of
                     # the original  exception.
@@ -182,6 +218,11 @@ class CiscoUcsmDriver(object):
         ucsm_ip = self.ucsm_host_dict.get(host_id)
         if not ucsm_ip:
             ucsm_ip = self.ucsm_conf.get_ucsm_ip_for_sp_template_host(host_id)
+        if not ucsm_ip:
+            # Try to discover the Service Proile or SP Template for the
+            # host directly from UCS Manager
+            LOG.debug('SD: Did not find sp template so reading from UCSM')
+            ucsm_ip = self._learn_sp_and_template_for_host(host_id)
         return ucsm_ip
 
     def _create_vlanprofile(self, handle, vlan_id, ucsm_ip):
@@ -781,7 +822,7 @@ class CiscoUcsmDriver(object):
 
     def _remove_vlan_from_vnic_templates(self, handle, vlan_id, ucsm_ip):
         """Removes VLAN from all VNIC templates that have it enabled."""
-        vnic_template_info = self.ucsm_conf.get_vnic_templates_for_ucsm_ip(
+        vnic_template_info = self.ucsm_conf.get_vnic_template_for_ucsm_ip(
             ucsm_ip)
         vlan_name = self.make_vlan_name(vlan_id)
 
@@ -858,6 +899,9 @@ class CiscoUcsmDriver(object):
                                                                 vlan_id,
                                                                 ucsm_ip)
                 self._delete_vlan_profile(handle, vlan_id, ucsm_ip)
+                if not trunk_vlans:
+                    return
+
                 for vlan_id in trunk_vlans:
                     self._delete_vlan_profile(handle, vlan_id, ucsm_ip)
 
