@@ -109,6 +109,7 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
                     LOG.debug('vnic_template %s', vnic_template)
                     self.ucsm_db.add_vnic_template(vlan_id, ucsm_ip,
                         vnic_template, physnet)
+                    return
                 else:
                     LOG.debug('VNIC Template not configured for '
                               'physnet %s', physnet)
