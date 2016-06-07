@@ -109,8 +109,8 @@ class L3RouterHostingDeviceBaseScheduler(object):
         query = query.having(
             expr.or_(func.sum(
                 hd_models.SlotAllocation.num_allocated) <= slot_threshold,
-                func.sum(hd_models.SlotAllocation.num_allocated ==
-                         expr.null())))
+                     func.sum(hd_models.SlotAllocation.num_allocated) ==
+                     expr.null()))
         query = query.order_by(hd_models.HostingDevice.created_at)
         return query.all()
 
