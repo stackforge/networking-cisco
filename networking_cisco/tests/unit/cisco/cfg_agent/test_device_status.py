@@ -54,7 +54,7 @@ class TestHostingDevice(base.BaseTestCase):
                                'port': '22',
                                'booting_time': 420}
         self.created_at_str = datetime.datetime.utcnow().strftime(
-            "%Y-%m-%d %H:%M:%S")
+            "%Y-%m-%d %H:%M:%S.%f")
         self.hosting_device['created_at'] = self.created_at_str
 
         # if is_pingable, then hd_state is 'Active'
@@ -163,7 +163,7 @@ class TestBacklogHostingDevice(base.BaseTestCase):
                                'port': '22',
                                'booting_time': 420}
         self.created_at_str = datetime.datetime.utcnow().strftime(
-            "%Y-%m-%d %H:%M:%S")
+            "%Y-%m-%d %H:%M:%S.%f")
         self.hosting_device['created_at'] = self.created_at_str
 
         # if is_pingable, then hd_state is 'Active'
