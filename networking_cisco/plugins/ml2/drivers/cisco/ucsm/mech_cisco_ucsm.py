@@ -251,6 +251,66 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
             else:
                 self.driver.update_serviceprofile(host_id, vlan_id)
 
+    def delete_port_precommit(self, context):
+        LOG.debug('SD: Inside delete_port_precommit')
+        vlan_id = self._get_vlanid(context)
+
+        if not vlan_id:
+            LOG.warning(_LW('Vlan_id is None. Ignoring this port.'))
+            return
+
+        # Checks to perform before UCS Manager can create a Port Profile.
+        # 1. Make sure this host is on a known UCS Manager.
+        host_id = context.current.get(portbindings.HOST_ID)
+        ucsm_ip = self.driver.get_ucsm_ip_for_host(host_id)
+        if not ucsm_ip:
+            LOG.info(_LI('Host_id %s is not controlled by any known UCS '
+                'Manager'), str(host_id))
+            return
+
+        profile = context.current.get(portbindings.PROFILE, {})
+        vnic_type = context.current.get(portbindings.VNIC_TYPE,
+                                        portbindings.VNIC_NORMAL)
+        if (self.driver.check_vnic_type_and_vendor_info(vnic_type, profile) and
+            self.driver.is_vmfex_port(profile)):
+            profile_name = self.ucsm_db.get_port_profile_for_vlan(vlan_id,
+                ucsm_ip)
+            self.ucsm_db.decrement_port_profile_usage_count(vlan_id,
+                profile_name, ucsm_ip)
+
+    def delete_port_postcommit(self, context):
+        LOG.debug('SD: Inside delete_port_postcommit')
+        vlan_id = self._get_vlanid(context)
+
+        if not vlan_id:
+            LOG.warning(_LW('Vlan_id is None. Ignoring this port.'))
+            return
+
+        # Checks to perform before UCS Manager can create a Port Profile.
+        # 1. Make sure this host is on a known UCS Manager.
+        host_id = context.current.get(portbindings.HOST_ID)
+        ucsm_ip = self.driver.get_ucsm_ip_for_host(host_id)
+        if not ucsm_ip:
+            LOG.info(_LI('Host_id %s is not controlled by any known UCS '
+                'Manager'), str(host_id))
+            return
+
+        profile = context.current.get(portbindings.PROFILE, {})
+        vnic_type = context.current.get(portbindings.VNIC_TYPE,
+                                        portbindings.VNIC_NORMAL)
+        if (self.driver.check_vnic_type_and_vendor_info(vnic_type, profile) and
+            self.driver.is_vmfex_port(profile)):
+            profile_name = self.ucsm_db.get_port_profile_for_vlan(vlan_id,
+                ucsm_ip)
+            usage_count = self.ucsm_db.get_port_profile_usage_count(vlan_id,
+                profile_name, ucsm_ip)
+            if usage_count and usage_count == 0:
+                LOG.debug('SD:PP %s has reached usage_count of 0.',
+                    profile_name)
+                LOG.debug('SD:Deleting %s from UCSM', profile_name)
+                self.driver.delete_port_profile(ucsm_ip, vlan_id,
+                    profile_name)   
+
     def delete_network_precommit(self, context):
         """Delete entry corresponding to Network's VLAN in the DB."""
         segments = context.network_segments
