@@ -40,13 +40,17 @@ class UcsmDbModel(object):
 
     def add_port_profile(self, profile_name, vlan_id, device_id):
         """Adds a port profile and its vlan_id to the table."""
-        if not self.get_port_profile_for_vlan(vlan_id, device_id):
+        port_profile = self.get_port_profile_for_vlan(vlan_id, device_id)
+        if not port_profile:
             port_profile = ucsm_model.PortProfile(profile_id=profile_name,
                                                   vlan_id=vlan_id,
                                                   device_id=device_id,
+                                                  usage_count=1,
                                                   created_on_ucs=False)
             with self.session.begin(subtransactions=True):
                 self.session.add(port_profile)
+        else:
+            self.increment_port_profile_usage_count(port_profile)
             return port_profile
 
     def set_port_profile_created(self, vlan_id, profile_name, device_id):
@@ -66,6 +70,41 @@ class UcsmDbModel(object):
                                           created_on_ucs=True)
                 self.session.add(new_profile)
 
+    def increment_port_profile_usage_count(self, port_profile):
+        with self.session.begin(subtransactions=True):
+            if port_profile:
+                port_profile.usage_count += 1
+                LOG.debug('SD: Incrementing PP %s usage count to %d',
+                    port_profile.profile_id, port_profile.usage_count)
+                self.session.merge(port_profile)
+     
+    def decrement_port_profile_usage_count(self, vlan_id, profile_name,
+        device_id):
+        with self.session.begin(subtransactions=True):
+            port_profile = self.session.query(
+                ucsm_model.PortProfile).filter_by(
+                    vlan_id=vlan_id, profile_id=profile_name,
+                    device_id=device_id).first()
+            if port_profile:
+                port_profile.usage_count -= 1
+                LOG.debug('SD:Decrementing PP %s usage count to %d',
+                    profile_name, port_profile.usage_count)
+                self.session.merge(port_profile)
+
+    def get_port_profile_usage_count(self, vlan_id, profile_name,
+        device_id):
+        with self.session.begin(subtransactions=True):
+            port_profile = self.session.query(
+                ucsm_model.PortProfile).filter_by(
+                    vlan_id=vlan_id, profile_id=profile_name,
+                    device_id=device_id).first()
+            if port_profile:
+                LOG.debug('SD:Usage count for PP %s is %d',
+                    profile_name, port_profile.usage_count)
+                return post_profile.usage_count
+            else:
+                return None
+        
     def delete_vlan_entry(self, vlan_id):
         """Deletes entry for a vlan_id if it exists."""
         with self.session.begin(subtransactions=True):

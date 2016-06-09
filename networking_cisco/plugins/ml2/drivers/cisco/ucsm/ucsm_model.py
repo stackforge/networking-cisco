@@ -27,6 +27,7 @@ class PortProfile(model_base.BASEV2):
     vlan_id = sa.Column(sa.Integer(), nullable=False, primary_key=True)
     profile_id = sa.Column(sa.String(64), nullable=False)
     device_id = sa.Column(sa.String(64), nullable=False)
+    usage_count = sa.Column(sa.Integer(), nullable=False)
     created_on_ucs = sa.Column(sa.Boolean(), nullable=False)
 
 

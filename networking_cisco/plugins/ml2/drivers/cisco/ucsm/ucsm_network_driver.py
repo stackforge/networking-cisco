@@ -19,6 +19,7 @@ from contextlib import contextmanager
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import importutils
+from threading import Timer
 
 from networking_cisco._i18n import _LE, _LI, _LW
 
@@ -44,7 +45,12 @@ class CiscoUcsmDriver(object):
         self.ucsm_conf = config.UcsmConfig()
         self.ucsm_host_dict = {}
         self.ucsm_sp_dict = {}
+        self.ucsm_pp_delete_dict = {}
         self._create_host_and_sp_dicts_from_config()
+        Timer(const.DEFAULT_PP_DELETE_TIME,
+            self.delayed_delete_port_profile, ()).start()
+        LOG.debug('SD: Starting timer for %d',
+            const.DEFAULT_PP_DELETE_TIME)
 
     def check_vnic_type_and_vendor_info(self, vnic_type, profile):
         """Checks if this vnic_type and vendor device info are supported.
@@ -633,11 +639,63 @@ class CiscoUcsmDriver(object):
             raise cexc.UcsmConfigFailed(config=vlan_id,
                                         ucsm_ip=ucsm_ip, exc=e)
 
+    def _add_pp_to_delete_pp_dict(self, ucsm_ip, port_profile):
+        # ucsm_pp_delete_dict entry is added for vlan_id and marked
+        # as False to indicate that it hasn't been deleted on the
+        # UCSM.
+        key = (ucsm_ip, port_profile)
+        LOG.DEBUG('SD: Adding Port profile %s to delete queue',
+            port_profile)
+        self.ucsm_pp_delete_dict[key] = 1
+
+    def _increment_pp_delete_retries(self, ucsm_ip, port_profile):
+        key = (ucsm_ip, port_profile)
+        retry = self.ucsm_pp_delete_dict.get(key)
+        if retry == const.MAX_PP_DELETE_RETRY_COUNT:
+            return False
+        else:
+            retry += 1
+            return True
+
+    def _get_pp_delete_entry(self, ucsm_ip, port_profile):
+        key = (ucsm_ip, port_profile)
+        if key in self.ucsm_pp_delete_dict:
+            return self.ucsm_pp_delete_dict.get(key)
+        else:
+            return None
+
+    def _remove_pp_delete_entry(self, ucsm_ip, port_profile):
+        key = (ucsm_ip, port_profile)
+        del self.ucsm_pp_delete_dict[key]
+
+    def delayed_delete_port_profile(self):
+        Timer(const.DEFAULT_PP_DELETE_TIME,
+            self.delayed_delete_port_profile, ()).start()
+        pps_to_delete = self.ucsm_pp_delete_dict.keys()
+        if not pps_to_delete:
+            LOG.debug('SD: No Port profiles to delete')
+            return
+
+        for pp_key in pps_to_delete:
+            ucsm_ip = pp_key[0]
+            port_profile = pp_key[1]
+            if (self._get_pp_delete_entry(ucsm_ip, port_profile) >
+                const.MAX_PP_DELETE_RETRY_COUNT):
+                LOG.warning('UCSM plugin unable to delete Port Profile '
+                    '%s after %d tries', port_profile,
+                    const.MAX_PP_DELETE_RETRY_COUNT)
+                continue
+            LOG.debug('SD: Deleting Port profile %s on UCSM %s',
+                port_profile, ucsm_ip)
+            with self.ucsm_connect_disconnect(ucsm_ip) as handle:
+                self._delete_port_profile(handle, port_profile, ucsm_ip)
+
+        return
+
     def _delete_port_profile(self, handle, port_profile, ucsm_ip):
         """Deletes Port Profile from UCS Manager."""
         port_profile_dest = (const.PORT_PROFILESETDN + const.VNIC_PATH_PREFIX +
                              port_profile)
-
         try:
             handle.StartTransaction()
 
@@ -657,12 +715,19 @@ class CiscoUcsmDriver(object):
             handle.RemoveManagedObject(p_profile)
             handle.CompleteTransaction()
 
-        except Exception as e:
+            self._remove_pp_delete_entry(ucsm_ip, port_profile)
+        #except Exception as e:
+        except Exception:
+            if not self._get_pp_delete_entry(ucsm_ip, port_profile):
+                self._add_pp_to_delete_pp_dict(ucsm_ip, port_profile)
+            else:
+                self._increment_pp_delete_retries(ucsm_ip, port_profile)
+
             # Raise a Neutron exception. Include a description of
             # the original  exception.
-            raise cexc.UcsmConfigDeleteFailed(config=port_profile,
-                                              ucsm_ip=ucsm_ip,
-                                              exc=e)
+            #raise cexc.UcsmConfigDeleteFailed(config=p_profile,
+            #                                  ucsm_ip=ucsm_ip,
+            #                                  exc=e)
 
     def _remove_vlan_from_all_service_profiles(self, handle, vlan_id, ucsm_ip):
         """Deletes VLAN Profile config from server's ethernet ports."""
@@ -832,6 +897,13 @@ class CiscoUcsmDriver(object):
         except Exception as e:
             return self._handle_ucsm_exception(e, 'VNIC Template',
                                                vlan_id, ucsm_ip)
+
+    def delete_port_profile(self, ucsm_ip, vlan_id, port_profile):
+        if not port_profile:
+            return
+        LOG.debug('SD: Attempting to delete PP %s from UCSM', port_profile)
+        with self.ucsm_connect_disconnect(ucsm_ip) as handle:
+            self._delete_port_profile(handle, port_profile, ucsm_ip)
 
     def delete_all_config_for_vlan(self, vlan_id, port_profile,
                                    trunk_vlans):
