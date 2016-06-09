@@ -1,0 +1,10 @@
+Code-Review+2: Shweta P <shpadubi@cisco.com>
+Code-Review+1: Nelson Huang <NelsonHuang@gmail.com>
+Code-Review+2: Bob Melander <bob.melander@gmail.com>
+Workflow+1: Bob Melander <bob.melander@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 09 Jun 2016 09:28:12 +0000
+Reviewed-on: https://review.openstack.org/323587
+Project: openstack/networking-cisco
+Branch: refs/heads/stable/liberty
