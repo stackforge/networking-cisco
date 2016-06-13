@@ -15,14 +15,14 @@ elif [ -x $ZUUL_CLONER ]; then
     # references are retrieved from zuul and rebased into the repo, then installed.
     $ZUUL_CLONER --cache-dir /opt/git --workspace /tmp git://git.openstack.org openstack/neutron
     (cd /tmp/openstack/neutron && git checkout stable/liberty)
-    pip install /tmp/openstack/neutron
+    pip install -c$UPPER_CONSTRAINTS_FILE /tmp/openstack/neutron
 else
     # Download or update neutron-master tarball and install
     ( cd .test-tars && wget -N http://tarballs.openstack.org/neutron/neutron-stable-liberty.tar.gz )
-    pip install .test-tars/neutron-stable-liberty.tar.gz
+    pip install -c$UPPER_CONSTRAINTS_FILE .test-tars/neutron-stable-liberty.tar.gz
 fi
 
 # Install the rest of the requirements as normal
-pip install -U $*
+pip install -U -c$UPPER_CONSTRAINTS_FILE $*
 
 exit $?
