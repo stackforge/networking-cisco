@@ -108,7 +108,6 @@ class DhcpRelayAgent(object):
         self.greenpool.waitall()
 
     def _namespace_monitor(self):
-
         while True:
             eventlet.sleep(MONITOR_INTERVAL)
 
