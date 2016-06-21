@@ -613,6 +613,14 @@ class L3RoutertypeAwareHostingDeviceSchedulerBaseTestCase(
             r_after = self._show('routers', r['id'])['router']
             self.assertEqual(selected_hd_id, r_after[HOSTING_DEVICE_ATTR])
 
+    def test_router_deleted_by_other_process_removed_from_backlog(self):
+        r_id = 'non_existant_router_id'
+        self.l3_plugin._backlogged_routers.add(r_id)
+        self.l3_plugin._refresh_router_backlog = False
+        self.assertEqual(1, len(self.l3_plugin._backlogged_routers))
+        self.l3_plugin._process_backlogged_routers()
+        self.assertEqual(0, len(self.l3_plugin._backlogged_routers))
+
 
 class L3RoutertypeAwareHostingDeviceSchedulerTestCase(
         L3RoutertypeAwareHostingDeviceSchedulerTestCaseBase):
