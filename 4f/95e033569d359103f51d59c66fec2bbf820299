@@ -1,0 +1,8 @@
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 29 Jun 2016 17:18:00 +0000
+Reviewed-on: https://review.openstack.org/335578
+Project: openstack/networking-cisco
+Branch: refs/heads/stable/liberty
