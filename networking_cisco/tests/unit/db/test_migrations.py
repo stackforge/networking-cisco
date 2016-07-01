@@ -23,8 +23,8 @@ if six.PY3:
 
 from neutron.db.migration.alembic_migrations import external
 from neutron.db.migration import cli as migration
-from neutron.tests.common import base
 from neutron.tests.functional.db import test_migrations
+from neutron.tests.unit import testlib_api
 
 from networking_cisco.db.migration import alembic_migrations
 from networking_cisco.db.migration.models import head
@@ -55,6 +55,7 @@ class _TestModelsMigrationsCisco(test_migrations._TestModelsMigrations):
             return True
 
 
-class TestModelsMigrationsMysql(_TestModelsMigrationsCisco,
-                                base.MySQLTestCase):
+class TestModelsMigrationsMysql(testlib_api.MySQLTestCaseMixin,
+                                _TestModelsMigrationsCisco,
+                                testlib_api.SqlTestCaseLight):
     pass
