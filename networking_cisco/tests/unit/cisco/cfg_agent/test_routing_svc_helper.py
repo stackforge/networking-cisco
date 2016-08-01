@@ -19,8 +19,8 @@ from oslo_config import cfg
 import oslo_messaging
 from oslo_utils import uuidutils
 
-from neutron.common import config as base_config
 from neutron.common import constants as l3_constants
+from neutron.conf import common as base_config
 from neutron.tests import base
 
 from networking_cisco.plugins.cisco.cfg_agent import cfg_agent
