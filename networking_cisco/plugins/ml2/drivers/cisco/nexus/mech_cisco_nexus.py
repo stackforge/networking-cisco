@@ -196,17 +196,21 @@ class CiscoNexusCfgMonitor(object):
                 const.FAIL_CONFIG, switch_ip)
             contact_failure = self._mdriver.get_switch_replay_failure(
                 const.FAIL_CONTACT, switch_ip)
-            LOG.debug("check_connections() switch "
+
+            LOG.debug("check_connections() thread %(thid)d, switch "
                       "%(switch_ip)s state %(state)s "
                       "contact_failure %(contact_failure)d "
                       "config_failure %(config_failure)d ",
-                      {'switch_ip': switch_ip, 'state': state,
+                      {'thid': threading.current_thread().ident,
+                       'switch_ip': switch_ip, 'state': state,
                        'contact_failure': contact_failure,
                        'config_failure': config_failure})
             try:
                 # Send a simple get nexus type to determine if
                 # the switch is up
-                nexus_type = self._driver.get_nexus_type(switch_ip)
+                nexus_type = self._driver.get_nexus_type(
+                    switch_ip,
+                    check_to_close_session=True)
             except Exception:
                 if state != const.SWITCH_INACTIVE:
                     LOG.error(_LE("Lost connection to switch ip "
@@ -240,6 +244,8 @@ class CiscoNexusCfgMonitor(object):
                     self._driver.keep_ssh_caching()
                     self.replay_config(switch_ip)
                     self._driver.init_ssh_caching()
+                    mgr = self._driver.nxos_connect(switch_ip)
+                    self._driver._close_session(mgr, switch_ip)
 
                     # If replay failed, it stops trying to configure db entries
                     # and sets switch state to inactive so this caller knows
@@ -286,6 +292,8 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         self.timer = None
         self.monitor_timeout = conf.cfg.CONF.ml2_cisco.switch_heartbeat_time
         self.monitor_lock = threading.Lock()
+        LOG.info(_LI("CiscoNexusMechanismDriver: initialize() called "
+                    "pid %(pid)d"), {'pid': self._ppid})
         # Start the monitor thread
         if self.is_replay_enabled():
             eventlet.spawn_after(DELAY_MONITOR_THREAD, self._monitor_thread)
@@ -1662,11 +1670,21 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
                 try:
                     self.driver.get_nexus_type(switch_ip)
                     verified_active_switches.append(switch_ip)
-                except Exception:
-                    pass
+                except Exception as e:
+                    LOG.error(_LE("Failed to ping "
+                        "switch ip %(switch_ip)s error %(exp_err)s"),
+                        {'switch_ip': switch_ip, 'exp_err': e})
 
             # if host_id is valid and there is no active
             # switches remaining
+            LOG.debug("Create Stats:  thread %(thid)d, "
+                      "all_switches %(all)d, "
+                      "active %(active)d, verified %(verify)d",
+                      {'thid': threading.current_thread().ident,
+                      'all': len(all_switches),
+                      'active': len(active_switches),
+                      'verify': len(verified_active_switches)})
+
             if all_switches and not verified_active_switches:
                 raise excep.NexusConnectFailed(
                     nexus_host=all_switches[0], config="None",
@@ -1779,6 +1797,10 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         # otherwise check if vxlan for us
         #
         if self._supported_baremetal_transaction(context):
+            return
+
+        # To bypass occasional unit test error when running tox -e py27
+        if context.segments_to_bind is None:
             return
 
         for segment in context.segments_to_bind:
