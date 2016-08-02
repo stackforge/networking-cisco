@@ -19,6 +19,7 @@ import mock
 from oslo_config import cfg
 import webob.exc as wexc
 
+
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     config as cisco_config)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
@@ -1136,10 +1137,11 @@ class TestCiscoPortsV2(CiscoML2MechanismTestCase,
                           '_get_close_ssh_session',
                           return_value=True).start()
 
-        # Verify that ncclient close is called twice. For create VLAN and
-        # trunk interface calls.
+        # Verify that ncclient close is called once. It is suppressed
+        # for successful create VLAN but called after trunk
+        # interface calls.
         with self._create_resources():
-            self.assertEqual(ncclient_close.call_count, 2)
+            self.assertEqual(1, ncclient_close.call_count)
 
 
 class TestCiscoNetworksV2(CiscoML2MechanismTestCase,
