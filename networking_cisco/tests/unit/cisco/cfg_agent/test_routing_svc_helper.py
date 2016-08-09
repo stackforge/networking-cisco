@@ -811,9 +811,9 @@ class TestDeviceSyncOperations(base.BaseTestCase):
         routers = []
         self.routing_helper._handle_sync_devices(routers)
 
-        self.routing_helper._fetch_router_info.assert_called_once()
+        self.assertEqual(1, self.routing_helper._fetch_router_info.call_count)
         self.assertEqual(2, self.routing_helper._router_removed.call_count)
-        self.routing_helper._cleanup_invalid_cfg.assert_called_once()
+        self.assertEqual(1, self.routing_helper._cleanup_invalid_cfg.call_count)
         self.assertEqual(2, len(routers))
 
     def test_handle_sync_devices_retry(self):
