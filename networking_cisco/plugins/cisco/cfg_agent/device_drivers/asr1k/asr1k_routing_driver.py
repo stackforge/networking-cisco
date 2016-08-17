@@ -15,7 +15,6 @@
 import logging
 import netaddr
 
-from neutron_lib import constants
 from oslo_config import cfg
 
 from networking_cisco._i18n import _, _LE, _LI
@@ -31,6 +30,8 @@ from networking_cisco.plugins.cisco.cfg_agent.device_drivers.csr1kv import (
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.extensions import ha
 from networking_cisco.plugins.cisco.extensions import routerrole
+
+from neutron.common import constants
 
 LOG = logging.getLogger(__name__)
 

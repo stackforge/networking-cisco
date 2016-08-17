@@ -18,7 +18,7 @@ import time
 
 from oslo_log import log as logging
 
-from neutron_lib import exceptions as nexception
+from neutron.common import exceptions as nexception
 
 from networking_cisco._i18n import _, _LE
 
