@@ -1,0 +1,10 @@
+Code-Review+1: Carol Bouchard <caboucha@cisco.com>
+Code-Review+2: Baodong (Robert) Li <baoli@cisco.com>
+Code-Review+2: Arvind Somya <asomya@cisco.com>
+Workflow+1: Arvind Somya <asomya@cisco.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 25 Aug 2016 22:23:28 +0000
+Reviewed-on: https://review.openstack.org/360708
+Project: openstack/networking-cisco
+Branch: refs/heads/stable/liberty
