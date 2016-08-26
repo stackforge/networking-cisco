@@ -35,6 +35,8 @@ from neutron.db import model_base
 from neutron.db import models_v2
 from neutron.extensions import l3
 
+from neutron_lib.api import validators
+
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.common import utils as cisco_utils
 from networking_cisco.plugins.cisco.extensions import ha
@@ -53,7 +55,7 @@ MAX_VRRP_GROUPS = 4094
 MAX_HSRP_GROUPS = 4094
 MAX_GLBP_GROUPS = 1023
 
-is_attr_set = attrs.is_attr_set
+is_attr_set = validators.is_attr_set
 ATTR_NOT_SPECIFIED = attrs.ATTR_NOT_SPECIFIED
 EXTERNAL_GW_INFO = l3.EXTERNAL_GW_INFO
 DEVICE_OWNER_ROUTER_GW = l3_constants.DEVICE_OWNER_ROUTER_GW

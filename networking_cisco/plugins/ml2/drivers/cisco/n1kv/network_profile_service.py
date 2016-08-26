@@ -22,11 +22,12 @@ from sqlalchemy.orm import exc
 from networking_cisco._i18n import _LE
 
 from neutron.api import extensions as api_extensions
-from neutron.api.v2 import attributes
 from neutron.common import exceptions as n_exc
 import neutron.db.api as db
 from neutron.db import common_db_mixin as base_db
 from neutron.plugins.common import constants as p_const
+
+from neutron_lib.api import validators
 
 from networking_cisco.plugins.ml2.drivers.cisco.n1kv import (
     constants as n1kv_const)
@@ -173,7 +174,7 @@ class NetworkProfile_db_mixin(network_profile_module.NetworkProfilePluginBase,
                 raise n_exc.InvalidInput(error_message=msg)
         if segment_type in [n1kv_const.TYPE_TRUNK,
                             p_const.TYPE_VXLAN]:
-            if not attributes.is_attr_set(net_p.get("sub_type")):
+            if not validators.is_attr_set(net_p.get("sub_type")):
                 msg = _LE("Argument sub_type missing "
                           "for network profile %s") % net_p["name"]
                 LOG.error(msg)
@@ -192,7 +193,7 @@ class NetworkProfile_db_mixin(network_profile_module.NetworkProfilePluginBase,
             else:
                 group_ip = cfg.CONF.ml2_type_vxlan.vxlan_group
                 multicast_ip_range = net_p.get("multicast_ip_range")
-                if not attributes.is_attr_set(multicast_ip_range):
+                if not validators.is_attr_set(multicast_ip_range):
                     if not group_ip:
                         msg = (_LE("Argument multicast_ip_range missing"
                                    " for VXLAN multicast network profile %s")
