@@ -35,6 +35,8 @@ from neutron.db import model_base
 from neutron.db import models_v2
 from neutron.extensions import l3
 
+from neutron_lib import constants as cons
+
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.common import utils as cisco_utils
 from networking_cisco.plugins.cisco.extensions import ha
@@ -54,7 +56,7 @@ MAX_HSRP_GROUPS = 4094
 MAX_GLBP_GROUPS = 1023
 
 is_attr_set = attrs.is_attr_set
-ATTR_NOT_SPECIFIED = attrs.ATTR_NOT_SPECIFIED
+ATTR_NOT_SPECIFIED = cons.ATTR_NOT_SPECIFIED
 EXTERNAL_GW_INFO = l3.EXTERNAL_GW_INFO
 DEVICE_OWNER_ROUTER_GW = l3_constants.DEVICE_OWNER_ROUTER_GW
 DEVICE_OWNER_ROUTER_INTF = l3_constants.DEVICE_OWNER_ROUTER_INTF
@@ -913,7 +915,7 @@ class HA_db_mixin(object):
         port = {'port': {
             'tenant_id': '',  # intentionally not set
             'network_id': network_id,
-            'mac_address': attrs.ATTR_NOT_SPECIFIED,
+            'mac_address': cons.ATTR_NOT_SPECIFIED,
             'fixed_ips': fixed_ips,
             'device_id': device_id,
             'device_owner': port_type,

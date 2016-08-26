@@ -18,7 +18,7 @@ import time
 
 from oslo_log import log as logging
 
-from neutron.api.v2 import attributes
+from neutron_lib import constants as cons
 
 LOG = logging.getLogger(__name__)
 
@@ -65,11 +65,11 @@ class PluggingDriverUtilsMixin(object):
 
     def _mgmt_subnet_spec(self, context, mgmt_context):
         ip_addr = mgmt_context.get('mgmt_ip_address',
-                                   attributes.ATTR_NOT_SPECIFIED)
-        if ip_addr and ip_addr != attributes.ATTR_NOT_SPECIFIED:
+                                   cons.ATTR_NOT_SPECIFIED)
+        if ip_addr and ip_addr != cons.ATTR_NOT_SPECIFIED:
             nw = self._core_plugin.get_network(context,
                                                mgmt_context['mgmt_nw_id'])
             ips = [{'ip_address': ip_addr, 'subnet_id': nw['subnets'][0]}]
         else:
-            ips = attributes.ATTR_NOT_SPECIFIED
+            ips = cons.ATTR_NOT_SPECIFIED
         return ips

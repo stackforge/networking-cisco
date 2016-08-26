@@ -24,6 +24,8 @@ from networking_cisco._i18n import _, _LE
 
 from neutron.api.v2 import attributes
 
+from neutron_lib import constants as cons
+
 LOG = logging.getLogger(__name__)
 
 
@@ -80,7 +82,7 @@ def verify_resource_dict(res_dict, is_create, attr_info):
 
     for attr, attr_vals in six.iteritems(attr_info):
         if (attr not in res_dict or
-                res_dict[attr] is attributes.ATTR_NOT_SPECIFIED):
+                res_dict[attr] is cons.ATTR_NOT_SPECIFIED):
             continue
         # Convert values if necessary
         if 'convert_to' in attr_vals:
