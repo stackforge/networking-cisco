@@ -19,19 +19,18 @@ Basic test Class and elements for testing Cisco Nexus platforms.
 
 import collections
 import mock
-import os
 from oslo_config import cfg
-from oslo_utils import importutils
 import re
 import six
 import testtools
 
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
+    config as nexus_config)
+from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     constants as const)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     nexus_network_driver)
-from networking_cisco.plugins.ml2.drivers.cisco.nexus import constants
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import exceptions
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import mech_cisco_nexus
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import nexus_db_v2
@@ -41,6 +40,7 @@ from neutron.plugins.common import constants as p_const
 from neutron.plugins.ml2 import driver_api as api
 from neutron.tests.unit import testlib_api
 
+from networking_cisco.tests import base as nc_base
 
 # Static variables used in testing
 NEXUS_IP_ADDRESS_1 = '1.1.1.1'
@@ -290,6 +290,14 @@ class FakeUnbindPortContext(FakePortContext):
     def original_bottom_bound_segment(self):
         return self._bottom_segment
 
+NEXUS_CONF_TEMPLATE = """
+[ml2_mech_cisco_nexus:%(ip_addr)s]
+ssh_port=%(ssh_port)s
+username=admin
+password=password
+physnet=%(physnet)s
+"""
+
 
 class TestCiscoNexusBase(testlib_api.SqlTestCase):
     """Feature Base Test Class for Cisco ML2 Nexus driver."""
@@ -313,6 +321,10 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
     def setUp(self):
         """Sets up mock ncclient, and switch and credentials dictionaries."""
 
+        #Clear all configuration parsing
+        nexus_config.ML2MechCiscoConfig.nexus_dict = {}
+        cfg.CONF.clear()
+
         super(TestCiscoNexusBase, self).setUp()
 
         cfg.CONF.import_opt('api_workers', 'neutron.service')
@@ -326,57 +338,43 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
                           '_import_ncclient',
                           return_value=self.mock_ncclient).start()
 
+        test_config_parts = {}
+        for name, config in self.test_configs.items():
+            ip_addr = config.nexus_ip_addr
+            host_name = config.host_name
+            nexus_port = config.nexus_port
+            if ip_addr not in test_config_parts:
+                test_config_parts[ip_addr] = {}
+                test_config_parts[ip_addr]['main'] = (
+                    NEXUS_CONF_TEMPLATE % {'ip_addr': ip_addr,
+                                           'ssh_port': NEXUS_SSH_PORT,
+                                           'physnet': PHYSNET})
+            if host_name is not HOST_NAME_UNUSED:
+                if host_name in test_config_parts[ip_addr]:
+                    test_config_parts[ip_addr][host_name].add(nexus_port)
+                else:
+                    test_config_parts[ip_addr][host_name] = set([nexus_port])
+        test_config_file = ""
+        for ip, subparts in test_config_parts.items():
+            switch_config = subparts['main']
+            for name, subpart in subparts.items():
+                if name == "main":
+                    continue
+                switch_config += "%s=%s\n" % (name, ','.join(subpart))
+            test_config_file += switch_config
+        nc_base.load_config_file(test_config_file)
+
         self.mock_continue_binding = mock.patch.object(
             FakePortContext,
             'continue_binding').start()
 
         self._mock_init()
 
-        def new_nexus_init(mech_instance):
-            mech_instance.driver = importutils.import_object(NEXUS_DRIVER)
-            mech_instance.monitor_timeout = (
-                cfg.CONF.ml2_cisco.switch_heartbeat_time)
-            mech_instance._ppid = os.getpid()
-
-            mech_instance._switch_state = {}
-            mech_instance._nexus_switches = collections.OrderedDict()
-            for name, config in self.test_configs.items():
-                ip_addr = config.nexus_ip_addr
-                host_name = config.host_name
-                nexus_port = config.nexus_port
-                # baremetal config done differently
-                if not ip_addr:
-                    continue
-                if host_name is not HOST_NAME_UNUSED:
-                    if (ip_addr, host_name) in mech_instance._nexus_switches:
-                        saved_port = (mech_instance._nexus_switches[
-                            (ip_addr, host_name)])
-                        if saved_port != nexus_port:
-                            mech_instance._nexus_switches[
-                                (ip_addr, host_name)] = (
-                                    saved_port + ',' + nexus_port)
-                    else:
-                        mech_instance._nexus_switches[
-                            (ip_addr, host_name)] = nexus_port
-                mech_instance._nexus_switches[(ip_addr,
-                                               'ssh_port')] = NEXUS_SSH_PORT
-                mech_instance._nexus_switches[(ip_addr,
-                                               constants.USERNAME)] = 'admin'
-                mech_instance._nexus_switches[(ip_addr,
-                                              constants.PASSWORD)] = 'password'
-                mech_instance._nexus_switches[(ip_addr,
-                                              'physnet')] = PHYSNET
-            mech_instance.driver.nexus_switches = (
-                mech_instance._nexus_switches)
-
-        mock.patch.object(mech_cisco_nexus.CiscoNexusMechanismDriver,
-                          '__init__', new=new_nexus_init).start()
-        self._cisco_mech_driver = (mech_cisco_nexus.
-                                   CiscoNexusMechanismDriver())
-        self._cfg_monitor = (mech_cisco_nexus.
-                             CiscoNexusCfgMonitor(
-                                 self._cisco_mech_driver.driver,
-                                 self._cisco_mech_driver))
+        self._cisco_mech_driver = mech_cisco_nexus.CiscoNexusMechanismDriver()
+        self._cisco_mech_driver.initialize()
+        self._cfg_monitor = self._cisco_mech_driver.monitor
+        self._cisco_mech_driver.driver.nexus_switches = (
+            self._cisco_mech_driver._nexus_switches)
         self.addCleanup(self._clear_port_dbs)
 
     def _generate_port_context(self, port_config,
@@ -506,18 +504,16 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
             edit_config.call_count,
             "Unexpected driver count")
 
-        for idx in range(0, len(driver_result)):
-            self.assertIsNotNone(
-                self.mock_ncclient.connect.
-                return_value.edit_config.mock_calls[idx][2]['config'],
-                "mock_data is None")
-            # assign None to skip testing this one.
-            if driver_result[idx]:
-                self.assertIsNotNone(
-                    re.search(driver_result[idx],
-                        self.mock_ncclient.connect.return_value.
-                        edit_config.mock_calls[idx][2]['config']),
-                    "Expected result data not found")
+        for result in driver_result:
+            if not result:
+                continue
+            found_call = False
+            edit_config = self.mock_ncclient.connect.return_value.edit_config
+            for call in edit_config.mock_calls:
+                serch = re.search(result, call[2]['config'])
+                if serch is not None:
+                    found_call = True
+            self.assertTrue(found_call, "Expected call not found")
 
     def _basic_create_verify_port_vlan(self, test_name, test_result,
                                        nbr_of_bindings=1,
