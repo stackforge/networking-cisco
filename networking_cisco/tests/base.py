@@ -15,7 +15,20 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import os
+import tempfile
+
+from oslo_config import cfg
 from oslotest import base
+
+
+def load_config_file(string):
+    cfile = tempfile.NamedTemporaryFile(delete=False)
+    cfile.write(string.encode('utf-8'))
+    cfile.close()
+    cfg.CONF(args=['--config-file', cfile.name])
+    os.unlink(cfile.name)
+    return cfile.name
 
 
 class TestCase(base.BaseTestCase):
