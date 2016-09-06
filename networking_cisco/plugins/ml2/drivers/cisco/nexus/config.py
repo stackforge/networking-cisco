@@ -16,6 +16,7 @@
 from oslo_config import cfg
 
 from networking_cisco._i18n import _
+from networking_cisco.config import base
 
 ml2_cisco_opts = [
     cfg.StrOpt('vlan_name_prefix', default='q-',
@@ -45,6 +46,13 @@ ml2_cisco_opts = [
     cfg.BoolOpt('host_key_checks', default=False,
                 help=_("Enable strict host key checks when "
                        "connecting to Nexus switches")),
+    base.SubsectionOpt('ml2_mech_cisco_nexus',
+                       dest='nexus_switches',
+                       subopts=[cfg.StrOpt('username'),
+                                cfg.StrOpt('password'),
+                                cfg.StrOpt('physnet'),
+                                cfg.IntOpt('ssh_port', default=22),
+                                base.RemainderOpt('compute_hosts')])
 ]
 
 
@@ -66,22 +74,10 @@ class ML2MechCiscoConfig(object):
     nexus_dict = {}
 
     def __init__(self):
-        self._create_ml2_mech_device_cisco_dictionary()
-
-    def _create_ml2_mech_device_cisco_dictionary(self):
-        """Create the ML2 device cisco dictionary.
-
-        Read data from the ml2_conf_cisco.ini device supported sections.
-        """
-        multi_parser = cfg.MultiConfigParser()
-        read_ok = multi_parser.read(cfg.CONF.config_file)
-
-        if len(read_ok) != len(cfg.CONF.config_file):
-            raise cfg.Error(_("Some config files were not parsed properly"))
-
-        for parsed_file in multi_parser.parsed:
-            for parsed_item in parsed_file.keys():
-                dev_id, sep, dev_ip = parsed_item.partition(':')
-                if dev_id.lower() == 'ml2_mech_cisco_nexus':
-                    for dev_key, value in parsed_file[parsed_item].items():
-                        self.nexus_dict[dev_ip, dev_key] = value[0]
+        for switch_ip, switch in cfg.CONF.ml2_cisco.nexus_switches.items():
+            for opt_name, value in switch.items():
+                if opt_name == 'compute_hosts':
+                    for host, ports in value.items():
+                        self.nexus_dict[(switch_ip, host)] = ports
+                else:
+                    self.nexus_dict[(switch_ip, opt_name)] = value
