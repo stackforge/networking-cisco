@@ -42,6 +42,7 @@ from neutron.plugins.ml2 import driver_api as api
 from neutron.plugins.ml2 import driver_context
 from neutron.tests.unit.plugins.ml2 import test_plugin
 
+from networking_cisco.tests import base as nc_base
 
 PHYS_NET = 'physnet1'
 COMP_HOST_NAME = 'testhost'
@@ -123,20 +124,6 @@ class CiscoML2MechanismTestCase(test_plugin.Ml2PluginV2TestCase):
         cfg.CONF.set_override('rpc_workers', 0)
         cfg.CONF.set_override('never_cache_ssh_connection', False, 'ml2_cisco')
 
-        # Configure the Cisco Nexus mechanism driver
-        nexus_config = {
-            (NEXUS_IP_ADDR, 'username'): 'admin',
-            (NEXUS_IP_ADDR, 'password'): 'mySecretPassword',
-            (NEXUS_IP_ADDR, 'ssh_port'): 22,
-            (NEXUS_IP_ADDR, 'physnet'): PHYS_NET,
-            (NEXUS_IP_ADDR, COMP_HOST_NAME): NEXUS_INTERFACE,
-            (NEXUS_IP_ADDR, COMP_HOST_NAME_2): NEXUS_INTERFACE_2}
-        self.nexus_patch = mock.patch.dict(
-            cisco_config.ML2MechCiscoConfig.nexus_dict,
-            nexus_config)
-        self.nexus_patch.start()
-        self.addCleanup(self.nexus_patch.stop)
-
         # The NETCONF client module is not included in the DevStack
         # distribution, so mock this module for unit testing.
         self.mock_ncclient = mock.Mock()
@@ -195,7 +182,34 @@ class CiscoML2MechanismTestCase(test_plugin.Ml2PluginV2TestCase):
 
         super(CiscoML2MechanismTestCase, self).setUp()
 
+        self._load_nexus_configuration()
         self.port_create_status = 'DOWN'
+
+    def _load_nexus_configuration(self, physnet=True, second_switch=False):
+        # Configure the Cisco Nexus mechanism driver
+        test_config_file = """
+[ml2_mech_cisco_nexus:1.1.1.1]
+username=admin
+password=mySecretPassword
+testhost=1/1
+testhost_2=1/2
+"""
+        if physnet:
+            test_config_file += "physnet=physnet1"
+        if second_switch:
+            test_config_file += """
+[ml2_mech_cisco_nexus:2.2.2.2]
+username=admin
+password=mySecretPassword
+testhost=1/1,1/2
+physnet=physnet1
+"""
+        cleanup_func = nc_base.load_config_file(test_config_file)
+        self.addCleanup(cleanup_func)
+        # TODO(sambetts) Remove this once we switch to using cfg.CONF for in
+        # all files
+        # Ensure we init the configuration dict
+        cisco_config.ML2MechCiscoConfig()
 
     def _create_deviceowner_mock(self):
         # Mock deviceowner method for UT's that expect update precommit
@@ -932,9 +946,7 @@ class TestCiscoPortsV2(CiscoML2MechanismTestCase,
         Verify that continue_binding() method is not called when no 'physnet'
         key is present in the nexus switch dictionary.
         """
-        self.nexus_patch.stop()
-        self.nexus_patch.values.pop((NEXUS_IP_ADDR, 'physnet'))
-        self.nexus_patch.start()
+        self._load_nexus_configuration(physnet=False)
 
         self.mock_segments_to_bind.return_value = [VXLAN_SEGMENT]
 
@@ -1020,9 +1032,7 @@ class TestCiscoPortsV2(CiscoML2MechanismTestCase,
         """Test processing for creating one VXLAN segment."""
 
         # Add 2nd switch to configuration for complete testing.
-        self.nexus_patch.stop()
-        self.nexus_patch.values.update(NEXUS_2ND_SWITCH)
-        self.nexus_patch.start()
+        self._load_nexus_configuration(second_switch=True)
 
         # Configure bound segments to indicate VXLAN+VLAN.
         self.mock_top_bound_segment.return_value = BOUND_SEGMENT_VXLAN

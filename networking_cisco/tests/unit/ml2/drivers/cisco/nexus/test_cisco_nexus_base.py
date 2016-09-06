@@ -41,6 +41,8 @@ from neutron.plugins.common import constants as p_const
 from neutron.plugins.ml2 import driver_api as api
 from neutron.tests.unit import testlib_api
 
+from networking_cisco.tests import base as nc_base
+
 # Static variables used in testing
 NEXUS_IP_ADDRESS_1 = '1.1.1.1'
 NEXUS_IP_ADDRESS_2 = '2.2.2.2'
@@ -193,6 +195,13 @@ class FakePortContext(object):
                     status=None):
         pass
 
+NEXUS_CONF_TEMPLATE = """
+[ml2_mech_cisco_nexus:%(ip_addr)s]
+ssh_port=%(ssh_port)s
+username=admin
+password=password
+"""
+
 
 class TestCiscoNexusBase(testlib_api.SqlTestCase):
     """Feature Base Test Class for Cisco ML2 Nexus driver."""
@@ -221,6 +230,32 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
         data_xml = {'connect.return_value.get.return_value.data_xml':
                     'switchport trunk allowed vlan none'}
         self.mock_ncclient.configure_mock(**data_xml)
+
+        test_config_parts = {}
+        for name, config in self.test_configs.items():
+            ip_addr = config.nexus_ip_addr
+            host_name = config.host_name
+            nexus_port = config.nexus_port
+            if ip_addr not in test_config_parts:
+                test_config_parts[ip_addr] = {}
+                test_config_parts[ip_addr]['main'] = (
+                    NEXUS_CONF_TEMPLATE % {'ip_addr': ip_addr,
+                                           'ssh_port': NEXUS_SSH_PORT})
+            if host_name is not HOST_NAME_UNUSED:
+                if host_name in test_config_parts[ip_addr]:
+                    test_config_parts[ip_addr][host_name] += ",%s" % nexus_port
+                else:
+                    test_config_parts[ip_addr][host_name] = (
+                        "%s=%s" % (host_name, nexus_port))
+
+        test_config_file = ""
+        for ip, subparts in test_config_parts.items():
+            switch_config = subparts['main']
+            for name, subpart in subparts.items():
+                if name != "main":
+                    switch_config += "\n%s" % subpart
+            test_config_file += switch_config
+        nc_base.load_config_file(test_config_file)
 
         def new_nexus_init(mech_instance):
             mech_instance.driver = importutils.import_object(NEXUS_DRIVER)
