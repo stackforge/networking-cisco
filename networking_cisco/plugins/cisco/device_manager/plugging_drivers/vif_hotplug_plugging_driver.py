@@ -19,11 +19,11 @@ from novaclient import exceptions as nova_exc
 from oslo_log import log as logging
 from sqlalchemy.sql import expression as expr
 
-from neutron.api.v2 import attributes
 from neutron.common import exceptions as n_exc
 from neutron.db import models_v2
 from neutron import manager
 
+from networking_cisco import backwards_compatibility as attributes
 from networking_cisco._i18n import _, _LE, _LW
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.device_manager import plugging_drivers

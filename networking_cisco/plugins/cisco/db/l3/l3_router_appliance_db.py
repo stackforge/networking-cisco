@@ -31,7 +31,6 @@ from sqlalchemy.sql import false as sql_false
 
 from networking_cisco._i18n import _, _LE, _LI, _LW
 
-from neutron.api.v2 import attributes
 from neutron.callbacks import events
 from neutron.callbacks import registry
 from neutron.callbacks import resources
@@ -48,6 +47,7 @@ from neutron import manager
 from neutron.plugins.common import constants as svc_constants
 from neutron_lib import exceptions as n_exc
 
+from networking_cisco import backwards_compatibility as attributes
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.db.device_manager import hd_models
 from networking_cisco.plugins.cisco.db.l3 import l3_models

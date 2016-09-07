@@ -15,10 +15,11 @@
 from networking_cisco._i18n import _
 
 from neutron.api import extensions
-from neutron.api.v2 import attributes as attr
 from neutron_lib import exceptions as nexception
 
 from neutron_lib.api import converters as conv
+
+from networking_cisco import backwards_compatibility as attr
 
 
 HA_ALIAS = 'router_ha'
