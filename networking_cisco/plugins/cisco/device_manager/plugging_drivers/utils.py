@@ -18,7 +18,7 @@ import time
 
 from oslo_log import log as logging
 
-from neutron.api.v2 import attributes
+from networking_cisco import backwards_compatibility as attributes
 
 LOG = logging.getLogger(__name__)
 

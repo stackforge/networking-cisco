@@ -26,7 +26,6 @@ from sqlalchemy.sql import expression as expr
 
 from networking_cisco._i18n import _, _LW
 
-from neutron.api.v2 import attributes as attrs
 from neutron.common import exceptions as n_exc
 from neutron.common import utils
 from neutron.db import l3_db
@@ -36,6 +35,7 @@ from neutron.extensions import l3
 
 from neutron_lib import constants as l3_constants
 
+from networking_cisco import backwards_compatibility as attrs
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.common import utils as cisco_utils
 from networking_cisco.plugins.cisco.extensions import ha
