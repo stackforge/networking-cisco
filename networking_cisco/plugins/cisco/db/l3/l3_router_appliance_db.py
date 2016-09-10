@@ -417,11 +417,14 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
                 interface_info)
             if by_port:
                 port = self._core_plugin.get_port(context,
-                    interface_info['port_id'])
+                                                  interface_info['port_id'])
+                subnet_id = None
             else:
                 # no port exists yet, but we still pass a context
                 port = None
-            port_ctxt = driver_context.RouterPortContext(port)
+                subnet_id = interface_info['subnet_id']
+            port_ctxt = driver_context.RouterPortContext(
+                port, self.get_router(context, router_id), subnet_id=subnet_id)
             driver.add_router_interface_precommit(context, port_ctxt)
         info = (super(L3RouterApplianceDBMixin, self).
                 add_router_interface(context, router_id, interface_info))
