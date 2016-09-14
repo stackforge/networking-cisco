@@ -61,21 +61,35 @@ def upgrade():
         op.add_column('cisco_router_mappings',
                       sa.Column('router_type_id', sa.String(length=36),
                                 nullable=False))
-        op.create_foreign_key('cisco_router_mappings_ibfk_3',
+
+        inspector = reflection.Inspector.from_engine(op.get_bind())
+        foreign_keys = inspector.get_foreign_keys('cisco_router_mappings')
+        for fk in foreign_keys:
+            op.drop_constraint(constraint_name=fk['name'],
+                               table_name='cisco_router_mappings',
+                               type_='foreignkey')
+        primary_key = inspector.get_pk_constraint('cisco_router_mappings')
+        op.drop_constraint(constraint_name=primary_key['name'],
+                           table_name='cisco_router_mappings',
+                           type_='primary')
+
+        op.create_foreign_key('cisco_router_mappings_ibfk_1',
                               source_table='cisco_router_mappings',
-                              referent_table='cisco_router_types',
-                              local_cols=['router_type_id'],
-                              remote_cols=['id'])
-        op.drop_constraint('cisco_router_mappings_ibfk_2',
-                           'cisco_router_mappings', type_='foreignkey')
-        op.drop_constraint('cisco_router_mappings_ibfk_2',
-                           'cisco_router_mappings', type_='primary')
+                              referent_table='cisco_hosting_devices',
+                              local_cols=['hosting_device_id'],
+                              remote_cols=['id'],
+                              ondelete='SET NULL'),
         op.create_foreign_key('cisco_router_mappings_ibfk_2',
                               source_table='cisco_router_mappings',
                               referent_table='routers',
                               local_cols=['router_id'],
                               remote_cols=['id'],
                               ondelete='CASCADE')
+        op.create_foreign_key('cisco_router_mappings_ibfk_3',
+                              source_table='cisco_router_mappings',
+                              referent_table='cisco_router_types',
+                              local_cols=['router_type_id'],
+                              remote_cols=['id'])
         op.create_primary_key(
             constraint_name='pk_cisco_router_mappings',
             table_name='cisco_router_mappings',
