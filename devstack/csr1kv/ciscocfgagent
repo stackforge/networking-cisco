@@ -27,6 +27,19 @@ function configure_ciscocfgagent {
     fi
     iniset $Q_CISCO_CFGAGENT_CONF_FILE DEFAULT verbose True
     iniset $Q_CISCO_CFGAGENT_CONF_FILE DEFAULT debug $ENABLE_DEBUG_LOG_LEVEL
+
+    if [[ "$Q_CISCO_MULTI_REGION" == "True" ]]; then
+        iniset $Q_CISCO_CFGAGENT_CONF_FILE multi_region enable_multi_region True
+        iniset $Q_CISCO_CFGAGENT_CONF_FILE multi_region region_id $OS_REGION_NAME
+    else
+        iniset $Q_CISCO_CFGAGENT_CONF_FILE multi_region enable_multi_region False
+    fi
+
+    if [[ "$Q_CISCO_CFG_AGENT_HEARTBEAT" == "True" ]]; then
+        iniset $Q_CISCO_CFGAGENT_CONF_FILE cfg_agent enable_heartbeat True
+    else
+        iniset $Q_CISCO_CFGAGENT_CONF_FILE cfg_agent enable_heartbeat False
+    fi
 }
 
 function init_ciscocfgagent {
