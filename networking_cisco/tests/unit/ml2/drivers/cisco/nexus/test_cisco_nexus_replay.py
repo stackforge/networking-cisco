@@ -966,6 +966,12 @@ class TestCiscoNexusBaremetalReplay(
 
     test_configs = collections.OrderedDict(sorted(test_configs.items()))
 
+    def setUp(self):
+        """Sets up mock ncclient, and switch and credentials dictionaries."""
+
+        cfg.CONF.set_override('never_cache_ssh_connection', False, 'ml2_cisco')
+        super(TestCiscoNexusBaremetalReplay, self).setUp()
+
     def test_replay_unique_ethernet_ports(self):
         """Provides replay data and result data for unique ports. """
 
