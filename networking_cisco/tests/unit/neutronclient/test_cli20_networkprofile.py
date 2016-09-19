@@ -33,7 +33,6 @@ class CLITestV20NetworkProfile(test_cli20.CLITestV20Base):
     def _create_patch(self, name, func=None):
         patcher = mock.patch(name)
         thing = patcher.start()
-        self.addCleanup(patcher.stop)
         return thing
 
     def _mock_extension_loading(self):
