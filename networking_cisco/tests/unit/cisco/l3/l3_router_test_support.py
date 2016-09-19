@@ -89,10 +89,18 @@ class TestL3RouterBaseExtensionManager(object):
         l3.RESOURCE_ATTRIBUTE_MAP['routers'].update(
             routertype.EXTENDED_ATTRIBUTES_2_0['routers'])
         # also add description attribute to router and fip resources
-        l3.RESOURCE_ATTRIBUTE_MAP['routers'].update(
+        ext_res = (standardattrdescription.Standardattrdescription().
+                   get_extended_resources("2.0"))
+        if 'routers' in ext_res:
+            l3.RESOURCE_ATTRIBUTE_MAP['routers'].update(ext_res['routers'])
+        if 'floatingips' in ext_res:
+            (l3.RESOURCE_ATTRIBUTE_MAP['floatingips'].
+             update(ext_res['floatingips']))
+        """l3.RESOURCE_ATTRIBUTE_MAP['routers'].update(
             standardattrdescription.EXTENDED_ATTRIBUTES_2_0['routers'])
         l3.RESOURCE_ATTRIBUTE_MAP['floatingips'].update(
             standardattrdescription.EXTENDED_ATTRIBUTES_2_0['floatingips'])
+        """
         # finally, extend the global attribute map
         attributes.RESOURCE_ATTRIBUTE_MAP.update(
             l3.RESOURCE_ATTRIBUTE_MAP)
