@@ -205,7 +205,6 @@ class CiscoML2MechanismTestCase(test_plugin.Ml2PluginV2TestCase):
             mech_cisco_nexus.CiscoNexusMechanismDriver,
             '_is_supported_deviceowner').start()
         mock_deviceowner.return_value = False
-        self.addCleanup(mock_deviceowner.stop)
 
     @contextlib.contextmanager
     def _patch_ncclient(self, attr, value):
@@ -950,7 +949,6 @@ class TestCiscoPortsV2(CiscoML2MechanismTestCase,
         mock_get_dynamic_segment = mock.patch.object(ml2_db,
                                                 'get_dynamic_segment').start()
         mock_get_dynamic_segment.return_value = None
-        self.addCleanup(mock_get_dynamic_segment.stop)
 
         self.mock_segments_to_bind.return_value = [VXLAN_SEGMENT]
 
