@@ -17,6 +17,7 @@
 Implements a Nexus-OS NETCONF over SSHv2 API Client
 """
 
+import os
 import re
 import six
 import threading
@@ -96,9 +97,11 @@ class CiscoNexusDriver(object):
                 "total_count": 1,
                 "min": curr_timeout,
                 "max": curr_timeout}
-        LOG.debug("NEXUS_TIME_STATS %s: %s_timeout %f count %d "
-                  "average %f other %d min %f max %f",
+        LOG.debug("NEXUS_TIME_STATS %s, pid %s, tid %d: %s_timeout %f "
+                  "count %d average %f other %d min %f max %f",
                   switch,
+                  os.getpid(),
+                  threading.current_thread().ident,
                   which,
                   curr_timeout,
                   self.time_stats[which]["total_count"],
@@ -119,12 +122,10 @@ class CiscoNexusDriver(object):
             mgr.close_session()
             self.capture_and_print_timeshot(
                 starttime, "close",
-                other=threading.current_thread().ident,
                 switch=nexus_host)
         else:
             self.capture_and_print_timeshot(
                 starttime, "nomgr_close",
-                other=threading.current_thread().ident,
                 switch=nexus_host)
 
     # Driver lock introduced to prevent replay thread and
@@ -186,7 +187,6 @@ class CiscoNexusDriver(object):
             else:
                 self.capture_and_print_timeshot(
                     starttime, "get",
-                    other=threading.current_thread().ident,
                     switch=nexus_host)
                 if check_to_close_session and self._get_close_ssh_session():
                     self._close_session(mgr, nexus_host)
@@ -252,7 +252,6 @@ class CiscoNexusDriver(object):
 
         self.capture_and_print_timeshot(
             starttime, "edit",
-            other=threading.current_thread().ident,
             switch=nexus_host)
 
         # if configured, close the ncclient ssh session.
@@ -266,7 +265,6 @@ class CiscoNexusDriver(object):
         if hasattr(self.connections.get(nexus_host), 'connected'):
             self.capture_and_print_timeshot(
                 starttime, "cacheconnect",
-                other=threading.current_thread().ident,
                 switch=nexus_host)
             return self.connections[nexus_host]
 
@@ -290,13 +288,11 @@ class CiscoNexusDriver(object):
             # the original ncclient exception.
             self.capture_and_print_timeshot(
                 starttime, "connecterr",
-                other=threading.current_thread().ident,
                 switch=nexus_host)
             raise cexc.NexusConnectFailed(nexus_host=nexus_host, exc=e)
 
         self.capture_and_print_timeshot(
             starttime, "connect",
-            other=threading.current_thread().ident,
             switch=nexus_host)
         self.connections[nexus_host] = man
         return self.connections[nexus_host]
@@ -331,7 +327,6 @@ class CiscoNexusDriver(object):
         starttime = time.time()
         response = self._get_config(nexus_host, confstr)
         self.capture_and_print_timeshot(starttime, "getif",
-            other=threading.current_thread().ident,
             switch=nexus_host)
         LOG.debug("GET call returned interface %(if_type)s %(interface)s "
             "config", {'if_type': intf_type, 'interface': interface})
@@ -384,7 +379,6 @@ class CiscoNexusDriver(object):
                               config=confstr)
         self.capture_and_print_timeshot(
             starttime, "get_allif",
-            other=threading.current_thread().ident,
             switch=nexus_host)
 
     def get_version(self, nexus_host):
@@ -415,7 +409,6 @@ class CiscoNexusDriver(object):
         response = self._get_config(nexus_host, confstr)
         self.capture_and_print_timeshot(
             starttime, "gettype",
-            other=threading.current_thread().ident,
             switch=nexus_host)
         if response:
             nexus_type = re.findall(
@@ -445,7 +438,6 @@ class CiscoNexusDriver(object):
         snippet = snipp.CMD_VLAN_CREATE_SNIPPET % vlanid_range
         self.capture_and_print_timeshot(
             starttime, "set_all_vlan_states",
-            other=threading.current_thread().ident,
             switch=nexus_host)
         self.send_edit_string(nexus_host, snippet)
 
@@ -462,7 +454,6 @@ class CiscoNexusDriver(object):
 
         self.capture_and_print_timeshot(
             starttime, "get_create_vlan",
-            other=threading.current_thread().ident,
             switch=nexus_host)
 
         return snippet
@@ -484,7 +475,6 @@ class CiscoNexusDriver(object):
 
         self.capture_and_print_timeshot(
             starttime, "create_vlan_seg",
-            other=threading.current_thread().ident,
             switch=nexus_host)
 
     def delete_vlan(self, nexus_host, vlanid):
@@ -496,7 +486,6 @@ class CiscoNexusDriver(object):
                           allowed_exc_strs=["None of the VLANs exist"])
         self.capture_and_print_timeshot(
             starttime, "del_vlan",
-            other=threading.current_thread().ident,
             switch=nexus_host)
 
     def build_intf_confstr(self, snippet, intf_type, interface, vlanid):
@@ -534,7 +523,6 @@ class CiscoNexusDriver(object):
 
         self.capture_and_print_timeshot(
             starttime, "createif",
-            other=threading.current_thread().ident,
             switch=nexus_host)
 
         return confstr
@@ -557,7 +545,6 @@ class CiscoNexusDriver(object):
         self._edit_config(nexus_host, target='running', config=confstr)
         self.capture_and_print_timeshot(
             starttime, "delif",
-            other=threading.current_thread().ident,
             switch=nexus_host)
 
     def send_edit_string(self, nexus_host, confstr,
@@ -575,7 +562,6 @@ class CiscoNexusDriver(object):
 
         self.capture_and_print_timeshot(
             starttime, "send_edit",
-            other=threading.current_thread().ident,
             switch=nexus_host)
 
     def send_enable_vlan_on_trunk_int(self, nexus_host, vlanid, intf_type,
@@ -601,7 +587,6 @@ class CiscoNexusDriver(object):
                 is_native)
         self.capture_and_print_timeshot(
             starttime, "create_all",
-            other=threading.current_thread().ident,
             switch=nexus_host)
 
     def create_vlan_svi(self, nexus_host, vlan_id, gateway_ip):
