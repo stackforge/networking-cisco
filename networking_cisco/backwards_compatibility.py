@@ -14,6 +14,8 @@
 
 from distutils.version import StrictVersion
 from neutron import version
+from neutron.tests.common import base
+from neutron.tests.unit import testlib_api
 
 # Some constants and verifier functions have been deprecated but are still
 # used by earlier releases of neutron. In order to maintain
@@ -21,13 +23,23 @@ from neutron import version
 # that passes constants and functions according to version number.
 
 if StrictVersion(str(version.version_info)) >= StrictVersion('9.0.0'):
+    from neutron.conf import common as base_config
     from neutron_lib.api import validators
     from neutron_lib import constants
     ATTR_NOT_SPECIFIED = constants.ATTR_NOT_SPECIFIED
     is_attr_set = validators.is_attr_set
     IS_PRE_NEWTON = False
+
+    class MySQLTestCase(testlib_api.MySQLTestCaseMixin,
+            testlib_api.SqlTestCaseLight):
+        pass
 else:
     from neutron.api.v2 import attributes
+    from neutron.common import config as base_config
     ATTR_NOT_SPECIFIED = attributes.ATTR_NOT_SPECIFIED
     is_attr_set = attributes.is_attr_set
     IS_PRE_NEWTON = True
+
+    class MySQLTestCase(base.MySQLTestCase):
+        pass
+core_opts = base_config.core_opts
