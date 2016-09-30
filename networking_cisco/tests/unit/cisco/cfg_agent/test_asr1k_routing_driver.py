@@ -68,6 +68,7 @@ class ASR1kRoutingDriver(base.BaseTestCase):
 
         self.vrf = ('nrouter-' + FAKE_ID)[:iosxe_driver.IosXeRoutingDriver.
                                           DEV_NAME_LEN]
+        self.snat_prefix = self.vrf
         self.driver._get_vrfs = mock.Mock(return_value=[self.vrf])
         self.ex_gw_ip = '20.0.0.31'
         # VIP is same as gw_ip for user visible router
@@ -500,7 +501,7 @@ class ASR1kRoutingDriver(base.BaseTestCase):
         self.assert_edit_run_cfg(
             csr_snippets.CREATE_ACL, cfg_params_create_acl)
 
-        pool_name = "%s_nat_pool" % self.vrf
+        pool_name = "%s_nat_pool" % self.snat_prefix
         cfg_params_dyn_trans = (acl_name, pool_name, self.vrf)
         self.assert_edit_run_cfg(
             snippets.SET_DYN_SRC_TRL_POOL, cfg_params_dyn_trans)
@@ -536,7 +537,8 @@ class ASR1kRoutingDriver(base.BaseTestCase):
         self.assert_edit_run_cfg(
             csr_snippets.CREATE_ACL, cfg_params_create_acl)
 
-        pool_name = "%s_nat_pool" % vrf
+        snat_prefix = self.snat_prefix + "-" + region_id
+        pool_name = "%s_nat_pool" % snat_prefix
         cfg_params_dyn_trans = (acl_name, pool_name, vrf)
         self.assert_edit_run_cfg(
             snippets.SET_DYN_SRC_TRL_POOL, cfg_params_dyn_trans)
@@ -558,7 +560,7 @@ class ASR1kRoutingDriver(base.BaseTestCase):
                    'acl_prefix': 'neutron_acl',
                    'vlan': self.vlan_int,
                    'port': self.port['id'][:8]}
-        pool_name = "%s_nat_pool" % self.vrf
+        pool_name = "%s_nat_pool" % self.snat_prefix
 
         cfg_params_dyn_trans = (acl_name, pool_name, self.vrf)
         self.assert_edit_run_cfg(
@@ -584,7 +586,8 @@ class ASR1kRoutingDriver(base.BaseTestCase):
                    'vlan': self.vlan_int,
                    'port': self.port['id'][:8]}
 
-        pool_name = "%s_nat_pool" % vrf
+        snat_prefix = self.snat_prefix + "-" + region_id
+        pool_name = "%s_nat_pool" % snat_prefix
 
         cfg_params_dyn_trans = (acl_name, pool_name, vrf)
         self.assert_edit_run_cfg(
