@@ -504,7 +504,11 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
     def _get_hsrp_grp_num_from_ri(ri):
         return ri.router['ha_info']['group']
 
+    def _get_snat_prefix(self, ri, ext_port):
+        return self._get_vrf_name(ri)
+
     def _add_internal_nw_nat_rules(self, ri, port, ext_port):
+        snat_prefix = self._get_snat_prefix(ri, ext_port)
         vrf_name = self._get_vrf_name(ri)
         acl_no = self._generate_acl_num_from_port(port)
         internal_cidr = port['ip_cidr']
@@ -514,7 +518,7 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
         outer_itfc = self._get_interface_name_from_hosting_port(ext_port)
         self._nat_rules_for_internet_access(acl_no, internal_net,
                                             net_mask, inner_itfc,
-                                            outer_itfc, vrf_name)
+                                            outer_itfc, vrf_name, snat_prefix)
 
     def _nat_rules_for_internet_access(self,
                                        acl_no,
@@ -522,7 +526,8 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
                                        netmask,
                                        inner_itfc,
                                        outer_itfc,
-                                       vrf_name):
+                                       vrf_name,
+                                       snat_prefix):
         """Configure the NAT rules for an internal network.
 
         Configuring NAT rules in the CSR1kv is a three step process. First
@@ -549,7 +554,7 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
             conf_str = snippets.CREATE_ACL % (acl_no, network, netmask)
             self._edit_running_config(conf_str, 'CREATE_ACL')
 
-        pool_name = "%s_nat_pool" % vrf_name
+        pool_name = "%s_nat_pool" % snat_prefix
         conf_str = asr1k_snippets.SET_DYN_SRC_TRL_POOL % (acl_no, pool_name,
                                                           vrf_name)
         try:
@@ -602,14 +607,17 @@ class ASR1kRoutingDriver(iosxe_driver.IosXeRoutingDriver):
         # self._remove_dyn_nat_translations()
 
         # remove dynamic nat rules and acls
+        snat_prefix = self._get_snat_prefix(ri, ext_port)
         vrf_name = self._get_vrf_name(ri)
         ext_itfc_name = self._get_interface_name_from_hosting_port(ext_port)
         for acl in acls:
-            self._remove_dyn_nat_rule(acl, ext_itfc_name, vrf_name)
+            self._remove_dyn_nat_rule(acl, ext_itfc_name,
+                                      vrf_name, snat_prefix)
 
-    def _remove_dyn_nat_rule(self, acl_no, outer_itfc_name, vrf_name):
+    def _remove_dyn_nat_rule(self, acl_no,
+                             outer_itfc_name, vrf_name, snat_prefix):
         try:
-            pool_name = "%s_nat_pool" % (vrf_name)
+            pool_name = "%s_nat_pool" % (snat_prefix)
             confstr = (asr1k_snippets.REMOVE_DYN_SRC_TRL_POOL %
                 (acl_no, pool_name, vrf_name))
             self._edit_running_config(confstr, 'REMOVE_DYN_SRC_TRL_POOL')
