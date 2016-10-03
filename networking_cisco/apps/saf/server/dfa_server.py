@@ -236,10 +236,12 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
         self.dcnm_event = None
 
         # Create segmentation id pool.
-        seg_id_min = int(cfg.dcnm.segmentation_id_min) + 25
+        seg_id_min = int(cfg.dcnm.segmentation_id_min)
         seg_id_max = int(cfg.dcnm.segmentation_id_max)
-        self.segmentation_pool = set(six.moves.range(
-            seg_id_min, seg_id_max + 1))
+        seg_reuse_timeout = int(cfg.dcnm.segmentation_reuse_timeout)
+        self.seg_drvr = dfa_dbm.DfaSegmentTypeDriver(
+            seg_id_min, seg_id_max, constants.RES_SEGMENT,
+            cfg, reuse_timeout=seg_reuse_timeout)
 
         # Create queue for exception returned by a thread.
         self._excpq = queue.Queue()
@@ -257,6 +259,25 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
         self._gateway_mac = cfg.dcnm.gateway_mac
         self.dcnm_dhcp = (cfg.dcnm.dcnm_dhcp.lower() == 'true')
         self.dcnm_client = cdr.DFARESTClient(cfg)
+
+        # Register segmentation id pool with DCNM
+        orch_id = cfg.dcnm.orchestrator_id
+        try:
+            segid_range = self.dcnm_client.get_segmentid_range(orch_id)
+            if segid_range is None:
+                self.dcnm_client.set_segmentid_range(orch_id, seg_id_min,
+                                                     seg_id_max)
+            else:
+                conf_min = int(segid_range["segmentIdRanges"].split("-")[0])
+                conf_max = int(segid_range["segmentIdRanges"].split("-")[1])
+                if conf_min != seg_id_min or conf_max != seg_id_max:
+                    self.dcnm_client.update_segmentid_range(orch_id,
+                                                            seg_id_min,
+                                                            seg_id_max)
+        except dexc.DfaClientRequestFailed as exc:
+            LOG.critical(("Segment ID range could not be created/updated" +
+                         " on DCNM: %s") % (exc))
+            raise SystemExit(exc)
 
         self.populate_cfg_dcnm(cfg, self.dcnm_client)
         self.populate_event_queue(cfg, self.pqueue)
@@ -325,10 +346,7 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
             self.network[net.network_id]['tenant_id'] = net.tenant_id
             self.network[net.network_id]['name'] = net.name
             self.network[net.network_id]['id'] = net.network_id
-
-            # Remove the used segmentation id from the pool.
-            if net.segmentation_id in self.segmentation_pool:
-                self.segmentation_pool.remove(net.segmentation_id)
+            self.network[net.network_id]['vlan'] = net.vlan
 
         LOG.info(_LI('Network info cache: %s'), self.network)
 
@@ -413,7 +431,8 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
                       len(':'.join((proj_name, part_name))))
             return
         try:
-            self.dcnm_client.create_project(proj_name, part_name, dci_id,
+            self.dcnm_client.create_project(self.cfg.dcnm.orchestrator_id,
+                                            proj_name, part_name, dci_id,
                                             proj.description)
         except dexc.DfaClientRequestFailed:
             # Failed to send create project in DCNM.
@@ -479,7 +498,8 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
         try:
             self.dcnm_client.update_project(new_proj_name,
                                             self.cfg.dcnm.
-                                            default_partition_name, new_dci_id)
+                                            default_partition_name,
+                                            dci_id=new_dci_id)
         except dexc.DfaClientRequestFailed:
             # Failed to update project in DCNM.
             # Save the info and mark it as failure and retry it later.
@@ -583,17 +603,11 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
         self.network_sub_create_notif(snet.get('tenant_id'), tenant_name,
                                       snet.get('cidr'))
 
-    def _get_segmentation_id(self, segid):
-        """Allocate segmentation id."""
+    def _get_segmentation_id(self, netid, segid, source):
+        """Allocate segmentation id. """
 
-        try:
-            newseg = (segid, self.segmentation_pool.remove(segid)
-                      if segid and segid in self.segmentation_pool else
-                      self.segmentation_pool.pop())
-            return newseg[0] if newseg[0] else newseg[1]
-        except KeyError:
-            LOG.exception(_LE('Error: Segmentation id pool is empty'))
-            return 0
+        return self.seg_drvr.allocate_segmentation_id(netid, seg_id=segid,
+                                                      source=source)
 
     def network_create_event(self, network_info):
         """Process network create event.
@@ -672,7 +686,7 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
             return
 
         pseg_id = self.network[net_id].get('provider:segmentation_id')
-        seg_id = self._get_segmentation_id(pseg_id)
+        seg_id = self._get_segmentation_id(net_id, pseg_id, 'openstack')
         self.network[net_id]['segmentation_id'] = seg_id
         try:
             cfgp, fwd_mod = self.dcnm_client.get_config_profile_for_network(
@@ -713,7 +727,7 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
         try:
             self.dcnm_client.delete_network(tenant_name, net)
             # Put back the segmentation id into the pool.
-            self.segmentation_pool.add(segid)
+            self.seg_drvr.release_segmentation_id(segid)
 
             # Remove entry from database and cache.
             self.delete_network_db(net_id)
@@ -771,7 +785,7 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
 
         net_id = utils.get_uuid()
         pseg_id = dcnm_net_info.get('segmentId')
-        seg_id = self._get_segmentation_id(pseg_id)
+        seg_id = self._get_segmentation_id(net_id, pseg_id, 'DCNM')
         cfgp = dcnm_net_info.get('profileName')
         net_name = dcnm_net_info.get('networkName')
         fwd_mod = self.dcnm_client.config_profile_fwding_mode_get(cfgp)

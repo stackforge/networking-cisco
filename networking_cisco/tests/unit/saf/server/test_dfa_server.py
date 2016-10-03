@@ -35,6 +35,7 @@ FAKE_NETWORK_ID = '949fdd05-a26a-4819-a829-9fc2285de6ff'
 FAKE_CFG_PROF_ID = '8c30f360ffe948109c28ab56f69a82e1'
 FAKE_SEG_ID = 12345
 FAKE_PROJECT_NAME = 'test_dfa_project'
+FAKE_ORCH_ID = 'test_openstack'
 FAKE_PROJECT_ID = 'aee5da7e699444889c662cf7ec1c8de7'
 FAKE_CFG_PROFILE_NAME = 'defaultNetworkL2Profile'
 FAKE_INSTANCE_NAME = 'test_dfa_instance'
@@ -114,10 +115,19 @@ class TestDFAServer(base.BaseTestCase):
         config.default_dcnm_opts['dcnm']['timeout_resp'] = 0.01
         config.default_dcnm_opts['dcnm']['segmentation_id_min'] = 10000
         config.default_dcnm_opts['dcnm']['segmentation_id_max'] = 20000
+        config.default_dcnm_opts['dcnm']['orchestrator_id'] = FAKE_ORCH_ID
         self.cfg = config.CiscoDFAConfig().cfg
         self.segid = int(self.cfg.dcnm.segmentation_id_min) + 10
+        self.seg_Drvr = mock.patch(
+            'networking_cisco.apps.saf.db.dfa_db_models.'
+            'DfaSegmentTypeDriver').start()
 
         self.dfa_server = ds.DfaServer(self.cfg)
+        mock.patch.object(self.dfa_server, '_get_segmentation_id',
+                          return_value=12345).start()
+        mock.patch.object(self.dfa_server.seg_drvr,
+                          'allocate_segmentation_id',
+                          return_value=12345)
         self.dciid = str(123)
         self.proj_desc = 'Unit Test Project'
         projs = [
@@ -203,8 +213,10 @@ class TestDFAServer(base.BaseTestCase):
         proj.name = FAKE_PROJECT_NAME + ':dci_id:' + dciid
         self.dfa_server.project_create_event(proj_info)
         expected_calls = [
-            mock.call(FAKE_PROJECT_NAME, part_name, None, proj.description),
-            mock.call(FAKE_PROJECT_NAME, part_name, dciid, proj.description)]
+            mock.call(FAKE_ORCH_ID, FAKE_PROJECT_NAME, part_name, None,
+                      proj.description),
+            mock.call(FAKE_ORCH_ID, FAKE_PROJECT_NAME, part_name, dciid,
+                      proj.description)]
         self.assertEqual(
             expected_calls,
             self.dfa_server.dcnm_client.create_project.call_args_list)
@@ -238,7 +250,7 @@ class TestDFAServer(base.BaseTestCase):
             self.dfa_server.dcnm_client.update_project.called)
         expected_calls = [mock.call(FAKE_PROJECT_NAME,
                                     self.cfg.dcnm.default_partition_name,
-                                    str(124))]
+                                    dci_id=str(124))]
         self.assertEqual(
             expected_calls,
             self.dfa_server.dcnm_client.update_project.call_args_list)
@@ -320,7 +332,6 @@ class TestDFAServer(base.BaseTestCase):
         """Test case for network delete event."""
 
         self._load_network_info()
-        self.assertFalse(self.segid in self.dfa_server.segmentation_pool)
         network_info = {'network_id': FAKE_NETWORK_ID}
         self.dfa_server.get_vms.return_value = []
         self.dfa_server.network_delete_event(network_info)
@@ -330,7 +341,8 @@ class TestDFAServer(base.BaseTestCase):
         self.assertTrue(arg1[0] == FAKE_PROJECT_NAME)
         self.assertTrue(arg1[1].name == FAKE_NETWORK_NAME)
         self.assertTrue(arg1[1].segmentation_id == self.segid)
-        self.assertTrue(self.segid in self.dfa_server.segmentation_pool)
+        self.dfa_server.seg_drvr.release_segmentation_id.assert_called_with(
+            self.segid)
         self.assertTrue(self.dfa_server.delete_network_db.called)
 
     def test_dcnm_network_create_event(self):
