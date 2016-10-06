@@ -1,0 +1,9 @@
+Code-Review+2: Paul Michali <pc@michali.net>
+Code-Review+2: Sridar Kandaswamy <skandasw@cisco.com>
+Workflow+1: Sridar Kandaswamy <skandasw@cisco.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 06 Oct 2016 19:48:43 +0000
+Reviewed-on: https://review.openstack.org/361700
+Project: openstack/networking-cisco
+Branch: refs/heads/master
