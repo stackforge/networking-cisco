@@ -1,0 +1,11 @@
+Code-Review+1: Paul Bourke (pbourke) <paul.bourke@oracle.com>
+Code-Review+1: Ann Taraday <akamyshnikova@mirantis.com>
+Code-Review+2: Paul Michali <pc@michali.net>
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 10 Oct 2016 11:43:15 +0000
+Reviewed-on: https://review.openstack.org/369981
+Project: openstack/networking-cisco
+Branch: refs/heads/master
