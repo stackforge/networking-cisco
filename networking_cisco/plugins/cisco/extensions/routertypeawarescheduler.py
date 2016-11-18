@@ -20,7 +20,6 @@ import webob.exc
 from networking_cisco._i18n import _, _LE
 
 from neutron.api import extensions
-from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import base
 from neutron.api.v2 import resource
 from neutron.common import rpc as n_rpc
@@ -33,6 +32,7 @@ from neutron import wsgi
 from neutron_lib.api import converters as conv
 from neutron_lib import exceptions as n_exc
 
+from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.extensions import ciscohostingdevicemanager
 
 
@@ -141,12 +141,12 @@ EXTENDED_ATTRIBUTES_2_0 = {
         AUTO_SCHEDULE_ATTR: {'allow_post': True, 'allow_put': True,
                              'convert_to': conv.convert_to_boolean,
                              'validate': {'type:boolean': None},
-                             'default': attr.ATTR_NOT_SPECIFIED,
+                             'default': bc.constants.ATTR_NOT_SPECIFIED,
                              'is_visible': True},
         SHARE_HOST_ATTR: {'allow_post': True, 'allow_put': False,
                           'convert_to': conv.convert_to_boolean,
                           'validate': {'type:boolean': None},
-                          'default': attr.ATTR_NOT_SPECIFIED,
+                          'default': bc.constants.ATTR_NOT_SPECIFIED,
                           'is_visible': True},
     }
 }
