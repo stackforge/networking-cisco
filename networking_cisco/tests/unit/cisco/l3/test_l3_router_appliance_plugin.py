@@ -13,20 +13,12 @@
 #    under the License.
 
 import contextlib
-import os
-
-
 import mock
-from oslo_config import cfg
-from oslo_db import exception as db_exc
-from oslo_utils import uuidutils
-import six
-from sqlalchemy import exc as inner_db_exc
+import os
 import unittest
 
 from neutron.api.v2 import attributes
 from neutron.callbacks import registry
-from neutron.common import constants as l3_constants
 from neutron import context as n_context
 from neutron.db import agents_db
 from neutron.extensions import external_net as external_net
@@ -38,6 +30,11 @@ from neutron.plugins.common import constants as service_constants
 from neutron.tests.unit.db import test_db_base_plugin_v2
 from neutron.tests.unit.extensions import test_extraroute
 from neutron.tests.unit.extensions import test_l3
+from oslo_config import cfg
+from oslo_db import exception as db_exc
+from oslo_utils import uuidutils
+import six
+from sqlalchemy import exc as inner_db_exc
 
 from networking_cisco._i18n import _
 from networking_cisco import backwards_compatibility as bc
@@ -181,9 +178,8 @@ class L3RouterApplianceTestCaseBase(
         # Ensure we use policy definitions from our repo
         cfg.CONF.set_override('policy_file', policy_path, 'oslo_policy')
 
-        self.core_plugin = manager.NeutronManager.get_plugin()
-        self.l3_plugin = manager.NeutronManager.get_service_plugins().get(
-            service_constants.L3_ROUTER_NAT)
+        self.core_plugin = bc.get_plugin()
+        self.l3_plugin = bc.get_plugin(service_constants.L3_ROUTER_NAT)
 
         self.setup_notification_driver()
 
@@ -816,7 +812,7 @@ class L3RouterApplianceNoGbpTestCase(test_l3.L3NatTestCaseMixin,
         self.l3_plugin.create_floatingip(ctx, floating_ip)
         self.l3_plugin._create_floatingip_gbp.assert_not_called()
         self.l3_plugin._create_floatingip_neutron.assert_called_once_with(ctx,
-            floating_ip, initial_status=l3_constants.FLOATINGIP_STATUS_ACTIVE)
+            floating_ip, initial_status=bc.constants.FLOATINGIP_STATUS_ACTIVE)
 
     def test_update_floatingip_no_gbp(self):
         self.l3_plugin._do_update_floatingip = mock.Mock()
