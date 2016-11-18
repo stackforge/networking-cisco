@@ -18,12 +18,12 @@ from oslo_config import cfg
 from oslo_utils import importutils
 
 from neutron.api.rpc.agentnotifiers import dhcp_rpc_agent_api
-from neutron.common import constants
 from neutron.common import topics
 from neutron.db import agentschedulers_db
 from neutron.plugins.ml2 import rpc
 from neutron.tests.unit.db import test_agentschedulers_db
 
+from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.common import cisco_constants as c_const
 from networking_cisco.plugins.cisco.extensions import (
     ciscohostingdevicemanager as ciscodevmgr)
@@ -50,7 +50,7 @@ class TestAgentSchedCorePlugin(device_manager_test_support.TestCorePlugin,
                                agentschedulers_db.DhcpAgentSchedulerDbMixin):
 
     supported_extension_aliases = ["external-net", "agent",
-                                   constants.DHCP_AGENT_SCHEDULER_EXT_ALIAS,
+                                   bc.constants.DHCP_AGENT_SCHEDULER_EXT_ALIAS,
                                    ciscodevmgr.HOSTING_DEVICE_MANAGER_ALIAS]
 
     def __init__(self):
@@ -62,7 +62,7 @@ class TestAgentSchedCorePlugin(device_manager_test_support.TestCorePlugin,
     def _start_rpc_notifiers(self):
         """Initialize RPC notifiers for agents."""
         self.notifier = rpc.AgentNotifierApi(topics.AGENT)
-        self.agent_notifiers[constants.AGENT_TYPE_DHCP] = (
+        self.agent_notifiers[bc.constants.AGENT_TYPE_DHCP] = (
             dhcp_rpc_agent_api.DhcpAgentNotifyAPI())
 
 
