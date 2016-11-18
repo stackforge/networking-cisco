@@ -22,27 +22,24 @@ from keystoneclient import exceptions as k_exceptions
 from keystoneclient import session
 from keystoneclient.v2_0 import client as k_client
 from keystoneclient.v3 import client
+from neutron.common import utils
+from neutron import context as neutron_context
+from neutron import manager
+from neutron.plugins.common import constants as svc_constants
+from neutron_lib import exceptions as n_exc
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 from oslo_utils import importutils
 from oslo_utils import timeutils
 from oslo_utils import uuidutils
-
 from sqlalchemy import func
 from sqlalchemy.orm import exc
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import expression as expr
 
 from networking_cisco._i18n import _, _LE, _LI, _LW
-
-from neutron.common import utils
-from neutron import context as neutron_context
-from neutron import manager
-from neutron.plugins.common import constants as svc_constants
-
-from neutron_lib import exceptions as n_exc
-
+from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.common import (cisco_constants as
                                                    c_constants)
 from networking_cisco.plugins.cisco.db.device_manager import hd_models
@@ -211,7 +208,7 @@ class HostingDeviceManagerMixin(hosting_devices_db.HostingDeviceDBMixin):
             tenant_id = cls.l3_tenant_id()
             if not tenant_id:
                 return
-            net = manager.NeutronManager.get_plugin().get_networks(
+            net = bc.get_plugin().get_networks(
                 neutron_context.get_admin_context(),
                 {'tenant_id': [tenant_id],
                  'name': [cfg.CONF.general.management_network]},
