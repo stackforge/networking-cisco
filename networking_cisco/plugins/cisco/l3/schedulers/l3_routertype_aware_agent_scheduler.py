@@ -18,15 +18,15 @@ from sqlalchemy import sql
 from neutron.db import l3_agentschedulers_db
 from neutron.db import l3_db
 from neutron.scheduler import l3_agent_scheduler
-from neutron_lib import constants as lib_constants
 
+from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.db.l3 import l3_models
 from networking_cisco.plugins.cisco.extensions import routertype
 
 LOG = logging.getLogger(__name__)
 
 
-AGENT_TYPE_L3 = lib_constants.AGENT_TYPE_L3
+AGENT_TYPE_L3 = bc.constants.AGENT_TYPE_L3
 
 
 class L3RouterTypeAwareScheduler(l3_agent_scheduler.L3Scheduler):
@@ -36,8 +36,10 @@ class L3RouterTypeAwareScheduler(l3_agent_scheduler.L3Scheduler):
     namespace based routers to l3 agents.
     """
 
-    def _get_unscheduled_routers(self, context, plugin):
+    def _get_unscheduled_routers(self, plugin, context):
         """Get routers with no agent binding."""
+        if bc.NEUTRON_VERSION <= bc.NEUTRON_NEWTON_VERSION:
+            context, plugin = plugin, context
         # TODO(gongysh) consider the disabled agent's router
         no_agent_binding = ~sql.exists().where(
             l3_db.Router.id ==
@@ -55,8 +57,10 @@ class L3RouterTypeAwareScheduler(l3_agent_scheduler.L3Scheduler):
                 context, filters={'id': unscheduled_router_ids})
         return []
 
-    def _filter_unscheduled_routers(self, context, plugin, routers):
+    def _filter_unscheduled_routers(self, plugin, context, routers):
         """Filter from list of routers the ones that are not scheduled."""
+        if bc.NEUTRON_VERSION <= bc.NEUTRON_NEWTON_VERSION:
+            context, plugin = plugin, context
         unscheduled_routers = []
         for router in routers:
             if (router[routertype.TYPE_ATTR] !=
