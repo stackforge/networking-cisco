@@ -12,9 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from types import ModuleType
+
 from distutils.version import StrictVersion
 
 from neutron import version
+
 
 # Some constants and verifier functions have been deprecated but are still
 # used by earlier releases of neutron. In order to maintain
@@ -24,17 +27,42 @@ from neutron import version
 NEUTRON_VERSION = StrictVersion(str(version.version_info))
 NEUTRON_NEWTON_VERSION = StrictVersion('9.0.0')
 
+n_c = __import__('neutron.common.constants', fromlist=['common.constants'])
+
 # 9.0.0 is Newton
 if NEUTRON_VERSION >= NEUTRON_NEWTON_VERSION:
     from neutron.conf import common as base_config
     from neutron_lib.api import validators
-    from neutron_lib import constants
-    ATTR_NOT_SPECIFIED = constants.ATTR_NOT_SPECIFIED
     is_attr_set = validators.is_attr_set
+    n_c_attr_names = dir(n_c)
 # Pre Newton
 elif NEUTRON_VERSION < NEUTRON_NEWTON_VERSION:
     from neutron.api.v2 import attributes
     from neutron.common import config as base_config
     ATTR_NOT_SPECIFIED = attributes.ATTR_NOT_SPECIFIED
     is_attr_set = attributes.is_attr_set
+    n_c_attr_names = n_c.my_globals
 core_opts = base_config.core_opts
+
+# Bring in the union of all constants in neutron.common.constants
+# and neutron_lib.constants. Handle any duplicates by using the
+# values in neutron_lib.
+#
+# In the plugin code, replace the following imports:
+#     from neutron.common import constants
+#     from neutron_lib import constants
+# with (something like this):
+#     from networking_cisco import backward_compatibility as bc
+# Then constants are referenced as shown in this example:
+#     port['devide_owner'] = bc.constants.DEVICE_OWNER_ROUTER_INTF
+
+ignore = frozenset(['__builtins__', '__doc__', '__file__', '__name__',
+                    '__package__', '__path__', '__version__'])
+constants = __import__('neutron_lib.constants', fromlist=['constants'])
+for attr_name in n_c_attr_names:
+    attr = getattr(n_c, attr_name)
+    if attr_name in ignore or isinstance(attr, ModuleType):
+        continue
+    else:
+        setattr(constants, attr_name, attr)
+del n_c, ignore, attr_name, attr

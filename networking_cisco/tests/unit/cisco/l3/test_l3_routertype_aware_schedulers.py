@@ -25,7 +25,6 @@ from sqlalchemy import exc as inner_db_exc
 from webob import exc
 
 from neutron.api.rpc.agentnotifiers import l3_rpc_agent_api
-from neutron.common import constants
 from neutron.common import test_lib
 from neutron import context as n_context
 from neutron.extensions import agent
@@ -36,8 +35,8 @@ from neutron.tests import fake_notifier
 from neutron.tests.unit.db import test_agentschedulers_db
 from neutron.tests.unit.extensions import test_l3
 from neutron.tests.unit.scheduler import test_l3_agent_scheduler
-from neutron_lib import constants as lib_constants
 
+from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.common import cisco_constants as c_const
 from networking_cisco.plugins.cisco.db.l3 import ha_db
 from networking_cisco.plugins.cisco.db.scheduler import (
@@ -101,11 +100,11 @@ class TestSchedulingCapableL3RouterServicePlugin(
         l3_router_test_support.TestL3RouterServicePlugin.
         supported_extension_aliases +
         [routertypeawarescheduler.ROUTERTYPE_AWARE_SCHEDULER_ALIAS,
-         constants.L3_AGENT_SCHEDULER_EXT_ALIAS])
+         bc.constants.L3_AGENT_SCHEDULER_EXT_ALIAS])
 
     def __init__(self):
         self.agent_notifiers.update(
-            {lib_constants.AGENT_TYPE_L3: l3_rpc_agent_api.L3AgentNotifyAPI(),
+            {bc.constants.AGENT_TYPE_L3: l3_rpc_agent_api.L3AgentNotifyAPI(),
              c_const.AGENT_TYPE_L3_CFG:
              l3_router_rpc_cfg_agent_api.L3RouterCfgAgentNotifyAPI(self)})
         self.router_scheduler = importutils.import_object(
@@ -187,14 +186,14 @@ class L3RoutertypeAwareL3AgentSchedulerTestCase(
                                      external_gw=None):
         # Parent test class run tests that use this function with L3 agent
         # notifier set to None so we do the same.
-        self.l3_plugin.agent_notifiers[lib_constants.AGENT_TYPE_L3] = None
+        self.l3_plugin.agent_notifiers[bc.constants.AGENT_TYPE_L3] = None
         super(L3RoutertypeAwareL3AgentSchedulerTestCase,
               self)._test_add_router_to_l3_agent()
 
     def test_add_router_to_l3_agent_dvr_to_snat(self):
         # Parent test class run tests that use this function with L3 agent
         # notifier set to None so we do the same.
-        self.l3_plugin.agent_notifiers[lib_constants.AGENT_TYPE_L3] = None
+        self.l3_plugin.agent_notifiers[bc.constants.AGENT_TYPE_L3] = None
         super(L3RoutertypeAwareL3AgentSchedulerTestCase,
               self).test_add_router_to_l3_agent_dvr_to_snat()
 
@@ -1293,7 +1292,7 @@ class TestSchedulingHACapableL3RouterServicePlugin(
         TestSchedulingCapableL3RouterServicePlugin.
         supported_extension_aliases +
         [routertypeawarescheduler.ROUTERTYPE_AWARE_SCHEDULER_ALIAS,
-         constants.L3_AGENT_SCHEDULER_EXT_ALIAS,
+         bc.constants.L3_AGENT_SCHEDULER_EXT_ALIAS,
          ha.HA_ALIAS])
 
     def cleanup_after_test(self):
