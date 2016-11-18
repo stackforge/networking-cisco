@@ -26,7 +26,6 @@ import unittest
 
 from neutron.api.v2 import attributes
 from neutron.callbacks import registry
-from neutron.common import constants as l3_constants
 from neutron import context as n_context
 from neutron.db import agents_db
 from neutron.extensions import external_net as external_net
@@ -816,7 +815,7 @@ class L3RouterApplianceNoGbpTestCase(test_l3.L3NatTestCaseMixin,
         self.l3_plugin.create_floatingip(ctx, floating_ip)
         self.l3_plugin._create_floatingip_gbp.assert_not_called()
         self.l3_plugin._create_floatingip_neutron.assert_called_once_with(ctx,
-            floating_ip, initial_status=l3_constants.FLOATINGIP_STATUS_ACTIVE)
+            floating_ip, initial_status=bc.constants.FLOATINGIP_STATUS_ACTIVE)
 
     def test_update_floatingip_no_gbp(self):
         self.l3_plugin._do_update_floatingip = mock.Mock()
