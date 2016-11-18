@@ -24,6 +24,7 @@ from neutron_lib import exceptions
 
 from neutron_lib.api import converters as conv
 
+from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.common import utils
 
 
@@ -85,7 +86,7 @@ EXTENDED_ATTRIBUTES_2_0 = {
     'routers': {
         TYPE_ATTR: {'allow_post': True, 'allow_put': True,
                     'validate': {'type:string': None},
-                    'default': attr.ATTR_NOT_SPECIFIED,
+                    'default': bc.constants.ATTR_NOT_SPECIFIED,
                     'is_visible': True},
     }
 }

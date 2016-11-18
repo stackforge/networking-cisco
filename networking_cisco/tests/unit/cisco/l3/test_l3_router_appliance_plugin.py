@@ -13,31 +13,27 @@
 #    under the License.
 
 import contextlib
-import os
-
-
 import mock
-from oslo_config import cfg
-from oslo_db import exception as db_exc
-from oslo_utils import uuidutils
-import six
-from sqlalchemy import exc as inner_db_exc
+import os
 import unittest
 
 from neutron.api.v2 import attributes
 from neutron.callbacks import registry
-from neutron.common import constants as l3_constants
 from neutron import context as n_context
 from neutron.db import agents_db
 from neutron.extensions import external_net as external_net
 from neutron.extensions import extraroute
 from neutron.extensions import l3
 from neutron.extensions import providernet as pnet
-from neutron import manager
 from neutron.plugins.common import constants as service_constants
 from neutron.tests.unit.db import test_db_base_plugin_v2
 from neutron.tests.unit.extensions import test_extraroute
 from neutron.tests.unit.extensions import test_l3
+from oslo_config import cfg
+from oslo_db import exception as db_exc
+from oslo_utils import uuidutils
+import six
+from sqlalchemy import exc as inner_db_exc
 
 from networking_cisco._i18n import _
 from networking_cisco import backwards_compatibility as bc
@@ -181,9 +177,8 @@ class L3RouterApplianceTestCaseBase(
         # Ensure we use policy definitions from our repo
         cfg.CONF.set_override('policy_file', policy_path, 'oslo_policy')
 
-        self.core_plugin = manager.NeutronManager.get_plugin()
-        self.l3_plugin = manager.NeutronManager.get_service_plugins().get(
-            service_constants.L3_ROUTER_NAT)
+        self.core_plugin = bc.get_plugin()
+        self.l3_plugin = bc.get_plugin(service_constants.L3_ROUTER_NAT)
 
         self.setup_notification_driver()
 
@@ -729,17 +724,16 @@ class L3RouterApplianceGbpTestCase(test_l3.L3NatTestCaseMixin,
 
     @contextlib.contextmanager
     def _mock_neutron_service_plugins(self):
-        """Context manager for mocking get_service_plugins
+        """Context manager for mocking get_plugin
 
         This is required to mock and unmock the function as close to where its
         being used as possible.
         """
-        with mock.patch.object(manager.NeutronManager,
-                               'get_service_plugins') as get_svc_plugin:
-            get_svc_plugin.return_value = {
-                'GROUP_POLICY': object(),
-                service_constants.L3_ROUTER_NAT: self}
-            yield get_svc_plugin
+        with mock.patch.object(bc, 'get_plugin') as get_plugin:
+            get_plugin.side_effect = lambda svc='CORE': {
+                'CORE': self.core_plugin, 'GROUP_POLICY': object(),
+                service_constants.L3_ROUTER_NAT: self}[svc]
+            yield get_plugin
 
     def test_is_gbp_workflow(self):
         with self._mock_neutron_service_plugins():
@@ -748,7 +742,7 @@ class L3RouterApplianceGbpTestCase(test_l3.L3NatTestCaseMixin,
     def test_create_floatingip_gbp(self):
         kwargs = {'arg_list': (external_net.EXTERNAL,),
                   external_net.EXTERNAL: True}
-        self.l3_plugin._update_fip_assoc = mock.Mock()
+        self.l3_plugin._update_fip_assoc = mock.Mock(return_value={})
         with self.network(**kwargs) as net:
             with self.subnet(network=net, cidr='200.0.0.0/22') as sub:
                 subnet = sub['subnet']
@@ -816,7 +810,7 @@ class L3RouterApplianceNoGbpTestCase(test_l3.L3NatTestCaseMixin,
         self.l3_plugin.create_floatingip(ctx, floating_ip)
         self.l3_plugin._create_floatingip_gbp.assert_not_called()
         self.l3_plugin._create_floatingip_neutron.assert_called_once_with(ctx,
-            floating_ip, initial_status=l3_constants.FLOATINGIP_STATUS_ACTIVE)
+            floating_ip, initial_status=bc.constants.FLOATINGIP_STATUS_ACTIVE)
 
     def test_update_floatingip_no_gbp(self):
         self.l3_plugin._do_update_floatingip = mock.Mock()
