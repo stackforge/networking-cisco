@@ -16,11 +16,11 @@
 from oslo_log import log as logging
 import oslo_messaging
 
-from neutron.common import constants
 from neutron.common import rpc as n_rpc
 from neutron.common import topics
 from neutron.common import utils
 from neutron import manager
+from neutron_lib import constants
 
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.extensions import ciscocfgagentscheduler

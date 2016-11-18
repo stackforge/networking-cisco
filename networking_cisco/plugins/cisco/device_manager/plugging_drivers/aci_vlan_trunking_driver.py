@@ -17,11 +17,11 @@ import re
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from neutron.common import constants as l3_constants
-from neutron.common import exceptions as n_exc
 from neutron.extensions import l3
 from neutron import manager
 from neutron.plugins.common import constants as svc_constants
+from neutron_lib import constants
+from neutron_lib import exceptions as n_exc
 
 from networking_cisco._i18n import _, _LI, _LE
 from networking_cisco.plugins.cisco.device_manager.plugging_drivers import (
@@ -36,8 +36,8 @@ APIC_SNAT_SUBNET = 'host-snat-pool-for-internal-use'
 APIC_SNAT_NET = 'host-snat-network-for-internal-use'
 EXTERNAL_GW_INFO = l3.EXTERNAL_GW_INFO
 UUID_REGEX = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
-DEVICE_OWNER_ROUTER_GW = l3_constants.DEVICE_OWNER_ROUTER_GW
-DEVICE_OWNER_ROUTER_INTF = l3_constants.DEVICE_OWNER_ROUTER_INTF
+DEVICE_OWNER_ROUTER_GW = constants.DEVICE_OWNER_ROUTER_GW
+DEVICE_OWNER_ROUTER_INTF = constants.DEVICE_OWNER_ROUTER_INTF
 ROUTER_ROLE_ATTR = routerrole.ROUTER_ROLE_ATTR
 
 

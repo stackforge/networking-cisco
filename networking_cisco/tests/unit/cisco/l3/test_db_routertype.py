@@ -21,17 +21,16 @@ from oslo_log import log as logging
 import six
 import webob.exc
 
-from networking_cisco._i18n import _LE
-
-from neutron.common import exceptions as n_exc
 from neutron import context as n_context
 from neutron import manager
 from neutron.plugins.common import constants
 from neutron.tests.unit.db import test_db_base_plugin_v2
 
 from neutron_lib import constants as n_const
+from neutron_lib import exceptions as n_exc
 
 import networking_cisco
+from networking_cisco._i18n import _LE
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.common import (cisco_constants as
                                                    c_constants)

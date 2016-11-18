@@ -24,17 +24,15 @@ from sqlalchemy.orm import exc
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import expression as expr
 
-from networking_cisco._i18n import _, _LW
-
-from neutron.common import exceptions as n_exc
 from neutron.common import utils
 from neutron.db import l3_db
 from neutron.db import model_base
 from neutron.db import models_v2
 from neutron.extensions import l3
-
 from neutron_lib import constants as l3_constants
+from neutron_lib import exceptions as n_exc
 
+from networking_cisco._i18n import _, _LW
 from networking_cisco import backwards_compatibility as bc_attr
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.common import utils as cisco_utils

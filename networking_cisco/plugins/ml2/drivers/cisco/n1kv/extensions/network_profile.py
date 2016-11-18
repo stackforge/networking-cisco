@@ -17,7 +17,6 @@ import abc
 import six
 
 from neutron.api import extensions
-from neutron.api.v2 import attributes
 from neutron.api.v2 import base
 from neutron import manager
 from neutron.services import service_base as sb
@@ -25,7 +24,9 @@ from neutron.services import service_base as sb
 from neutron_lib.api import converters as conv
 from neutron_lib import constants as lib_constants
 
+from networking_cisco import backwards_compatibility as bc_attr
 from networking_cisco.plugins.ml2.drivers.cisco.n1kv import constants
+
 
 NETWORK_PROFILE = 'network_profile'
 NETWORK_PROFILES = NETWORK_PROFILE + 's'
@@ -51,12 +52,12 @@ RESOURCE_ATTRIBUTE_MAP = {
         'sub_type': {
             'allow_post': True, 'allow_put': False,
             'is_visible': True,
-            'default': attributes.ATTR_NOT_SPECIFIED
+            'default': bc_attr.ATTR_NOT_SPECIFIED
         },
         'multicast_ip_range': {
             'allow_post': True, 'allow_put': True,
             'is_visible': True,
-            'default': attributes.ATTR_NOT_SPECIFIED
+            'default': bc_attr.ATTR_NOT_SPECIFIED
         },
         'multicast_ip_index': {
             'allow_post': False, 'allow_put': False,
@@ -65,12 +66,12 @@ RESOURCE_ATTRIBUTE_MAP = {
         'physical_network': {
             'allow_post': True, 'allow_put': False,
             'is_visible': True,
-            'default': attributes.ATTR_NOT_SPECIFIED
+            'default': bc_attr.ATTR_NOT_SPECIFIED
         },
         'tenant_id': {
             'allow_post': True, 'allow_put': False,
             'is_visible': False,
-            'default': attributes.ATTR_NOT_SPECIFIED
+            'default': bc_attr.ATTR_NOT_SPECIFIED
         },
         'add_tenants': {
             'allow_post': True, 'allow_put': True,

@@ -27,7 +27,6 @@ from oslo_utils import uuidutils
 from networking_cisco._i18n import _LE
 
 from neutron.api.v2 import attributes
-from neutron.common import constants as common_constants
 from neutron.common import test_lib
 from neutron import context as n_context
 from neutron.db import agents_db
@@ -56,7 +55,7 @@ LOG = logging.getLogger(__name__)
 
 
 _uuid = uuidutils.generate_uuid
-ISO8601_TIME_FORMAT = common_constants.ISO8601_TIME_FORMAT
+ISO8601_TIME_FORMAT = lib_constants.ISO8601_TIME_FORMAT
 
 CORE_PLUGIN_KLASS = (
     'networking_cisco.tests.unit.cisco.device_manager'

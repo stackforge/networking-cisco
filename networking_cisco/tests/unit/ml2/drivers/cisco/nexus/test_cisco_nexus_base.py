@@ -35,11 +35,12 @@ from networking_cisco.plugins.ml2.drivers.cisco.nexus import exceptions
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import mech_cisco_nexus
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import nexus_db_v2
 
-from neutron.common import constants as n_const
 from neutron.extensions import portbindings
 from neutron.plugins.common import constants as p_const
 from neutron.plugins.ml2 import driver_api as api
 from neutron.tests.unit import testlib_api
+from neutron_lib import constants as n_const
+
 
 # Static variables used in testing
 NEXUS_IP_ADDRESS_1 = '1.1.1.1'
