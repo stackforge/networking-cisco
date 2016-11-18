@@ -16,19 +16,19 @@
 from oslo_log import log as logging
 import oslo_messaging
 
-from neutron.common import constants
 from neutron.common import rpc as n_rpc
 from neutron.common import topics
 from neutron.common import utils
 from neutron import manager
 
+from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.extensions import ciscocfgagentscheduler
 
 LOG = logging.getLogger(__name__)
 
 
-L3AGENT_SCHED = constants.L3_AGENT_SCHEDULER_EXT_ALIAS
+L3AGENT_SCHED = bc.constants.L3_AGENT_SCHEDULER_EXT_ALIAS
 CFGAGENT_SCHED = ciscocfgagentscheduler.CFG_AGENT_SCHEDULER_ALIAS
 CFG_AGENT_L3_ROUTING = cisco_constants.CFG_AGENT_L3_ROUTING
 

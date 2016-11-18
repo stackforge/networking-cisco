@@ -28,16 +28,14 @@ from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_utils import excutils
 
-from networking_cisco._i18n import _LE, _LI, _LW
-
 from neutron.db import api as db_api
 from neutron.extensions import portbindings
 from neutron.plugins.common import constants as p_const
 from neutron.plugins.ml2 import db as ml2_db
 from neutron.plugins.ml2 import driver_api as api
 
-from neutron_lib import constants as n_const
-
+from networking_cisco._i18n import _LE, _LI, _LW
+from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     config as conf)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
@@ -515,11 +513,12 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         return (port['device_owner'].startswith('compute') or
                 port['device_owner'].startswith('baremetal') or
                 port['device_owner'].startswith('manila') or
-                port['device_owner'] == n_const.DEVICE_OWNER_DHCP or
-                port['device_owner'] == n_const.DEVICE_OWNER_ROUTER_HA_INTF)
+                port['device_owner'] in [
+                    bc.constants.DEVICE_OWNER_DHCP,
+                    bc.constants.DEVICE_OWNER_ROUTER_HA_INTF])
 
     def _is_status_active(self, port):
-        return port['status'] == n_const.PORT_STATUS_ACTIVE
+        return port['status'] == bc.constants.PORT_STATUS_ACTIVE
 
     def _is_baremetal(self, port):
         """Identifies ironic baremetal transactions.
@@ -600,7 +599,7 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
                 context.set_binding(segment[api.ID],
                     portbindings.VIF_TYPE_OTHER,
                     {},
-                    status=n_const.PORT_STATUS_ACTIVE)
+                    status=bc.constants.PORT_STATUS_ACTIVE)
                 selected = True
                 LOG.debug("Baremetal binding selected: segment ID %(id)s, "
                           "segment %(seg)s, phys net %(physnet)s, and "
