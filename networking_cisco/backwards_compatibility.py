@@ -16,6 +16,7 @@ from distutils.version import StrictVersion
 
 from neutron import version
 
+
 # Some constants and verifier functions have been deprecated but are still
 # used by earlier releases of neutron. In order to maintain
 # backwards-compatibility with stable/mitaka this will act as a translator
@@ -24,12 +25,36 @@ from neutron import version
 NEUTRON_VERSION = StrictVersion(str(version.version_info))
 NEUTRON_NEWTON_VERSION = StrictVersion('9.0.0')
 
+# Bring in the union of all constants in neutron.common.constants
+# and neutron_lib.constants. Handle any duplicates by using the
+# values in neutron_lib.
+#
+# In the plugin code, replace the following imports:
+#     from neutron.common import constants
+#     from neutron_lib import constants
+# with (something like this):
+#     from networking_cisco import backward_compatibility as bc
+# Then constants are referenced like this:
+#     if port['devide_owner'] == bc.constants.]
+
+ignore = frozenset(['__builtins__', '__doc__', '__file__', '__name__',
+                    '__package__'])
+constants = __import__('neutron.common.constants')
+n_l = __import__('neutron_lib.constants')
+for attr in dir(n_l):
+    if attr in ignore:
+        continue
+    else:
+        setattr(constants, attr, getattr(n_l, attr))
+del n_l, ignore, attr
+
+
 # 9.0.0 is Newton
 if NEUTRON_VERSION >= NEUTRON_NEWTON_VERSION:
     from neutron.conf import common as base_config
     from neutron_lib.api import validators
-    from neutron_lib import constants
-    ATTR_NOT_SPECIFIED = constants.ATTR_NOT_SPECIFIED
+    #from neutron_lib import constants
+    #ATTR_NOT_SPECIFIED = constants.ATTR_NOT_SPECIFIED
     is_attr_set = validators.is_attr_set
 # Pre Newton
 elif NEUTRON_VERSION < NEUTRON_NEWTON_VERSION:
