@@ -17,8 +17,8 @@ import re
 from oslo_config import cfg
 from oslo_log import log as logging
 
+from neutron_lib import exceptions as n_exc
 from neutron.common import constants as l3_constants
-from neutron.common import exceptions as n_exc
 from neutron.extensions import l3
 from neutron import manager
 from neutron.plugins.common import constants as svc_constants

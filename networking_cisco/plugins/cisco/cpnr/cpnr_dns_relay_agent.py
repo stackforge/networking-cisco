@@ -22,8 +22,8 @@ import struct
 import time
 import uuid
 
+from neutron_lib import exceptions
 from neutron.common import config
-from neutron.common import exceptions
 from oslo_config import cfg
 from oslo_log import log as logging
 
