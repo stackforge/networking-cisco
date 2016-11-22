@@ -1838,7 +1838,7 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
                 # Database has provider_segment dictionary key.
                 network_id = context.current['network_id']
                 dynamic_segment = ml2_db.get_dynamic_segment(
-                                    db_api.get_session(), network_id, physnet)
+                                    context, network_id, physnet)
 
                 # Have other drivers bind the VLAN dynamic segment.
                 if dynamic_segment:
