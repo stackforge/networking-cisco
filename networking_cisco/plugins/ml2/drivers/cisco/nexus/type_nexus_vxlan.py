@@ -54,7 +54,7 @@ nexus_vxlan_opts = [
 cfg.CONF.register_opts(nexus_vxlan_opts, "ml2_type_nexus_vxlan")
 
 
-class NexusVxlanTypeDriver(type_tunnel.TunnelTypeDriver):
+class NexusVxlanTypeDriver(type_tunnel.ML2TunnelTypeDriver):
     def __init__(self):
         super(NexusVxlanTypeDriver, self).__init__(
             nexus_models_v2.NexusVxlanAllocation)
@@ -155,12 +155,12 @@ class NexusVxlanTypeDriver(type_tunnel.TunnelTypeDriver):
         session.flush()
         return mcast_for_vni
 
-    def allocate_tenant_segment(self, session):
-        alloc = self.allocate_partially_specified_segment(session)
+    def allocate_tenant_segment(self, context):
+        alloc = self.allocate_partially_specified_segment(context)
         if not alloc:
             return
         vni = alloc.vxlan_vni
-        mcast_group = self._get_mcast_group_for_vni(session, vni)
+        mcast_group = self._get_mcast_group_for_vni(context.session, vni)
         return {api.NETWORK_TYPE: const.TYPE_NEXUS_VXLAN,
                 api.PHYSICAL_NETWORK: mcast_group,
                 api.SEGMENTATION_ID: alloc.vxlan_vni}
@@ -208,15 +208,15 @@ class NexusVxlanTypeDriver(type_tunnel.TunnelTypeDriver):
                 session.execute(nexus_models_v2.NexusVxlanAllocation.
                                 __table__.insert(), bulk)
 
-    def reserve_provider_segment(self, session, segment):
+    def reserve_provider_segment(self, context, segment):
         if self.is_partial_segment(segment):
-            alloc = self.allocate_partially_specified_segment(session)
+            alloc = self.allocate_partially_specified_segment(context)
             if not alloc:
                 raise exc.NoNetworkAvailable
         else:
             segmentation_id = segment.get(api.SEGMENTATION_ID)
             alloc = self.allocate_fully_specified_segment(
-                session, vxlan_vni=segmentation_id)
+                context, vxlan_vni=segmentation_id)
             if not alloc:
                 raise exc.TunnelIdInUse(tunnel_id=segmentation_id)
         return {api.NETWORK_TYPE: p_const.TYPE_VXLAN,

@@ -30,7 +30,6 @@ from oslo_utils import excutils
 
 from networking_cisco import backwards_compatibility as bc
 
-from neutron.db import api as db_api
 from neutron.extensions import portbindings
 from neutron.plugins.common import constants as p_const
 
@@ -1843,7 +1842,7 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
                 # Database has provider_segment dictionary key.
                 network_id = context.current['network_id']
                 dynamic_segment = segments_db.get_dynamic_segment(
-                                    db_api.get_session(), network_id, physnet)
+                                   context, network_id, physnet)
 
                 # Have other drivers bind the VLAN dynamic segment.
                 if dynamic_segment:
