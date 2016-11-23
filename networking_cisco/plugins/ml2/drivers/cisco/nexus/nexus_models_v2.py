@@ -59,6 +59,9 @@ class NexusPortBinding(model_base.BASEV2):
             self.is_native_vlan == other.is_native_vlan
         )
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 
 class NexusNVEBinding(model_base.BASEV2):
     """Represents Network Virtualization Endpoint configuration."""

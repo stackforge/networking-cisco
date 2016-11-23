@@ -51,6 +51,9 @@ class LineItem(object):
     def __eq__(self, other):
         return self.str_list() == other.str_list()
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 
 class HTParser(object):
     """
