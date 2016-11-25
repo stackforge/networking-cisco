@@ -20,7 +20,6 @@ import six
 from networking_cisco._i18n import _
 
 from neutron.api import extensions
-from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
 from neutron.services.service_base import ServicePluginBase
 from neutron_lib import exceptions as nexception
@@ -232,7 +231,6 @@ class Ciscohostingdevicemanager(extensions.ExtensionDescriptor):
         """Returns Ext Resources."""
         plural_mappings = resource_helper.build_plural_mappings(
             {}, RESOURCE_ATTRIBUTE_MAP)
-        attr.PLURALS.update(plural_mappings)
         action_map = {DEVICE: {'get_hosting_device_config': 'GET'}}
         return resource_helper.build_resource_info(plural_mappings,
                                                    RESOURCE_ATTRIBUTE_MAP,
