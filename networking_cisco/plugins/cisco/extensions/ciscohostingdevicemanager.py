@@ -14,18 +14,17 @@
 
 import abc
 
+from neutron_lib.api import converters as conv
+from neutron_lib.api import extensions
+from neutron_lib import exceptions as nexception
 from oslo_utils import netutils
 import six
 
 from networking_cisco._i18n import _
 
-from neutron.api import extensions
 from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
 from neutron.services.service_base import ServicePluginBase
-from neutron_lib import exceptions as nexception
-
-from neutron_lib.api import converters as conv
 
 from networking_cisco.plugins.cisco.common import cisco_constants as constants
 from networking_cisco.plugins.cisco.common import utils
