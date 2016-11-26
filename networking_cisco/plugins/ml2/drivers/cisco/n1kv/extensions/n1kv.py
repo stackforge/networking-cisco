@@ -14,11 +14,11 @@
 #    under the License.
 
 
-from networking_cisco._i18n import _
+from neutron_lib.api import extensions
 
-from neutron.api import extensions
 from neutron.api.v2 import attributes
 
+from networking_cisco._i18n import _
 from networking_cisco.plugins.ml2.drivers.cisco.n1kv import constants
 
 

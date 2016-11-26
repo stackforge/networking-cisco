@@ -31,6 +31,7 @@ from neutron import policy
 from neutron import wsgi
 
 from neutron_lib.api import converters as conv
+from neutron_lib.api import extensions as api_extensions
 from neutron_lib import exceptions as n_exc
 
 from networking_cisco.plugins.cisco.extensions import ciscohostingdevicemanager
@@ -152,7 +153,7 @@ EXTENDED_ATTRIBUTES_2_0 = {
 }
 
 
-class Routertypeawarescheduler(extensions.ExtensionDescriptor):
+class Routertypeawarescheduler(api_extensions.ExtensionDescriptor):
     """Extension class supporting l3 agent scheduler."""
     @classmethod
     def get_name(cls):

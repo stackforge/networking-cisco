@@ -12,13 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from networking_cisco._i18n import _
-
-from neutron.api import extensions
+from neutron_lib.api import converters as conv
+from neutron_lib.api import extensions
 from neutron_lib import exceptions as nexception
 
-from neutron_lib.api import converters as conv
-
+from networking_cisco._i18n import _
 from networking_cisco import backwards_compatibility as bc_attr
 
 
