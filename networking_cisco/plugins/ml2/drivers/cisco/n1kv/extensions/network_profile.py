@@ -14,6 +14,9 @@
 #    under the License.
 import abc
 
+from neutron_lib.api import converters as conv
+from neutron_lib.api import extensions as api_extensions
+from neutron_lib import constants as lib_constants
 import six
 
 from neutron.api import extensions
@@ -21,9 +24,6 @@ from neutron.api.v2 import attributes
 from neutron.api.v2 import base
 from neutron import manager
 from neutron.services import service_base as sb
-
-from neutron_lib.api import converters as conv
-from neutron_lib import constants as lib_constants
 
 from networking_cisco.plugins.ml2.drivers.cisco.n1kv import constants
 
@@ -93,7 +93,7 @@ RESOURCE_ATTRIBUTE_MAP = {
 }
 
 
-class Network_profile(extensions.ExtensionDescriptor):
+class Network_profile(api_extensions.ExtensionDescriptor):
 
     @classmethod
     def get_name(cls):

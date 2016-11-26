@@ -14,6 +14,8 @@
 
 import abc
 
+from neutron_lib.api import extensions as api_extensions
+from neutron_lib import exceptions
 from oslo_log import log as logging
 import webob.exc
 
@@ -27,7 +29,6 @@ from neutron.extensions import agent
 from neutron import manager
 from neutron import policy
 from neutron import wsgi
-from neutron_lib import exceptions
 
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.extensions import ciscohostingdevicemanager
@@ -126,7 +127,7 @@ class CfgAgentsHandlingHostingDeviceController(wsgi.Controller):
             request.context, kwargs['hosting_device_id'])
 
 
-class Ciscocfgagentscheduler(extensions.ExtensionDescriptor):
+class Ciscocfgagentscheduler(api_extensions.ExtensionDescriptor):
     """Extension class supporting configuration agent scheduler."""
     @classmethod
     def get_name(cls):
