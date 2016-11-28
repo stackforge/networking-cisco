@@ -36,6 +36,7 @@ from networking_cisco.plugins.ml2.drivers.cisco.apic import exceptions as aexc
 
 
 LOG = logging.getLogger(__name__)
+TYPE_FLAT = 'flat'
 
 
 class APICMechanismDriver(api.MechanismDriver):
@@ -208,13 +209,19 @@ class APICMechanismDriver(api.MechanismDriver):
 
     @sync_init
     def create_port_postcommit(self, context):
+        if context.network.current['provider:network_type'] == TYPE_FLAT:
+            return
         self._perform_port_operations(context)
 
     @sync_init
     def update_port_postcommit(self, context):
+        if context.network.current['provider:network_type'] == TYPE_FLAT:
+            return
         self._perform_port_operations(context)
 
     def delete_port_postcommit(self, context):
+        if context.network.current['provider:network_type'] == TYPE_FLAT:
+            return
         port = context.current
         # Check if a compute port
         if context.host:
@@ -226,6 +233,8 @@ class APICMechanismDriver(api.MechanismDriver):
     def create_network_postcommit(self, context):
         # The following validation is not happening in the precommit to avoid
         # database lock timeout
+        if context.network.current['provider:network_type'] == TYPE_FLAT:
+            return
         if context.current['name'] == acst.APIC_SYNC_NETWORK:
             raise aexc.ReservedSynchronizationName(
                 net_id=context.current['id'])
@@ -247,9 +256,13 @@ class APICMechanismDriver(api.MechanismDriver):
 
     @sync_init
     def update_network_postcommit(self, context):
+        if context.network.current['provider:network_type'] == TYPE_FLAT:
+            return
         super(APICMechanismDriver, self).update_network_postcommit(context)
 
     def delete_network_postcommit(self, context):
+        if context.network.current['provider:network_type'] == TYPE_FLAT:
+            return
         if not context.current.get('router:external'):
             tenant_id = context.current['tenant_id']
             network_id = context.current['id']
@@ -273,6 +286,8 @@ class APICMechanismDriver(api.MechanismDriver):
 
     @sync_init
     def create_subnet_postcommit(self, context):
+        if context.network.current['provider:network_type'] == TYPE_FLAT:
+            return
         info = self._get_subnet_info(context, context.current)
         if info:
             tenant_id, network_id, gateway_ip = info
@@ -282,6 +297,8 @@ class APICMechanismDriver(api.MechanismDriver):
 
     @sync_init
     def update_subnet_postcommit(self, context):
+        if context.network.current['provider:network_type'] == TYPE_FLAT:
+            return
         if context.current['gateway_ip'] != context.original['gateway_ip']:
             with self.apic_manager.apic.transaction() as trs:
                 info = self._get_subnet_info(context, context.original)
@@ -298,6 +315,8 @@ class APICMechanismDriver(api.MechanismDriver):
                         tenant_id, network_id, gateway_ip, transaction=trs)
 
     def delete_subnet_postcommit(self, context):
+        if context.network.current['provider:network_type'] == TYPE_FLAT:
+            return
         info = self._get_subnet_info(context, context.current)
         if info:
             tenant_id, network_id, gateway_ip = info
