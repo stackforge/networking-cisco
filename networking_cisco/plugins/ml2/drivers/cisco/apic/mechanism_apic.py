@@ -105,7 +105,7 @@ class APICMechanismDriver(api.MechanismDriver):
         tenant_id = self.name_mapper.tenant(context, tenant_id)
 
         # Get segmentation id
-        segment = context.top_bound_segment
+        segment = context.network.network_segments[0]
         if not segment:
             LOG.debug("Port %s is not bound to a segment", port)
             return
