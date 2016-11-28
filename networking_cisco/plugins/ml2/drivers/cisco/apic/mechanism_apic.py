@@ -171,9 +171,12 @@ class APICMechanismDriver(api.MechanismDriver):
                                                        network_id)
 
     def _get_active_path_count(self, context):
+        segment = context.top_bound_segment
+        if (segment.get(api.NETWORK_TYPE) in [constants.TYPE_VLAN]):
+            seg = segment.get(api.ID)
         return context._plugin_context.session.query(
-            models.PortBinding).filter_by(
-                host=context.host, segment=context._binding.segment).count()
+            models.PortBindingLevel).filter_by(
+                host=context.host, segment_id=seg).count()
 
     @lockutils.synchronized('apic-portlock')
     def _delete_port_path(self, context, atenant_id, anetwork_id):
