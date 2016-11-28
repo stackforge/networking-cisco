@@ -655,7 +655,7 @@ class DFARESTClient(object):
                 mob_domain_name = network.mob_domain_name
             else:
                 # The current way will not work since _default_md is obtained
-                # during create_service_network. It's preferrable to get it
+                # during create_service_network. It's preferable to get it
                 # during init TODO(padkrish)
                 if self._default_md is None:
                     self._set_default_mobility_domain()
