@@ -302,6 +302,10 @@ class L3RouterApplianceRouterTypeDriverTestCase(test_l3.L3NatTestCaseMixin,
             scheduler_mock.return_value.unschedule_router.return_value = True
             release_mock.return_value = True
             with self.router() as router,\
+                    mock.patch('neutron.db.'
+                               'l3_gwmode_db.'
+                               'L3_NAT_dbonly_mixin.'
+                               '_extend_router_dict_gw_mode'),\
                     mock.patch('networking_cisco.plugins.cisco.db.l3.'
                                'l3_router_appliance_db.'
                                'L3RouterApplianceDBMixin.'

@@ -39,6 +39,7 @@ from neutron import context as n_context
 from neutron.db import db_base_plugin_v2
 from neutron.db import extraroute_db
 from neutron.db import l3_db
+from neutron.db import l3_gwmode_db
 from neutron.extensions import l3
 from neutron.extensions import providernet as pr_net
 from neutron_lib import exceptions as n_exc
@@ -106,7 +107,8 @@ class RouterBindingInfoError(n_exc.NeutronException):
     message = _("Could not get binding information for router %(router_id)s.")
 
 
-class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
+class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin,
+                               l3_gwmode_db.L3_NAT_dbonly_mixin):
     """Mixin class implementing Neutron's routing service using appliances."""
 
     # Dictionary with loaded scheduler modules for different router types
