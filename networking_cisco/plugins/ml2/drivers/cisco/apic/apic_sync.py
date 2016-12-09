@@ -87,9 +87,9 @@ class ApicBaseSynchronizer(SynchronizerBase):
         # Sync Ports (compute/gateway/dhcp)
         ports = [x for x in self.core_plugin.get_ports(ctx)]
         for port in ports:
-            binding = l2_db.get_locked_port_and_binding(ctx.session,
+            binding = l2_db.get_locked_port_and_binding(ctx,
                                                         port['id'])[1]
-            levels = l2_db.get_binding_levels(ctx.session, port['id'],
+            levels = l2_db.get_binding_levels(ctx, port['id'],
                                               binding.host)
             network = self.core_plugin.get_network(ctx, port['network_id'])
             mech_context = driver_context.PortContext(self.core_plugin, ctx,
