@@ -61,10 +61,12 @@ elif NEUTRON_VERSION < NEUTRON_NEWTON_VERSION:
     from neutron.api import extensions  # noqa
     from neutron.api.v2 import attributes
     from neutron.common import config as base_config
-    from neutron.db import model_base  # noqa
+    from neutron.db import model_base
     from neutron import manager
+
     setattr(constants, 'ATTR_NOT_SPECIFIED', getattr(attributes,
                                                      'ATTR_NOT_SPECIFIED'))
+    model_base.HasProject = model_base.HasTenant
     is_attr_set = attributes.is_attr_set
     validators = attributes.validators
     n_c_attr_names = n_c.my_globals
@@ -75,8 +77,6 @@ elif NEUTRON_VERSION < NEUTRON_NEWTON_VERSION:
         else:
             return manager.NeutronManager.get_service_plugins().get(service)
 core_opts = base_config.core_opts
-#extensions = extensions
-#model_base = model_base
 
 # Bring in the union of all constants in neutron.common.constants
 # and neutron_lib.constants. Handle any duplicates by using the
