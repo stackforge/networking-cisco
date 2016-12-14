@@ -35,7 +35,11 @@ if NEUTRON_VERSION >= NEUTRON_NEWTON_VERSION:
     from neutron.conf import common as base_config
     from neutron import manager
     from neutron_lib.api import validators
+    from neutron_lib.db import model_base
 
+#    BASEV2 = model_base.BASEV2
+#    HasId = model_base.HasId
+#    HasProject = model_base.HasProject
     is_attr_set = validators.is_attr_set
     validators = validators.validators
     if NEUTRON_VERSION.version[0] == NEUTRON_NEWTON_VERSION.version[0]:
@@ -55,9 +59,14 @@ if NEUTRON_VERSION >= NEUTRON_NEWTON_VERSION:
 elif NEUTRON_VERSION < NEUTRON_NEWTON_VERSION:
     from neutron.api.v2 import attributes
     from neutron.common import config as base_config
+    from neutron.db import model_base
     from neutron import manager
+
     setattr(constants, 'ATTR_NOT_SPECIFIED', getattr(attributes,
                                                      'ATTR_NOT_SPECIFIED'))
+#    BASEV2 = model_base.BASEV2
+#    HasId = model_base.HasId
+    model_base.HasProject = model_base.HasTenant
     is_attr_set = attributes.is_attr_set
     validators = attributes.validators
     n_c_attr_names = n_c.my_globals

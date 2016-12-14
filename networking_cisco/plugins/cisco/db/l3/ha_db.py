@@ -97,7 +97,7 @@ router_appliance_opts = [
 cfg.CONF.register_opts(router_appliance_opts, "ha")
 
 
-class RouterHASetting(model_base.BASEV2):
+class RouterHASetting(bc.model_base.BASEV2):
     """Represents HA settings for router visible to user."""
     __tablename__ = 'cisco_router_ha_settings'
 
@@ -125,7 +125,8 @@ class RouterHASetting(model_base.BASEV2):
                       default=ha.HA_ACTIVE, server_default=ha.HA_ACTIVE)
 
 
-class RouterHAGroup(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
+class RouterHAGroup(bc.model_base.BASEV2, bc.model_base.HasId,
+                    bc.model_base.HasProject):
     """Represents an HA group as used in VRRP, HSRP, and GLBP."""
     __tablename__ = 'cisco_router_ha_groups'
 
@@ -162,7 +163,7 @@ class RouterHAGroup(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     other_config = sa.Column(sa.String(255))
 
 
-class RouterRedundancyBinding(model_base.BASEV2):
+class RouterRedundancyBinding(bc.model_base.BASEV2):
     """Represents binding between an HA enabled router and its
     redundancy routers.
     """
