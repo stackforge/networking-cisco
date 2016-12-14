@@ -34,6 +34,7 @@ constants = __import__('neutron_lib.constants', fromlist=['constants'])
 if NEUTRON_VERSION >= NEUTRON_NEWTON_VERSION:
     from neutron.conf import common as base_config
     from neutron import manager
+    from neutron_lib.api import extensions
     from neutron_lib.api import validators
 
     is_attr_set = validators.is_attr_set
@@ -53,6 +54,7 @@ if NEUTRON_VERSION >= NEUTRON_NEWTON_VERSION:
         n_c_attr_names = dir(n_c)
 # Pre Newton
 elif NEUTRON_VERSION < NEUTRON_NEWTON_VERSION:
+    from neutron.api import extensions
     from neutron.api.v2 import attributes
     from neutron.common import config as base_config
     from neutron import manager

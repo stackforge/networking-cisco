@@ -16,10 +16,12 @@ from oslo_log import log as logging
 import oslo_messaging
 from oslo_serialization import jsonutils
 import six
+#import pdb
 
 from neutron import context as neutron_context
 from neutron.db import api as db_api
 from neutron.extensions import l3
+
 
 from networking_cisco import backwards_compatibility as bc
 
@@ -32,10 +34,18 @@ class L3RouterCfgRpcCallback(object):
     # 1.0 L3PluginCfgAgentApi BASE_RPC_API_VERSION
     # 1.1 Added 'update_floatingip_statuses' method
     # 1.2 Added 'cfg_sync_all_hosted_routers' method
-    target = oslo_messaging.Target(version='1.2')
+    target = oslo_messaging.Target(version='1.3')
 
     def __init__(self, l3plugin):
         self._l3plugin = l3plugin
+
+    def get_cfg_router_ids(self, context, host, router_ids=None,
+                       hosting_device_ids=None):
+        """Returns IDs of routers scheduled to l3 agent on <host>"""
+        #pdb.set_trace()
+        return self._l3plugin.list_router_ids_on_host(context, host,
+                                                      router_ids,
+                                                      hosting_device_ids)
 
     # version 1.0 API
     @db_api.retry_db_errors
@@ -51,6 +61,7 @@ class L3RouterCfgRpcCallback(object):
         @return: a list of routers
                  with their hosting devices, interfaces and floating_ips
         """
+        #pdb.set_trace()
         adm_context = neutron_context.get_admin_context()
         try:
             routers = (
