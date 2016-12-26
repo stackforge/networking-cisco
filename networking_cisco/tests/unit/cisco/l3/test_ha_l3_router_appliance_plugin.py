@@ -28,8 +28,8 @@ from neutron import context
 from neutron.db import l3_db
 from neutron.extensions import extraroute
 from neutron.extensions import l3
-from neutron.plugins.common import constants as service_constants
 from neutron.tests import fake_notifier
+from neutron_lib import constants
 
 from networking_cisco import backwards_compatibility as bc
 import networking_cisco.plugins
@@ -1467,7 +1467,7 @@ class HAL3RouterApplianceVMTestCase(
             self._routes_update_cleanup(p1['id'], None, r['id'], [])
 
     def test__notify_subnetpool_address_scope_update(self):
-        l3_plugin = bc.get_plugin(service_constants.L3_ROUTER_NAT)
+        l3_plugin = bc.get_plugin(constants.L3)
 
         tenant_id = _uuid()
         with mock.patch.object(

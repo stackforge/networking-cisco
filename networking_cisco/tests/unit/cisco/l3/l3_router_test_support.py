@@ -28,7 +28,7 @@ from neutron.common import test_lib
 from neutron.db import common_db_mixin
 from neutron.extensions import l3
 from neutron.extensions import standardattrdescription
-from neutron.plugins.common import constants as service_constants
+from neutron_lib import constants
 
 
 L3_PLUGIN_KLASS = (
@@ -127,7 +127,7 @@ class TestL3RouterServicePlugin(
         routertype.ROUTERTYPE_ALIAS]
 
     def get_plugin_type(self):
-        return service_constants.L3_ROUTER_NAT
+        return constants.L3
 
     def get_plugin_description(self):
         return "L3 Routing Service Plugin for testing"
