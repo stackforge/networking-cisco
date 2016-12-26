@@ -23,8 +23,8 @@ import webob.exc
 from neutron.common import test_lib
 from neutron import context
 from neutron.extensions import providernet as pr_net
-from neutron.plugins.common import constants as service_constants
 from neutron.tests.unit.extensions import test_l3
+from neutron_lib import constants
 
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.common import cisco_constants
@@ -300,7 +300,7 @@ class TestAciVLANTrunkingPlugDriverGbp(
         g_p_mock = mock.MagicMock()
         plugins = {'CORE': self.core_plugin,
                    'GROUP_POLICY': self.mock_gbp_plugin,
-                   service_constants.L3_ROUTER_NAT: self.l3_plugin,
+                   constants.L3: self.l3_plugin,
                    cisco_constants.DEVICE_MANAGER: self.core_plugin}
         g_p_mock.side_effect = lambda svc='CORE': plugins.get(svc)
         mock.patch('networking_cisco.backwards_compatibility.get_plugin',
