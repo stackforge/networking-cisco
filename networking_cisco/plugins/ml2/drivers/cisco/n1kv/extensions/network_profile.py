@@ -16,7 +16,7 @@ import abc
 
 import six
 
-from neutron.api import extensions
+from neutron_lib.api import extensions
 from neutron.api.v2 import base
 from neutron.services import service_base as sb
 from neutron_lib.api import converters as conv
