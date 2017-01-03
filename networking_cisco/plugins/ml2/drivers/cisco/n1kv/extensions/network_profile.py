@@ -16,7 +16,6 @@ import abc
 
 import six
 
-from neutron.api import extensions
 from neutron.api.v2 import base
 from neutron.services import service_base as sb
 from neutron_lib.api import converters as conv
@@ -127,7 +126,7 @@ class Network_profile(bc.extensions.ExtensionDescriptor):
                 resource_name,
                 plugin,
                 RESOURCE_ATTRIBUTE_MAP.get(collection_name))
-            ex = extensions.ResourceExtension(collection_name,
+            ex = bc.extensions.ResourceExtension(collection_name,
                                               controller)
             exts.append(ex)
         return exts
