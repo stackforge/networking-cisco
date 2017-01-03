@@ -21,7 +21,6 @@ from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
 from neutron.services.service_base import ServicePluginBase
 from neutron_lib.api import converters as conv
-from neutron_lib import exceptions as nexception
 
 from networking_cisco._i18n import _
 from networking_cisco import backwards_compatibility as bc
@@ -34,31 +33,31 @@ NEUTRON_NEWTON_VERSION = bc.NEUTRON_NEWTON_VERSION
 
 
 # Hosting device and hosting device template exceptions
-class HostingDeviceInvalidPortValue(nexception.InvalidInput):
+class HostingDeviceInvalidPortValue(bc.exception.InvalidInput):
     message = _("Invalid value for port %(port)s")
 
 
-class HostingDeviceInUse(nexception.InUse):
+class HostingDeviceInUse(bc.exception.InUse):
     message = _("Hosting device %(id)s in use.")
 
 
-class HostingDeviceMgmtPortNotFound(nexception.InUse):
+class HostingDeviceMgmtPortNotFound(bc.exception.InUse):
     message = _("Specified management port %(id)s does not exist.")
 
 
-class HostingDeviceNotFound(nexception.NotFound):
+class HostingDeviceNotFound(bc.exception.NotFound):
     message = _("Hosting device %(id)s does not exist")
 
 
-class HostingDeviceTemplateNotFound(nexception.NotFound):
+class HostingDeviceTemplateNotFound(bc.exception.NotFound):
     message = _("Hosting device template %(id)s does not exist")
 
 
-class HostingDeviceTemplateInUse(nexception.InUse):
+class HostingDeviceTemplateInUse(bc.exception.InUse):
     message = _("Hosting device template %(id)s in use.")
 
 
-class TenantBoundNotUUIDListOrNone(nexception.NetworkNotFound):
+class TenantBoundNotUUIDListOrNone(bc.exception.NetworkNotFound):
     message = _("Attribute tenant_bound must be a list of tenant ids or None")
 
 
