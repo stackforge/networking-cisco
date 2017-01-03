@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import debtcollector
-
 from oslo_config import cfg
 from oslo_log import log as logging
 
@@ -23,7 +21,6 @@ from networking_cisco._i18n import _
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const
 
 LOG = logging.getLogger(__name__)
-DEPRECATION_MESSAGE = "This will be removed in the N cycle."
 
 """ Cisco UCS Manager ML2 Mechanism driver specific configuration.
 
@@ -82,7 +79,6 @@ def parse_pci_vendor_config():
     return vendor_list
 
 
-@debtcollector.removals.remove(message=DEPRECATION_MESSAGE)
 def parse_ucsm_host_config():
     sp_dict = {}
     host_dict = {}
@@ -113,7 +109,6 @@ def parse_ucsm_host_config():
         return sp_dict, host_dict
 
 
-@debtcollector.removals.remove(message=DEPRECATION_MESSAGE)
 def parse_virtio_eth_ports():
     eth_port_list = []
     if not cfg.CONF.ml2_cisco_ucsm.ucsm_virtio_eth_ports:
@@ -149,7 +144,6 @@ class UcsmConfig(object):
             raise cfg.Error(_('Insufficient UCS Manager configuration has '
                               'been provided to the plugin'))
 
-    @debtcollector.removals.remove(message=DEPRECATION_MESSAGE)
     def _create_single_ucsm_dicts(self):
         """Creates a dictionary of UCSM data for 1 UCS Manager."""
         ucsm_info = []
