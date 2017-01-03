@@ -151,3 +151,31 @@ class UcsmDbModel(object):
                     vlan_id=vlan_id).delete()
             except orm.exc.NoResultFound:
                 return
+
+    def get_port_profile_to_delete(self, profile_name, device_id):
+        """Returns port profile to be deleted."""
+        entry = self.session.query(ucsm_model.PortProfileDelete).filter_by(
+            profile_id=profile_name, device_id=device_id).first()
+        return True if entry else False
+
+    def add_port_profile_to_delete_table(self, profile_name, device_id):
+        """Adds a port profile to the delete table."""
+        if not self.get_port_profile_to_delete(profile_name, device_id):
+            port_profile = ucsm_model.PortProfileDelete(
+                profile_id=profile_name, device_id=device_id)
+            with self.session.begin(subtransactions=True):
+                self.session.add(port_profile)
+            return port_profile
+
+    def get_all_port_profiles_to_delete(self):
+        all_entries = self.session.query(ucsm_model.PortProfileDelete).all()
+        return all_entries
+
+    def remove_port_profile_to_delete(self, profile_name, device_id):
+        """Removes port profile to be deleted from table."""
+        with self.session.begin(subtransactions=True):
+            try:
+                self.session.query(ucsm_model.PortProfileDelete).filter_by(
+                    profile_id=profile_name, device_id=device_id).delete()
+            except orm.exc.NoResultFound:
+                return

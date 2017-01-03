@@ -38,6 +38,7 @@ if NEUTRON_VERSION >= NEUTRON_NEWTON_VERSION:
 
     is_attr_set = validators.is_attr_set
     validators = validators.validators
+
     if NEUTRON_VERSION.version[0] == NEUTRON_NEWTON_VERSION.version[0]:
         from neutron.api import extensions  # noqa
         from neutron.db import model_base  # noqa
@@ -56,18 +57,23 @@ if NEUTRON_VERSION >= NEUTRON_NEWTON_VERSION:
 
         get_plugin = directory.get_plugin
         n_c_attr_names = dir(n_c)
+
+    HasTenantorProject = model_base.HasProject
+
 # Pre Newton
 elif NEUTRON_VERSION < NEUTRON_NEWTON_VERSION:
     from neutron.api import extensions  # noqa
     from neutron.api.v2 import attributes
     from neutron.common import config as base_config
     from neutron.db import model_base  # noqa
+    from neutron.db import models_v2  # noqa
     from neutron import manager
     setattr(constants, 'ATTR_NOT_SPECIFIED', getattr(attributes,
                                                      'ATTR_NOT_SPECIFIED'))
     is_attr_set = attributes.is_attr_set
     validators = attributes.validators
     n_c_attr_names = n_c.my_globals
+    HasTenantorProject = models_v2.HasTenant
 
     def get_plugin(service=None):
         if service is None:
