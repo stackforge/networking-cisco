@@ -19,10 +19,10 @@ import six
 from networking_cisco.plugins.ml2.drivers.cisco.n1kv import (
     constants)
 
-from neutron.api import extensions
 from neutron.api.v2 import base
 from neutron.services import service_base as sb
 from neutron_lib.api import converters as conv
+from neutron_lib.api import extensions
 
 from networking_cisco import backwards_compatibility as bc
 

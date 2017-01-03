@@ -17,14 +17,12 @@ import abc
 from oslo_log import log as logging
 import webob.exc
 
-from neutron.api import extensions
 from neutron.api.v2 import base
 from neutron.api.v2 import resource
 from neutron.common import rpc as n_rpc
 from neutron.extensions import agent
 from neutron import policy
 from neutron import wsgi
-from neutron_lib import exceptions
 
 from networking_cisco._i18n import _, _LE
 from networking_cisco import backwards_compatibility as bc
@@ -41,17 +39,17 @@ class InvalidCfgAgent(agent.AgentNotFound):
                 "disabled")
 
 
-class HostingDeviceAssignedToCfgAgent(exceptions.Conflict):
+class HostingDeviceAssignedToCfgAgent(bc.exceptions.Conflict):
     message = _("The hosting device %(hosting_device_id)s is already assigned "
                 "to Cisco cfg agent %(agent_id)s.")
 
 
-class HostingDeviceSchedulingFailed(exceptions.Conflict):
+class HostingDeviceSchedulingFailed(bc.exceptions.Conflict):
     message = _("Failed to assign hosting device %(hosting_device_id)s to "
                 "Cisco cfg agent %(agent_id)s.")
 
 
-class HostingDeviceNotAssignedToCfgAgent(exceptions.NotFound):
+class HostingDeviceNotAssignedToCfgAgent(bc.exceptions.NotFound):
     message = _("The hosting device %(hosting_device_id)s is currently not "
                 "assigned to Cisco cfg agent %(agent_id)s.")
 
@@ -154,13 +152,13 @@ class Ciscocfgagentscheduler(bc.extensions.ExtensionDescriptor):
                       collection_name="agents")
         controller = resource.Resource(HostingDeviceSchedulerController(),
                                        base.FAULT_MAP)
-        exts.append(extensions.ResourceExtension(CFG_AGENT_HOSTING_DEVICES,
+        exts.append(bc.extensions.ResourceExtension(CFG_AGENT_HOSTING_DEVICES,
                                                  controller, parent))
         parent = dict(member_name=ciscohostingdevicemanager.DEVICE,
                       collection_name=ciscohostingdevicemanager.DEVICES)
         controller = resource.Resource(
             CfgAgentsHandlingHostingDeviceController(), base.FAULT_MAP)
-        exts.append(extensions.ResourceExtension(HOSTING_DEVICE_CFG_AGENTS,
+        exts.append(bc.extensions.ResourceExtension(HOSTING_DEVICE_CFG_AGENTS,
                                                  controller, parent,
                                                  PATH_PREFIX))
         return exts
