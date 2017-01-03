@@ -38,7 +38,7 @@ class HostingDeviceInvalidPortValue(nexception.InvalidInput):
     message = _("Invalid value for port %(port)s")
 
 
-class HostingDeviceInUse(nexception.InUse):
+class HostingDeviceInUse(bc.exception.InUse):
     message = _("Hosting device %(id)s in use.")
 
 
