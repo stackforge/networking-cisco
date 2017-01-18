@@ -22,7 +22,7 @@ from oslo_utils import importutils
 
 from networking_cisco._i18n import _LE, _LI, _LW
 
-from neutron.extensions import portbindings
+from neutron_lib.api.definitions import portbindings
 
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import config
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const

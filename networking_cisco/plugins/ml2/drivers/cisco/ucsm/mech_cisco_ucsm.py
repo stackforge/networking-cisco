@@ -16,9 +16,9 @@
 
 from oslo_log import log as logging
 
-from neutron.extensions import portbindings
 from neutron.plugins.common import constants as p_const
 from neutron.plugins.ml2 import driver_api as api
+from neutron_lib.api.definitions import portbindings
 
 from networking_cisco._i18n import _LE, _LI, _LW
 from networking_cisco import backwards_compatibility as bc

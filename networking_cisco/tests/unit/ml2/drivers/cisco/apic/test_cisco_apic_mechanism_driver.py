@@ -19,9 +19,9 @@ import mock
 
 sys.modules["apicapi"] = mock.Mock()
 
-from neutron.extensions import portbindings
 from neutron.plugins.ml2.drivers import type_vlan  # noqa
 from neutron.tests import base
+from neutron_lib.api.definitions import portbindings
 
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.ml2.drivers.cisco.apic import (

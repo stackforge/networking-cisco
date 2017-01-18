@@ -31,8 +31,8 @@ from oslo_utils import excutils
 from networking_cisco import backwards_compatibility as bc
 
 from neutron.db import api as db_api
-from neutron.extensions import portbindings
 from neutron.plugins.common import constants as p_const
+from neutron_lib.api.definitions import portbindings
 
 if bc.NEUTRON_VERSION <= bc.NEUTRON_NEWTON_VERSION:
     from neutron.plugins.ml2 import db as segments_db
