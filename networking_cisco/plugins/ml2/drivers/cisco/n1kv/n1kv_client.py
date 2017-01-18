@@ -19,13 +19,13 @@ import netaddr
 import requests
 import six
 
+from neutron_lib.api.definitions import provider_net as providernet
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_utils import excutils
 from oslo_utils import netutils
 
-from neutron.extensions import providernet
 from neutron.plugins.common import constants as p_const
 from neutron_lib import exceptions as n_exc
 

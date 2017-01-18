@@ -18,9 +18,9 @@ import mock
 
 from neutron.common import test_lib
 from neutron import context
-from neutron.extensions import providernet as pr_net
 from neutron.plugins.common import constants as service_constants
 from neutron.tests.unit.extensions import test_l3
+from neutron_lib.api.definitions import provider_net as pr_net
 
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.device_manager.plugging_drivers.\

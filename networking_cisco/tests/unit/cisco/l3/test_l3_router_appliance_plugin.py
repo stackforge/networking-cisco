@@ -24,11 +24,11 @@ from neutron.db import agents_db
 from neutron.extensions import external_net as external_net
 from neutron.extensions import extraroute
 from neutron.extensions import l3
-from neutron.extensions import providernet as pnet
 from neutron.plugins.common import constants as service_constants
 from neutron.tests.unit.db import test_db_base_plugin_v2
 from neutron.tests.unit.extensions import test_extraroute
 from neutron.tests.unit.extensions import test_l3
+from neutron_lib.api.definitions import provider_net as pnet
 from oslo_config import cfg
 from oslo_db import exception as db_exc
 from oslo_utils import uuidutils

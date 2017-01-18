@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.extensions import providernet as pr_net
+from neutron_lib.api.definitions import provider_net as pr_net
 from oslo_log import log as logging
 from oslo_utils import excutils
 

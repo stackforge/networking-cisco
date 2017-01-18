@@ -35,8 +35,8 @@ from networking_cisco.plugins.ml2.drivers.cisco.n1kv import n1kv_client
 from networking_cisco.plugins.ml2.drivers.cisco.n1kv import n1kv_db
 
 import neutron.db.api as db
-from neutron.extensions import providernet
 from neutron.plugins.common import constants as p_const
+from neutron_lib.api.definitions import provider_net as providernet
 
 LOG = log.getLogger(__name__)
 

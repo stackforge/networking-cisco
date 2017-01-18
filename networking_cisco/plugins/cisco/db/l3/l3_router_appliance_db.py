@@ -40,9 +40,9 @@ from neutron.db import db_base_plugin_v2
 from neutron.db import extraroute_db
 from neutron.db import l3_db
 from neutron.extensions import l3
-from neutron.extensions import providernet as pr_net
 from neutron.plugins.common import constants as svc_constants
 from neutron_lib import exceptions as n_exc
+from neutron_lib.api.definitions import provider_net as pr_net
 
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco._i18n import _, _LE, _LI, _LW

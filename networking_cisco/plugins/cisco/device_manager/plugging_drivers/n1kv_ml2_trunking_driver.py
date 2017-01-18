@@ -16,8 +16,8 @@ import eventlet
 
 from neutron import context as n_context
 from neutron.db import models_v2
-from neutron.extensions import providernet as pr_net
 from neutron_lib import exceptions as n_exc
+from neutron_lib.api.definitions import provider_net as pr_net
 from oslo_config import cfg
 from oslo_log import log as logging
 from sqlalchemy.orm import exc
