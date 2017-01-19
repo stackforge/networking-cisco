@@ -97,7 +97,7 @@ def parse_ucsm_host_config():
             if '/' not in service_profile:
                 # Assuming the service profile is at the root level
                 # and the path is not specified. This option
-                # allows backward compatability with earlier config
+                # allows backward compatibility with earlier config
                 # format
                 sp_dict[key] = (const.SERVICE_PROFILE_PATH_PREFIX +
                     service_profile.strip())
