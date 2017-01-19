@@ -87,7 +87,7 @@ class TestAciVLANTrunkingPlugDriverBase(
     """Test class for Base ACI VLAN Trunking Plugging driver
 
     This class tests the functionality of the ACI VLAN Trunking Plugging
-    driver, which is indpendent of the workflow used (GBP or Neutron)
+    driver, which is independent of the workflow used (GBP or Neutron)
     """
 
     # we use router types defined in .ini file.
