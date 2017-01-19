@@ -556,7 +556,7 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
 
         This version of the create_flaotingip is needed for the GBP workflow,
         as the pre-/post-commmit calls for creating the floating IP must be
-        peformed in a loop with the database call in the grandparent class.
+        performed in a loop with the database call in the grandparent class.
         """
 
         result = None
