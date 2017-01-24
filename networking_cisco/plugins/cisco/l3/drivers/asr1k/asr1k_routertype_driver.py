@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import copy
-
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import uuidutils
@@ -239,7 +237,7 @@ class ASR1kL3RouterDriver(drivers.L3RouterBaseDriver):
             'device_id': [global_router['id']],
             'device_owner': [port_type]}
         connected_nets = {
-            p['network_id'] for p in
+            p['network_id']: p['fixed_ips'] for p in
             self._core_plugin.get_ports(context, filters=filters)}
         if ext_net_id in connected_nets:
             # already connected to the external network so we're done
@@ -256,7 +254,8 @@ class ASR1kL3RouterDriver(drivers.L3RouterBaseDriver):
             port_type=DEVICE_OWNER_GLOBAL_ROUTER_GW):
         # When a global router is connected to an external network then a
         # special type of gateway port is created on that network. Such a
-        # port is called auxiliary gateway ports. A (logical) global router
+        # port is called auxiliary gateway ports. It has an ip address on
+        # each subnet of the external network. A (logical) global router
         # never has a traditional Neutron gateway port.
         filters = {
             'device_id': [tenant_router['id']],
@@ -265,7 +264,7 @@ class ASR1kL3RouterDriver(drivers.L3RouterBaseDriver):
         # the CIDR of that port's subnet
         gw_port = self._core_plugin.get_ports(context,
                                               filters=filters)[0]
-        fixed_ips = self._get_fixed_ips_subnets(gw_port['fixed_ips'])
+        fixed_ips = self._get_fixed_ips_subnets(context, gw_port)
         global_router_id = global_router['id']
         with context.session.begin(subtransactions=True):
             aux_gw_port = self._core_plugin.create_port(context, {
@@ -353,10 +352,12 @@ class ASR1kL3RouterDriver(drivers.L3RouterBaseDriver):
             context.session.add(r_ha_s_db)
         return logical_global_router
 
-    def _get_fixed_ips_subnets(self, fixed_ips):
-        subnets = copy.copy(fixed_ips)
-        for s in subnets:
-            s.pop('ip_address', None)
+    def _get_fixed_ips_subnets(self, context, gw_port):
+        nw = self._core_plugin.get_network(context, gw_port['network_id'])
+        subnets = [{'subnet_id': s} for s in nw['subnets']]
+        #subnets = copy.copy(gw_port['fixed_ips'])
+        #for s in subnets:
+        #    s.pop('ip_address', None)
         return subnets
 
     def _provision_port_ha(self, context, ha_port, router, ha_binding_db=None):
