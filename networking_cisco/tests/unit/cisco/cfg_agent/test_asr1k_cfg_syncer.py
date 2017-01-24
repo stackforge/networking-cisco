@@ -1655,3 +1655,9 @@ class ASR1kCfgSyncer(base.BaseTestCase):
                                                      parsed_cfg)
 
         self.assertEqual([], invalid_cfg)
+
+    # - test nat overload for backup router
+    # - test tenant gateway router with two subnets on the gateway port
+    # - test global router with two external networks
+    #   - external network 1 has one subnet
+    #   - external network 2 has two subnets

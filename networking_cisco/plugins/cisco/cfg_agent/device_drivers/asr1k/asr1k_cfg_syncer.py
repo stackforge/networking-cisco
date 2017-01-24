@@ -34,6 +34,8 @@ LOG = logging.getLogger(__name__)
 
 
 ROUTER_ROLE_ATTR = routerrole.ROUTER_ROLE_ATTR
+ROUTER_ROLE_HA_REDUNDANCY = cisco_constants.ROUTER_ROLE_HA_REDUNDANCY
+
 
 NROUTER_REGEX = "nrouter-(\w{6,6})"
 NROUTER_MULTI_REGION_REGEX = "nrouter-(\w{6,6})-(\w{1,7})"
@@ -456,10 +458,13 @@ class ConfigSyncer(object):
             # pool_info = router['gw_port']['nat_pool_info']
             # pool_ip = pool_info['pool_ip']
             # pool_net = netaddr.IPNetwork(pool_info['pool_cidr'])
-            pool_ip = str(router['gw_port']['fixed_ips'][0]['ip_address'])
+            if router.get(ROUTER_ROLE_ATTR) == ROUTER_ROLE_HA_REDUNDANCY:
+                the_port = router['gw_port'][ha.HA_INFO]['ha_port']
+            else:
+                the_port = router['gw_port']
+            pool_ip = str(the_port['fixed_ips'][0]['ip_address'])
             # pool_net = router['gw_port']['subnets'][0]['cidr']
-            pool_net = netaddr.IPNetwork(
-                router['gw_port']['subnets'][0]['cidr'])
+            pool_net = netaddr.IPNetwork(the_port['subnets'][0]['cidr'])
 
             if start_ip != pool_ip:
                 LOG.info(_LI("start IP %(start_ip)s for "
