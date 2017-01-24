@@ -84,6 +84,9 @@ class TestBasicRoutingOperationsAci(helper.TestBasicRoutingOperations):
         super(TestBasicRoutingOperationsAci,
               self).test_process_router(test_admin_state=False)
 
+    def test_process_msn_router(self):
+        self._test_process_msn_router(test_admin_state=False)
+
     def test_process_router_2_rids_1_vrf(self):
         driver = self._mock_driver_and_hosting_device(self.routing_helper)
         router1, ports = helper.prepare_router_data()
