@@ -41,10 +41,11 @@ from neutron.db import extraroute_db
 from neutron.db import l3_db
 from neutron.extensions import l3
 from neutron.extensions import providernet as pr_net
+from neutron.plugins.common import constants as svc_constants
 from neutron_lib import exceptions as n_exc
 
 from networking_cisco import backwards_compatibility as bc
-from networking_cisco._i18n import _, _LE, _LI, _LW
+from networking_cisco._i18n import _, _LE, _LI
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.db.device_manager import hd_models
 from networking_cisco.plugins.cisco.db.l3 import l3_models
@@ -64,9 +65,10 @@ FLOATINGIP_STATUS_ACTIVE = bc.constants.FLOATINGIP_STATUS_ACTIVE
 AGENT_TYPE_L3 = bc.constants.AGENT_TYPE_L3
 AGENT_TYPE_L3_CFG = cisco_constants.AGENT_TYPE_L3_CFG
 VM_CATEGORY = ciscohostingdevicemanager.VM_CATEGORY
-L3_ROUTER_NAT = bc.constants.L3
+L3_ROUTER_NAT = svc_constants.L3_ROUTER_NAT
 HOSTING_DEVICE_ATTR = routerhostingdevice.HOSTING_DEVICE_ATTR
 ROUTER_ROLE_GLOBAL = cisco_constants.ROUTER_ROLE_GLOBAL
+ROUTER_ROLE_LOGICAL_GLOBAL = cisco_constants.ROUTER_ROLE_LOGICAL_GLOBAL
 ROUTER_ROLE_HA_REDUNDANCY = cisco_constants.ROUTER_ROLE_HA_REDUNDANCY
 
 DICT_EXTEND_FUNCTIONS = ['_extend_router_dict_routertype',
@@ -1064,13 +1066,17 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
 
     @lockutils.synchronized('routerbacklog', 'neutron-')
     def _process_backlogged_routers(self):
-        self.ensure_global_router_cleanup()
+        e_context = n_context.get_admin_context()
+        for r_type, drv in self._router_drivers.items():
+            if drv is not None:
+                LOG.debug('Calling pre_backlog_processing for router type %s',
+                          r_type)
+                drv.pre_backlog_processing(e_context)
         if self._refresh_router_backlog:
             self._sync_router_backlog()
         if not self._backlogged_routers:
             LOG.debug('No routers in backlog %s' % self._backlogged_routers)
             return
-        e_context = n_context.get_admin_context()
         scheduled_routers = []
         LOG.info(_LI('Processing router (scheduling) backlog'))
         # try to reschedule
@@ -1111,50 +1117,11 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
             for ni in self.get_notifiers(e_context, scheduled_routers):
                 if ni['notifier']:
                     ni['notifier'].routers_updated(e_context, ni['routers'])
-
-    def ensure_global_router_cleanup(self):
-        """TODO: Function to be moved into router type driver.
-
-        This function should be moved into the router type driver.
-        This will be done when the router type driver api is revised.
-        """
-        e_context = n_context.get_admin_context()
-        l3plugin = bc.get_plugin(L3_ROUTER_NAT)
-        filters = {routerrole.ROUTER_ROLE_ATTR: [ROUTER_ROLE_GLOBAL]}
-        global_routers = l3plugin.get_routers(e_context, filters=filters)
-        if not global_routers:
-            LOG.debug("There are no global routers")
-            return
-        for gr in global_routers:
-            filters = {
-                HOSTING_DEVICE_ATTR: [gr[HOSTING_DEVICE_ATTR]],
-                routerrole.ROUTER_ROLE_ATTR: [ROUTER_ROLE_HA_REDUNDANCY, None]
-            }
-            invert_filters = {'gw_port_id': [None]}
-            num_rtrs = l3plugin.get_routers_count_extended(
-                e_context, filters=filters, invert_filters=invert_filters)
-            LOG.debug("Global router %(name)s[%(id)s] with hosting_device "
-                      "%(hd)s has %(num)d routers with gw_port set on that "
-                      "device",
-                      {'name': gr['name'], 'id': gr['id'],
-                       'hd': gr[HOSTING_DEVICE_ATTR], 'num': num_rtrs, })
-            if num_rtrs == 0:
-                LOG.warning(_LW("Global router:%(name)s[id:%(id)s] is present "
-                             "for hosting device:%(hd)s but there are no "
-                             "tenant or redundancy routers with gateway set "
-                             "on that hosting device. Proceeding to delete "
-                             "global router."),
-                         {'name': gr['name'], 'id': gr['id'],
-                          'hd': gr[HOSTING_DEVICE_ATTR]})
-                try:
-                    l3plugin.delete_router(
-                            e_context, gr['id'], unschedule=False)
-                except (exc.ObjectDeletedError, l3.RouterNotFound) as e:
-                    LOG.warning(e)
-                driver = self._get_router_type_driver(
-                        e_context, gr[routertype.TYPE_ATTR])
-                driver._conditionally_remove_logical_global_router(
-                        e_context, gr)
+        for r_type, drv in self._router_drivers.items():
+            if drv is not None:
+                LOG.debug('Calling post_backlog_processing for router type %s',
+                          r_type)
+                drv.post_backlog_processing(e_context)
 
     def _setup_backlog_handling(self):
         LOG.debug('Activating periodic backlog processor')
@@ -1558,7 +1525,7 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
 def _notify_routers_callback(resource, event, trigger, **kwargs):
     context = kwargs['context']
     router_ids = kwargs['router_ids']
-    l3plugin = bc.get_plugin(L3_ROUTER_NAT)
+    l3plugin = bc.get_plugin(svc_constants.L3_ROUTER_NAT)
     if l3plugin and router_ids:
         l3plugin._notify_affected_routers(context, list(router_ids),
                                           'disassociate_floatingips')
@@ -1578,7 +1545,7 @@ def _notify_cfg_agent_port_update(resource, event, trigger, **kwargs):
         if original_device_owner.startswith('network'):
             router_id = original_port.get('device_id')
             context = kwargs.get('context')
-            l3plugin = bc.get_plugin(L3_ROUTER_NAT)
+            l3plugin = bc.get_plugin(svc_constants.L3_ROUTER_NAT)
             if l3plugin and router_id:
                 l3plugin._notify_port_update_routers(context, router_id,
                                                      original_port,
