@@ -176,7 +176,7 @@ class AciVLANTrunkingPlugDriver(hw_vlan.HwVLANTrunkingPlugDriver):
     @property
     def l3_plugin(self):
         if not self._l3_plugin:
-            self._l3_plugin = bc.get_plugin(bc.constants.L3)
+            self._l3_plugin = bc.get_plugin(bc.constants.L3_ROUTER_NAT)
         return self._l3_plugin
 
     @property
