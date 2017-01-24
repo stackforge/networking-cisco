@@ -17,6 +17,7 @@ import eventlet
 import netaddr
 import pprint as pp
 
+from operator import itemgetter
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
@@ -726,9 +727,41 @@ class RoutingServiceHelper(object):
                     self._enable_router_interface(ri, port)
 
     def _process_new_ports(self, ri, new_ports, ex_gw_port, list_port_ids_up):
+        #TODO(bmelande): 1. We need to handle the case where an external
+        #                   network, to which a global router is connected,
+        #                   is given another subnet. The global router must
+        #                   then attached to that subnet. That attachment
+        #                   does NOT result in a new router port. Instead, it
+        #                   is done as an update to an EXISTING router port
+        #                   which gets another ip address (from the newly
+        #                   added subnet.
         for p in new_ports:
-            self._set_subnet_info(p)
+            # We sort the port's subnets on subnet_id so we can be sure that
+            # the same ip address is used as primary on the HA master router
+            # as well as on all HA backup routers.
+            port_subnets = sorted(p['subnets'], key=itemgetter('id'))
+
+            num_subnets_on_port = len(port_subnets)
+            LOG.debug("Number of subnets associated with router port = %d" %
+                      num_subnets_on_port)
+            if (ri.router['routerrole:role'] is None and
+                    num_subnets_on_port > 1):
+                LOG.error(_LE("Ignoring router port with multiple IPv4 "
+                              "subnets associated"))
+                raise Exception("Multiple subnets configured on port. %s" %
+                                pp.pformat(port_subnets))
+
+            # Configure the primary IP address
+            self._set_subnet_info(p, port_subnets[0]['id'])
             self._internal_network_added(ri, p, ex_gw_port)
+
+            # Process the secondary subnets. Only router ports of global
+            # routers can have multiple ipv4 subnets since we connect such
+            # routers to external networks using regular router ports.
+            for p_sn in port_subnets[1:]:
+                self._set_subnet_info(p, p_sn['id'], is_primary=False)
+                self._internal_network_added(ri, p, ex_gw_port)
+
             ri.internal_ports.append(p)
             list_port_ids_up.append(p['id'])
 
@@ -738,8 +771,20 @@ class RoutingServiceHelper(object):
             ri.internal_ports.remove(p)
 
     def _process_gateway_set(self, ri, ex_gw_port, list_port_ids_up):
-        self._set_subnet_info(ex_gw_port)
+        # We sort the port's subnets on subnet_id so we can be sure that
+        # the same ip address is used as primary on the HA master router
+        # as well as on all HA backup routers.
+        gw_port_subnets = sorted(ex_gw_port['subnets'], key=itemgetter('id'))
+
+        # Configure the primary IP address
+        self._set_subnet_info(ex_gw_port, gw_port_subnets[0]['id'])
         self._external_gateway_added(ri, ex_gw_port)
+
+        # Process the secondary subnets
+        for gw_p_sn in gw_port_subnets[1:]:
+            self._set_subnet_info(ex_gw_port, gw_p_sn['id'], is_primary=False)
+            self._external_gateway_added(ri, ex_gw_port)
+
         list_port_ids_up.append(ex_gw_port['id'])
 
     def _process_gateway_cleared(self, ri, ex_gw_port):
@@ -1074,26 +1119,21 @@ class RoutingServiceHelper(object):
         ri.routes = new_routes
 
     @staticmethod
-    def _set_subnet_info(port):
-        ips = port['fixed_ips']
+    def _set_subnet_info(port, subnet_id, is_primary=True):
+
+        ips = [i['ip_address'] for i in port['fixed_ips']
+               if i['subnet_id'] == subnet_id]
         if not ips:
             raise Exception(_("Router port %s has no IP address") % port['id'])
-        if len(ips) > 1:
-            LOG.error(_LE("Ignoring multiple IPs on router port %s"),
-                      port['id'])
-
-        port_subnets = port['subnets']
-
-        num_subnets_on_port = len(port_subnets)
-        LOG.debug("number of subnets associated with port = %d" %
-                  num_subnets_on_port)
-        # TODO(What should we do if multiple subnets are somehow associated)
-        # TODO(with a port?)
-        if (num_subnets_on_port > 1):
-            LOG.error(_LE("Ignoring port with multiple subnets associated"))
-            raise Exception(("Multiple subnets configured on port.  %s") %
-                            pp.pformat(port_subnets))
-        else:
-            subnet = port_subnets[0]
-            prefixlen = netaddr.IPNetwork(subnet['cidr']).prefixlen
-            port['ip_cidr'] = "%s/%s" % (ips[0]['ip_address'], prefixlen)
+        subnet = port['subnets'][0]
+        prefixlen = netaddr.IPNetwork(subnet['cidr']).prefixlen
+        port['ip_info'] = {'subnet_id': subnet_id, 'is_primary': is_primary,
+                           'ip_cidr': "%s/%s" % (ips[0], prefixlen)}
+        ### REMOVE BELOW attributes when we've confirmed the ip_info dict
+        ###              attributes works
+        # NOTE! 'ip:cidr' is used in several .py files so we need to do a
+        #       "search & replace with" ['ip_info']['ip_cidr'] before we
+        #       remove it.
+        port['ip_cidr'] = "%s/%s" % (ips[0], prefixlen)
+        port['is_primary'] = is_primary
+        ### END OF REMOVE
