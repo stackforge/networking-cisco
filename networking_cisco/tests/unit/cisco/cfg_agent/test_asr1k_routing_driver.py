@@ -76,21 +76,25 @@ class ASR1kRoutingDriver(base.BaseTestCase):
         self.ex_gw_cidr = '20.0.0.30/24'
         self.ex_gw_ip_mask = '255.255.255.0'
         self.ex_gw_ha_group = 1500
+        sn_id = _uuid()
         self.ex_gw_ha_info = {'group': self.ex_gw_ha_group,
                               'ha_port': {
                                   'fixed_ips': [{
+                                      'subnet_id': sn_id,
                                       'ip_address': self.ex_gw_ip_vip,
                                       'prefixlen': self.ex_gw_prefixlen}]}}
         self.ex_gw_gateway_ip = '20.0.0.1'
         self.vlan_ext = 317
         self.phy_infc = 'GigabitEthernet0/0/0'
-
         self.ex_gw_port = {'id': _uuid(),
                            'network_id': _uuid(),
+                           'ip_info': {'subnet_id': sn_id,
+                                       'is_primary': True,
+                                       'ip_cidr': self.ex_gw_cidr},
                            'fixed_ips': [{'ip_address': self.ex_gw_ip,
                                           'prefixlen': self.ex_gw_prefixlen,
-                                          'subnet_id': _uuid()}],
-                           'subnets': [{'cidr': self.ex_gw_cidr,
+                                          'subnet_id': sn_id}],
+                           'subnets': [{'id': sn_id, 'cidr': self.ex_gw_cidr,
                                         'gateway_ip': self.ex_gw_gateway_ip}],
                            'device_owner': bc.constants.DEVICE_OWNER_ROUTER_GW,
                            'mac_address': 'ca:fe:de:ad:be:ef',
@@ -109,21 +113,25 @@ class ASR1kRoutingDriver(base.BaseTestCase):
         self.gw_ip_vip = '10.0.3.1'
         self.gw_ip_mask = '255.255.255.0'
         self.gw_ha_group = 1621
+        sn_id = _uuid()
         self.gw_ha_info = {'group': self.gw_ha_group,
                            'ha_port': {
                                'fixed_ips': [{
+                                   'subnet_id': sn_id,
                                    'ip_address': self.gw_ip_vip,
                                    'prefixlen': self.gw_prefixlen}]}}
         self.port = {'id': PORT_ID,
-                     'ip_cidr': self.gw_ip_cidr,
-                     'fixed_ips': [{'ip_address': self.gw_ip}],
-                     'subnets': [{'cidr': self.gw_ip_cidr,
+                     'ip_info': {'subnet_id': sn_id,
+                                 'is_primary': True,
+                                 'ip_cidr': self.gw_ip_cidr},
+                     'fixed_ips': [{'ip_address': self.gw_ip,
+                                    'subnet_id': sn_id}],
+                     'subnets': [{'id': sn_id, 'cidr': self.gw_ip_cidr,
                                   'gateway_ip': self.gw_ip}],
                      'hosting_info': {
                          'physical_interface': self.phy_infc,
                          'segmentation_id': self.vlan_int},
-                     HA_INFO: self.gw_ha_info
-                     }
+                     HA_INFO: self.gw_ha_info}
         int_ports = [self.port]
         self.floating_ip = '20.0.0.35'
         self.fixed_ip = '10.0.3.5'

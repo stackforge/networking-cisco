@@ -68,6 +68,7 @@ VM_CATEGORY = ciscohostingdevicemanager.VM_CATEGORY
 L3_ROUTER_NAT = svc_constants.L3_ROUTER_NAT
 HOSTING_DEVICE_ATTR = routerhostingdevice.HOSTING_DEVICE_ATTR
 ROUTER_ROLE_GLOBAL = cisco_constants.ROUTER_ROLE_GLOBAL
+ROUTER_ROLE_LOGICAL_GLOBAL = cisco_constants.ROUTER_ROLE_LOGICAL_GLOBAL
 ROUTER_ROLE_HA_REDUNDANCY = cisco_constants.ROUTER_ROLE_HA_REDUNDANCY
 
 DICT_EXTEND_FUNCTIONS = ['_extend_router_dict_routertype',
@@ -1140,22 +1141,29 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
                       {'name': gr['name'], 'id': gr['id'],
                        'hd': gr[HOSTING_DEVICE_ATTR], 'num': num_rtrs, })
             if num_rtrs == 0:
-                LOG.warning(_LW("Global router:%(name)s[id:%(id)s] is present "
-                             "for hosting device:%(hd)s but there are no "
-                             "tenant or redundancy routers with gateway set "
-                             "on that hosting device. Proceeding to delete "
-                             "global router."),
-                         {'name': gr['name'], 'id': gr['id'],
-                          'hd': gr[HOSTING_DEVICE_ATTR]})
+                LOG.warning(
+                    _LW("Global router:%(name)s[id:%(id)s] is present for "
+                        "hosting device:%(hd)s but there are no tenant or "
+                        "redundancy routers with gateway set on that hosting "
+                        "device. Proceeding to delete global router."),
+                    {'name': gr['name'], 'id': gr['id'],
+                     'hd': gr[HOSTING_DEVICE_ATTR]})
                 try:
                     l3plugin.delete_router(
                             e_context, gr['id'], unschedule=False)
                 except (exc.ObjectDeletedError, l3.RouterNotFound) as e:
                     LOG.warning(e)
-                driver = self._get_router_type_driver(
-                        e_context, gr[routertype.TYPE_ATTR])
-                driver._conditionally_remove_logical_global_router(
-                        e_context, gr)
+                driver = self._get_router_type_driver(e_context,
+                                                      gr[routertype.TYPE_ATTR])
+                filters = {
+                    #TODO(bmelande): Filter on routertype of global router
+                    #routertype.TYPE_ATTR: [routertype_id],
+                    routerrole.ROUTER_ROLE_ATTR: [ROUTER_ROLE_LOGICAL_GLOBAL]}
+                log_global_routers = self._l3_plugin.get_routers(
+                    e_context, filters=filters)
+                log_global_router_id = log_global_routers[0]['id']
+                driver._delete_global_router(e_context, log_global_router_id,
+                                             logical=True)
 
     def _setup_backlog_handling(self):
         LOG.debug('Activating periodic backlog processor')
