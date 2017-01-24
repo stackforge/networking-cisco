@@ -18,6 +18,7 @@ import netaddr
 from oslo_db import exception as db_exc
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
+from sqlalchemy.ext.declarative import declarative_base
 import sqlalchemy.orm.exc as orm_exc
 import time
 
@@ -35,8 +36,10 @@ LOG = logging.getLogger(__name__)
 DB_MAX_RETRIES = 10
 RULE_LEN = 4096
 
+Base = declarative_base()
 
-class DfaSegmentationId(db.Base):
+
+class DfaSegmentationId(Base):
     """Represents DFA segmentation ID."""
 
     __tablename__ = 'segmentation_id'
@@ -49,7 +52,7 @@ class DfaSegmentationId(db.Base):
     delete_time = sa.Column(sa.DateTime)
 
 
-class DfaVlanId(db.Base):
+class DfaVlanId(Base):
     """Represents DFA VLAN ID."""
 
     __tablename__ = 'vlan_id'
@@ -62,7 +65,7 @@ class DfaVlanId(db.Base):
     delete_time = sa.Column(sa.DateTime)
 
 
-class DfaInServiceSubnet(db.Base):
+class DfaInServiceSubnet(Base):
     """Represents DFA Service Subnet."""
 
     __tablename__ = 'in_service_subnet'
@@ -74,7 +77,7 @@ class DfaInServiceSubnet(db.Base):
     allocated = sa.Column(sa.Boolean, nullable=False, default=False)
 
 
-class DfaOutServiceSubnet(db.Base):
+class DfaOutServiceSubnet(Base):
     """Represents DFA Service Subnet."""
 
     __tablename__ = 'out_service_subnet'
@@ -308,7 +311,7 @@ class DfaSegmentTypeDriver(object):
         return netid_dict
 
 
-class DfaNetwork(db.Base):
+class DfaNetwork(Base):
 
     """Represents DFA network."""
 
@@ -325,7 +328,7 @@ class DfaNetwork(db.Base):
     result = sa.Column(sa.String(16))
 
 
-class DfaTenants(db.Base):
+class DfaTenants(Base):
 
     """Represents DFA tenants."""
 
@@ -337,7 +340,7 @@ class DfaTenants(db.Base):
     result = sa.Column(sa.String(16))
 
 
-class DfaVmInfo(db.Base):
+class DfaVmInfo(Base):
 
     """Represents VM info."""
 
@@ -357,7 +360,7 @@ class DfaVmInfo(db.Base):
     result = sa.Column(sa.String(16))
 
 
-class DfaAgentsDb(db.Base):
+class DfaAgentsDb(Base):
 
     """Represents DFA agent."""
 
@@ -369,7 +372,7 @@ class DfaAgentsDb(db.Base):
     configurations = sa.Column(sa.String(4095))
 
 
-class DfaTopologyDb(db.Base):
+class DfaTopologyDb(Base):
     """Represents DFA Topology Discovery."""
 
     __tablename__ = 'topology_discovery'
@@ -390,7 +393,7 @@ class DfaTopologyDb(db.Base):
     configurations = sa.Column(sa.String(512))
 
 
-class DfaFwInfo(db.Base):
+class DfaFwInfo(Base):
     """Represents Firewall info."""
 
     __tablename__ = 'firewall'
