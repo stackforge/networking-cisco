@@ -1154,8 +1154,14 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
                     LOG.warning(e)
                 driver = self._get_router_type_driver(
                         e_context, gr[routertype.TYPE_ATTR])
-                driver._conditionally_remove_logical_global_router(
-                        e_context, gr)
+                filters = {routertype.TYPE_ATTR: [routertype_id],
+                   routerrole.ROUTER_ROLE_ATTR: [ROUTER_ROLE_LOGICAL_GLOBAL]}
+                log_global_routers = self._l3_plugin.get_routers(context,
+                                                         filters=filters)
+                log_global_router_id = log_global_routers[0]['id']
+                driver._delete_global_router(e_context, log_global_router_id, logical=True)
+                #driver._conditionally_remove_logical_global_router(
+                #        e_context, gr)
 
     def _setup_backlog_handling(self):
         LOG.debug('Activating periodic backlog processor')
