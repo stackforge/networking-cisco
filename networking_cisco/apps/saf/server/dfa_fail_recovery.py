@@ -84,6 +84,11 @@ class DfaFailureRecovery(object):
                 LOG.error(_LE("failure_recovery: Failed to create %(proj)s "
                               "on DCNM : %(reason)s"),
                           {'proj': proj.name, 'reason': str(e)})
+                self.update_project_info_cache(proj.id,
+                                               dci_id=proj.dci_id,
+                                               name=proj.name,
+                                               opcode='add.',
+                                               reason=str(e))
             else:
                 # Request is sent successfully, update the database.
                 self.update_project_info_cache(proj.id, dci_id=proj.dci_id,
@@ -107,6 +112,11 @@ class DfaFailureRecovery(object):
                 LOG.error(_LE("failure_recovery: Failed to update %(proj)s "
                               "on DCNM : %(reason)s"),
                           {'proj': proj.name, 'reason': str(exc)})
+                self.update_project_info_cache(proj.id,
+                                               dci_id=proj.dci_id,
+                                               name=proj.name,
+                                               opcode='update',
+                                               reason=str(e))
             else:
                 # Request is sent successfully, update the database.
                 self.update_project_info_cache(proj.id,
@@ -142,10 +152,11 @@ class DfaFailureRecovery(object):
                             net.fwd_mod = fwd_mod
                         self.dcnm_client.create_network(tenant_name, net, snet,
                                                         self.dcnm_dhcp)
-                    except dexc.DfaClientRequestFailed:
+                    except dexc.DfaClientRequestFailed as e:
                         # Still is failure, only log the error.
                         LOG.error(_LE('Failed to create network %(net)s.'),
                                   {'net': net.name})
+                        self.network[net_id].update({'reason': str(e)})
                     else:
                         # Request is sent to DCNM, update the database
                         params = dict(
@@ -177,8 +188,13 @@ class DfaFailureRecovery(object):
                 except Exception as e:
                     # Failed to send info to the agent. Keep the data in the
                     # database as failure to send it later.
-                    LOG.error(_LE('Failed to send VM info to agent. '
-                                  'Reason %s'), str(e))
+                    LOG.error(_LE('Failed to send create VM info to agent'
+                        '%(agent)s reason %(reason)s'), {'agent': vm.host,
+                        'reason': str(e)})
+                    reason = ('Failed to send create VM info to agent %s'
+                              'Reason %s' % (vm.host, str(e)))
+                    self.update_reason_in_port_result(vm.port_id, reason)
+
                 else:
                     params = dict(columns=dict(
                         result=constants.RESULT_SUCCESS))
@@ -191,8 +207,12 @@ class DfaFailureRecovery(object):
                 try:
                     self.neutron_event.send_vm_info(str(vm.host), str(vm_info))
                 except Exception as e:
-                    LOG.error(_LE('Failed to send VM info to agent. '
-                                  'Reason %s'), str(e))
+                    LOG.error(_LE('Failed to send create VM info to agent'
+                        '%(agent)s reason %(reason)s'), {'agent': vm.host,
+                        'reason': str(e)})
+                    reason = ('Failed to send delete VM info to agent %s'
+                              'Reason %s' % (vm.host, str(e)))
+                    self.update_reason_in_port_result(vm.port_id, reason)
                 else:
                     self.delete_vm_db(vm.port_id)
                     LOG.info(_LI('Deleted VM %(vm)s from DB.'),
@@ -207,15 +227,17 @@ class DfaFailureRecovery(object):
                 tenant_name = self.get_project_name(net.tenant_id)
                 try:
                     self.dcnm_client.delete_network(tenant_name, net)
-                except dexc.DfaClientRequestFailed:
+                except dexc.DfaClientRequestFailed as e:
                     # Still is failure, only log the error.
                     LOG.error(_LE('Failed to delete network %(net)s.'),
                               {'net': net.name})
+                    self.network[net_id].update({'reason': str(e)})
                 else:
                     # Request is sent to DCNM, delete the entry
                     # from database and return the segmentation id to the
                     # pool.
                     self.delete_network_db(net_id)
+                    del self.network[net_id]
                     self.segmentation_pool.add(segid)
                     LOG.debug("Success on failure recovery to deleted "
                               "%(net)s", {'net': net.name})
@@ -236,6 +258,11 @@ class DfaFailureRecovery(object):
                 LOG.error(_LE("Failure recovery is failed to delete "
                           "%(project)s on DCNM : %(reason)s"),
                           {'project': proj.name, 'reason': str(e)})
+                self.update_project_info_cache(proj.id,
+                                               dci_id=proj.dci_id,
+                                               name=proj.name,
+                                               opcode='delete',
+                                               reason=str(e))
             else:
                 # Delete was successful, now update the database.
                 self.update_project_info_cache(proj.id, opcode='delete')
