@@ -15,6 +15,9 @@
 #
 
 
+# Fabric Enabler Version
+VERSION = '2.0'
+
 # RPC message type exchange between server and agent.
 VM_INFO = 1000
 UPDATE_IP_RULE = 1001

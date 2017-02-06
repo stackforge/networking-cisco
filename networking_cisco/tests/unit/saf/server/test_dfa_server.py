@@ -284,6 +284,7 @@ class TestDFAServer(base.BaseTestCase):
         dcnmclnt = self.dfa_server.dcnm_client
         dcnmclnt.get_config_profile_for_network.return_value = (
             FAKE_CFG_PROFILE_NAME, FAKE_FWD_MODE)
+        self.dfa_server.get_network.return_value = None
         self.dfa_server.network_create_event(network_info)
         dfa_net = self.dfa_server.network[FAKE_NETWORK_ID]
         expected_calls = [mock.call(FAKE_NETWORK_ID, dfa_net, 'openstack',
@@ -311,6 +312,7 @@ class TestDFAServer(base.BaseTestCase):
         dcnmclnt = self.dfa_server.dcnm_client
         dcnmclnt.get_config_profile_for_network.return_value = (
             FAKE_CFG_PROFILE_NAME, FAKE_FWD_MODE)
+        self.dfa_server.get_network.return_value = None
         self.dfa_server.network_create_event(network_info)
 
         fake_network = mock.Mock()
