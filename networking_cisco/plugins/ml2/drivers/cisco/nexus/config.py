@@ -45,6 +45,9 @@ ml2_cisco_opts = [
     cfg.BoolOpt('host_key_checks', default=False,
                 help=_("Enable strict host key checks when "
                        "connecting to Nexus switches")),
+    cfg.BoolOpt('use_restapi_driver', default=False,
+                help=_("Use RESTAPI drivers to configure "
+                       "Nexus switches")),
 ]
 
 
