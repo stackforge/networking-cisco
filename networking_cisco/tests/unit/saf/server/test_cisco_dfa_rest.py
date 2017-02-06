@@ -94,8 +94,8 @@ class TestCiscoDFAClient(base.BaseTestCase):
         self.assertEqual(expected_calls,
                          self.dcnm_client._send_request.call_args_list)
 
-    def test_create_network(self):
-        """Test create network."""
+    def create_network_info(self):
+        """Create network info."""
 
         network_info = {}
         cfg_args = []
@@ -104,7 +104,6 @@ class TestCiscoDFAClient(base.BaseTestCase):
         network_name = self.testnetwork.name
         tenant_name = 'Cisco'
         part_name = self.dcnm_client._part_name
-        url = self.dcnm_client._create_network_url % (tenant_name, part_name)
 
         cfg_args.append("$segmentId=" + seg_id)
         cfg_args.append("$netMaskLength=16")
@@ -129,8 +128,30 @@ class TestCiscoDFAClient(base.BaseTestCase):
                         "description": network_name,
                         "dhcpScope": dhcp_scopes}
 
+        return network_info
+
+    def test_create_network(self):
+        """Test create network."""
+
+        network_info = self.create_network_info()
+        create_url = self.dcnm_client._create_network_url % (
+                network_info.get("organizationName"),
+                network_info.get("partitionName"))
         self.dcnm_client._create_network(network_info)
-        self.dcnm_client._send_request.assert_called_with('POST', url,
+        self.dcnm_client._send_request.assert_called_with('POST', create_url,
+                                                          network_info,
+                                                          'network')
+
+    def test_update_network(self):
+        """Test update network."""
+
+        network_info = self.create_network_info()
+        update_url = self.dcnm_client._network_url % (
+                network_info.get("organizationName"),
+                network_info.get("partitionName"),
+                network_info.get("segmentId"))
+        self.dcnm_client._update_network(network_info)
+        self.dcnm_client._send_request.assert_called_with('PUT', update_url,
                                                           network_info,
                                                           'network')
 
