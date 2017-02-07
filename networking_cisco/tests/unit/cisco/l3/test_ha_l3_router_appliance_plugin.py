@@ -1467,7 +1467,7 @@ class HAL3RouterApplianceVMTestCase(
             self._routes_update_cleanup(p1['id'], None, r['id'], [])
 
     def test__notify_subnetpool_address_scope_update(self):
-        l3_plugin = bc.get_plugin(service_constants.L3_ROUTER_NAT)
+        l3_plugin = bc.get_plugin(bc.constants.L3)
 
         tenant_id = _uuid()
         with mock.patch.object(

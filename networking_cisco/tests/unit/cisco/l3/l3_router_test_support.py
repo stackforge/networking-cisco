@@ -14,6 +14,7 @@
 
 import mock
 
+from networking_cisco import backwards_compatibility as bc
 import networking_cisco.plugins
 from networking_cisco.plugins.cisco.db.l3 import l3_router_appliance_db
 from networking_cisco.plugins.cisco.db.l3 import routertype_db
@@ -127,7 +128,7 @@ class TestL3RouterServicePlugin(
         routertype.ROUTERTYPE_ALIAS]
 
     def get_plugin_type(self):
-        return service_constants.L3_ROUTER_NAT
+        return bc.constants.L3
 
     def get_plugin_description(self):
         return "L3 Routing Service Plugin for testing"

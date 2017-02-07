@@ -138,7 +138,7 @@ class Routertype(bc.extensions.ExtensionDescriptor):
             attr.PLURALS.update(plural_mappings)
         return resource_helper.build_resource_info(plural_mappings,
                                                    RESOURCE_ATTRIBUTE_MAP,
-                                                   constants.L3_ROUTER_NAT)
+                                                   bc.constants.L3)
 
     def get_extended_resources(self, version):
         if version == "2.0":

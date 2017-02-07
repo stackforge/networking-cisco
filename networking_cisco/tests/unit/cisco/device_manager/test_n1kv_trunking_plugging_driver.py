@@ -57,7 +57,7 @@ class TestN1kvTrunkingPluggingDriver(
         service_plugins = {
             constants.CISCO_N1KV: POLICY_PROFILE_PLUGIN,
             constants.CISCO_N1KV_NET_PROFILE: NETWORK_PROFILE_PLUGIN,
-            service_constants.L3_ROUTER_NAT: L3_PLUGIN_KLASS}
+            bc.constants.L3: L3_PLUGIN_KLASS}
 
         ml2_cisco_opts = {
             'n1kv_vsm_ips': ['127.0.0.1'],

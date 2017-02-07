@@ -300,7 +300,7 @@ class TestAciVLANTrunkingPlugDriverGbp(
         g_p_mock = mock.MagicMock()
         plugins = {'CORE': self.core_plugin,
                    'GROUP_POLICY': self.mock_gbp_plugin,
-                   service_constants.L3_ROUTER_NAT: self.l3_plugin,
+                   bc.constants.L3: self.l3_plugin,
                    cisco_constants.DEVICE_MANAGER: self.core_plugin}
         g_p_mock.side_effect = lambda svc='CORE': plugins.get(svc)
         mock.patch('networking_cisco.backwards_compatibility.get_plugin',

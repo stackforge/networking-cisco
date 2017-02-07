@@ -566,4 +566,4 @@ class ASR1kL3RouterDriver(drivers.L3RouterBaseDriver):
 
     @property
     def _l3_plugin(self):
-        return bc.get_plugin(constants.L3_ROUTER_NAT)
+        return bc.get_plugin(bc.constants.L3)

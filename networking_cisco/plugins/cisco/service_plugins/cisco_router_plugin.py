@@ -97,7 +97,7 @@ class CiscoRouterPlugin(common_db_mixin.CommonDbMixin,
         self.conn.consume_in_threads()
 
     def get_plugin_type(self):
-        return constants.L3_ROUTER_NAT
+        return bc.constants.L3
 
     def get_plugin_description(self):
         return ("Cisco Router Service Plugin for basic L3 forwarding"
