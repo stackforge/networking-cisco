@@ -20,7 +20,6 @@ import mock
 from neutron.api import extensions as api_ext
 from neutron.common import config
 from neutron import context as n_context
-from neutron.plugins.common import constants as svc_constants
 from neutron.tests.unit.db import test_db_base_plugin_v2
 from oslo_config import cfg
 from oslo_utils import importutils
@@ -61,7 +60,7 @@ HW_CATEGORY = ciscohostingdevicemanager.HARDWARE_CATEGORY
 HW_TEMPLATE_NAME = "HW_template"
 HW_ROUTERTYPE_NAME = "HW_router"
 
-L3_ROUTER_NAT = svc_constants.L3_ROUTER_NAT
+L3_ROUTER_NAT = bc.constants.L3
 
 DEFAULT_SERVICE_TYPES = "router"
 NETWORK_NODE_SERVICE_TYPES = "router:fwaas:vpn"
@@ -1039,6 +1038,8 @@ class TestDeviceManagerDBPlugin(
                         auto_delete=auto_delete, no_delete=no_delete) as hd:
                     with mock.patch('networking_cisco.backwards_compatibility.'
                                     'get_plugin'):
+                        print(bc.get_plugin())
+                        print(self._devmgr)
                         hd_id = hd['hosting_device']['id']
                         m2 = mock.MagicMock()
                         self._devmgr.agent_notifiers = {
