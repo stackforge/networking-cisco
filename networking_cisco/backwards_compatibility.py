@@ -28,6 +28,7 @@ from neutron import version
 NEUTRON_VERSION = StrictVersion(str(version.version_info))
 NEUTRON_NEWTON_VERSION = StrictVersion('9.0.0')
 NEUTRON_OCATA_VERSION = StrictVersion('10.0.0')
+NEUTRON_OCATA_MAJOR_MINOR = StrictVersion('10.0')
 
 n_c = __import__('neutron.common.constants', fromlist=['common.constants'])
 constants = __import__('neutron_lib.constants', fromlist=['constants'])
@@ -50,12 +51,16 @@ else:
 
 
 if NEUTRON_VERSION >= NEUTRON_OCATA_VERSION:
-    from neutron import context
     from neutron.db.models import agent as agent_model
     from neutron.db.models import l3 as l3_models
     from neutron_lib.api import extensions
     from neutron_lib.db import model_base
     from neutron_lib.plugins import directory
+
+    if NEUTRON_OCATA_MAJOR_MINOR in NEUTRON_VERSION:
+        from neutron import context
+    else:
+        from neutron_lib import context
 
     get_plugin = directory.get_plugin
     n_c_attr_names = dir(n_c)
