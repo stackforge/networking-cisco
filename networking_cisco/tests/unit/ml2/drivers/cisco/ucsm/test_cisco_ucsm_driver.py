@@ -832,3 +832,23 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         host_id3 = 'compute3'
         hostname = self.mech_driver._get_host_id(host_id3)
         self.assertEqual(host_id3, hostname)
+
+    def test_port_profile_delete_table_add(self):
+        """Verifies that add and get of 1 PP to delete table works.""" 
+        self.db.add_port_profile_to_delete_table('OS-PP-100', '10.10.10.10')
+        self.assertTrue(self.db.get_port_profile_to_delete('OS-PP-100', '10.10.10.10'))
+
+    def test_pp_delete_table_add_multiple(self):
+        """Verifies that add and get of multiple PPs to delete table works.""" 
+        self.db.add_port_profile_to_delete_table("OS-PP-100", "10.10.10.10")
+        self.db.add_port_profile_to_delete_table("OS-PP-200", "10.10.10.10")
+        all_pps = self.db.get_all_port_profiles_to_delete()
+        for pp in all_pps:
+            self.assertEqual("10.10.10.10", pp.device_id)
+
+    def test_remove_port_profile_from_table(self):
+        """Verifies that removing entry from PP delete table works.""" 
+        self.db.add_port_profile_to_delete_table("OS-PP-100", "10.10.10.10")
+        self.db.remove_port_profile_to_delete("OS-PP-100", "10.10.10.10")
+        self.assertFalse(self.db.get_port_profile_to_delete("OS-PP-100", "10.10.10.10"))
+
