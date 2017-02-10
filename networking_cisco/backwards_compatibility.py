@@ -50,10 +50,10 @@ else:
 
 
 if NEUTRON_VERSION >= NEUTRON_OCATA_VERSION:
-    from neutron import context
     from neutron.db.models import agent as agent_model
     from neutron.db.models import l3 as l3_models
     from neutron_lib.api import extensions
+    from neutron_lib import context
     from neutron_lib.db import model_base
     from neutron_lib.plugins import directory
 
