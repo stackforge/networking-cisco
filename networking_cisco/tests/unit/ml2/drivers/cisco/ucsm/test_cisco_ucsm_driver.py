@@ -92,6 +92,8 @@ vnic_template_dict = {
     ('2.2.2.2', 'physnet2'): ('org-root/org-Test-Sub', 'Test'),
 }
 
+PORT_PROFILE_1 = 'OS-PP-100'
+
 
 class FakeNetworkContext(api.NetworkContext):
 
@@ -832,3 +834,72 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         host_id3 = 'compute3'
         hostname = self.mech_driver._get_host_id(host_id3)
         self.assertEqual(host_id3, hostname)
+
+    def test_port_profile_delete_table_add(self):
+        """Verifies that add and get of 1 PP to delete table works."""
+        self.db.add_port_profile_to_delete_table('OS-PP-100', '10.10.10.10')
+        self.assertTrue(self.db.get_port_profile_to_delete('OS-PP-100',
+            '10.10.10.10'))
+
+    def test_pp_delete_table_add_multiple(self):
+        """Verifies that add and get of multiple PPs to delete table works."""
+        self.db.add_port_profile_to_delete_table("OS-PP-100", "10.10.10.10")
+        self.db.add_port_profile_to_delete_table("OS-PP-200", "10.10.10.10")
+        all_pps = self.db.get_all_port_profiles_to_delete()
+        for pp in all_pps:
+            self.assertEqual("10.10.10.10", pp.device_id)
+
+    def test_remove_port_profile_from_table(self):
+        """Verifies that removing entry from PP delete table works."""
+        self.db.add_port_profile_to_delete_table("OS-PP-100", "10.10.10.10")
+        self.db.remove_port_profile_to_delete("OS-PP-100", "10.10.10.10")
+        self.assertFalse(self.db.get_port_profile_to_delete("OS-PP-100",
+            "10.10.10.10"))
+
+    def test_port_profile_delete_on_ucsm(self):
+        def static_vars(**kwargs):
+            def decorate(func):
+                for k in kwargs:
+                    setattr(func, k, kwargs[k])
+                return func
+            return decorate
+
+        @static_vars(counter=-1)
+        def new_delete_port_profile(mech_context, port_profile, ucsm_ip):
+            new_delete_port_profile.counter += 1
+            try:
+                if new_delete_port_profile.counter == 0:
+                    self.db.add_port_profile_to_delete_table(
+                        port_profile, ucsm_ip)
+                    raise Exception("Port profile still in use by VMs.")
+                elif new_delete_port_profile.counter == 1:
+                    self.db.remove_port_profile_to_delete(
+                        port_profile, ucsm_ip)
+                    return True
+            except Exception as e:
+                raise exceptions.UcsmConfigFailed(config=port_profile,
+                                        ucsm_ip=UCSM_IP_ADDRESS_1, exc=e)
+
+        mock.patch.object(ucsm_network_driver.CiscoUcsmDriver,
+                          '_delete_port_profile',
+                          new=new_delete_port_profile).start()
+
+        # Make sure Exception is raised when _delete_port_profile
+        # is called for the first time
+        self.assertRaises(exceptions.UcsmConfigFailed,
+                          self.ucsm_driver._delete_port_profile,
+                          PORT_PROFILE_1, UCSM_IP_ADDRESS_1)
+
+        # Make sure an entry has been added to the DB table when
+        # PP could not be deleted due to exception.
+        self.assertTrue(self.db.get_port_profile_to_delete(
+            PORT_PROFILE_1, UCSM_IP_ADDRESS_1))
+
+        # When counter=1, we are mimicking the case where the PP
+        # is being deleted from the timer thread.
+        self.assertTrue(self.ucsm_driver._delete_port_profile(
+                        PORT_PROFILE_1, UCSM_IP_ADDRESS_1))
+
+        # Make sure PP has been removed from the DB table.
+        self.assertFalse(self.db.get_port_profile_to_delete(
+            PORT_PROFILE_1, UCSM_IP_ADDRESS_1))
