@@ -36,6 +36,7 @@ from networking_cisco.plugins.ml2.drivers.cisco.nexus import exceptions
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import mech_cisco_nexus
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import nexus_db_v2
 
+from neutron import context
 from neutron.extensions import portbindings
 from neutron.plugins.common import constants as p_const
 from neutron.plugins.ml2 import driver_api as api
@@ -368,6 +369,7 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
                                               'physnet')] = PHYSNET
             mech_instance.driver.nexus_switches = (
                 mech_instance._nexus_switches)
+            mech_instance.context = context.Context()
 
         mock.patch.object(mech_cisco_nexus.CiscoNexusMechanismDriver,
                           '__init__', new=new_nexus_init).start()

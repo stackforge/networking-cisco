@@ -30,7 +30,7 @@ from oslo_utils import excutils
 
 from networking_cisco import backwards_compatibility as bc
 
-from neutron.db import api as db_api
+from neutron import context
 from neutron.extensions import portbindings
 from neutron.plugins.common import constants as p_const
 
@@ -292,6 +292,7 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         self.timer = None
         self.monitor_timeout = conf.cfg.CONF.ml2_cisco.switch_heartbeat_time
         self.monitor_lock = threading.Lock()
+        self.context = context.Context()
         LOG.info(_LI("CiscoNexusMechanismDriver: initialize() called "
                     "pid %(pid)d thid %(tid)d"), {'pid': self._ppid,
                     'tid': threading.current_thread().ident})
@@ -1843,7 +1844,7 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
                 # Database has provider_segment dictionary key.
                 network_id = context.current['network_id']
                 dynamic_segment = segments_db.get_dynamic_segment(
-                                    db_api.get_session(), network_id, physnet)
+                    self.context, network_id, physnet)
 
                 # Have other drivers bind the VLAN dynamic segment.
                 if dynamic_segment:
