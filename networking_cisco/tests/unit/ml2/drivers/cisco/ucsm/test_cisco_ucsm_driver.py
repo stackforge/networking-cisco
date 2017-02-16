@@ -921,3 +921,19 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         # Failed delete results in entry being created in the PP delete table
         self.assertTrue(self.ucsm_driver.ucsm_db.has_port_profile_to_delete(
             PORT_PROFILE_1, UCSM_IP_ADDRESS_1))
+
+    def test_add_sp_template_config_to_db(self):
+        host_id = HOST1
+        ucsm_ip = UCSM_IP_ADDRESS_1
+        sp_template_with_path = "/org-root/test/ls-SP-Test"
+        sp_template_info = sp_template_with_path.rsplit('/', 1)
+
+        self.ucsm_config.update_sp_template_config(host_id, ucsm_ip,
+                                                   sp_template_with_path)
+
+        self.assertIsNotNone(
+            self.ucsm_config.get_sp_template_for_host(host_id))
+        self.assertEqual(sp_template_info[1],
+            self.ucsm_config.get_sp_template_for_host(host_id))
+        self.assertEqual(sp_template_info[0],
+            self.ucsm_config.get_sp_template_path_for_host(host_id))
