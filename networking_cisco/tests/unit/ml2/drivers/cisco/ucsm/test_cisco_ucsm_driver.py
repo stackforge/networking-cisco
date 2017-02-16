@@ -168,9 +168,10 @@ class FakePortContext(object):
 class FakeUcsmHandle(object):
     """Ucsm connection handle for testing purposes only."""
 
-    def __init__(self, port_profile):
+    def __init__(self, port_profile=None):
         self._port_profile = port_profile
         self._times_called = 0
+        self.sp_list = ['org-root/SP1']
 
     def StartTransaction(self):
         return True
@@ -186,10 +187,17 @@ class FakeUcsmHandle(object):
         else:
             return self._port_profile
 
+    def ConfigResolveClass(self, classId, inFilter,
+                           inHierarchical=False, dumpXml=None):
+        return self.sp_list
+
     def RemoveManagedObject(self, p_profile):
         self._port_profile = None
 
     def CompleteTransaction(self):
+        return
+
+    def Logout(self):
         return
 
 
@@ -209,6 +217,7 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
             mech_instance.supported_sriov_vnic_types = SRIOV_VNIC_TYPES
             mech_instance.supported_pci_devs = SUPPORTED_PCI_DEVS
             mech_instance.ucsm_host_dict = UCSM_HOST_DICT
+            mech_instance.ucsm_conf = conf.UcsmConfig()
 
         mock.patch.object(ucsm_network_driver.CiscoUcsmDriver,
                           '__init__',
@@ -921,3 +930,39 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         # Failed delete results in entry being created in the PP delete table
         self.assertTrue(self.ucsm_driver.ucsm_db.has_port_profile_to_delete(
             PORT_PROFILE_1, UCSM_IP_ADDRESS_1))
+
+    def test_add_sp_template_config_to_db(self):
+        host_id = HOST1
+        ucsm_ip = UCSM_IP_ADDRESS_1
+        sp_template_with_path = "/org-root/test/ls-SP-Test"
+        sp_template_info = sp_template_with_path.rsplit('/', 1)
+
+        self.ucsm_config.update_sp_template_config(host_id, ucsm_ip,
+                                                   sp_template_with_path)
+
+        self.assertIsNotNone(
+            self.ucsm_config.get_sp_template_for_host(host_id))
+        self.assertEqual(sp_template_info[1],
+            self.ucsm_config.get_sp_template_for_host(host_id))
+        self.assertEqual(sp_template_info[0],
+            self.ucsm_config.get_sp_template_path_for_host(host_id))
+
+    def test_get_ucsm_ip_for_host_success(self):
+        host_id = HOST1
+        ucsm_ip = UCSM_IP_ADDRESS_1
+        sp_template_with_path = "/org-root/test/ls-SP-Test"
+
+        self.ucsm_config.update_sp_template_config(host_id, ucsm_ip,
+                                                   sp_template_with_path)
+        self.assertEqual(ucsm_ip, self.ucsm_driver.get_ucsm_ip_for_host(
+            host_id))
+
+    def test_get_ucsm_ip_for_host_failure(self):
+        def new_learn_sp_and_template_for_host(mech_instance, host_id):
+            return None
+
+        mock.patch.object(ucsm_network_driver.CiscoUcsmDriver,
+                          '_learn_sp_and_template_for_host',
+                          new=new_learn_sp_and_template_for_host).start()
+
+        self.assertIsNone(self.ucsm_driver.get_ucsm_ip_for_host('Hostname3'))
