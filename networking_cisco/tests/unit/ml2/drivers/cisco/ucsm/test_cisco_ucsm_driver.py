@@ -832,3 +832,42 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         host_id3 = 'compute3'
         hostname = self.mech_driver._get_host_id(host_id3)
         self.assertEqual(host_id3, hostname)
+
+    def test_add_sp_template_config_to_db(self):
+        sp_template_with_path = "/org-root/test/ls-SP-Test"
+        sp_template_info = sp_template_with_path.rsplit('/', 1)
+        self.ucsm_config.add_sp_template_config_for_host('Host1',
+        UCSM_IP_ADDRESS_1, sp_template_info[0], sp_template_info[1])
+        self.assertEqual(sp_template_info[1],
+            self.ucsm_config.get_sp_template_for_host('Host1'))
+        self.assertEqual(sp_template_info[0],
+            self.ucsm_config.get_sp_template_path_for_host('Host1'))
+
+    def test_learning_of_sp_template_config(self):
+
+        def new_update_sp_template_config(mech_context, host_id, ucsm_ip,
+            sp_template_with_path):
+            sp_template_info = sp_template_with_path.rsplit('/', 1)
+            self.ucsm_config.add_sp_template_config_for_host(host_id,
+                ucsm_ip, sp_template_info[0], sp_template_info[1])
+
+        mock.patch.object(ucsm_network_driver.CiscoUcsmDriver,
+                          '_update_sp_template_config',
+                          new=new_update_sp_template_config).start()
+
+        def new_learn_sp_and_template_for_host(mech_context, host_id):
+            sp_template_with_path = "/org-root/test/ls-SP-Test"
+            ucsm_ip = UCSM_IP_ADDRESS_1
+            self.ucsm_driver._update_sp_template_config(host_id, ucsm_ip,
+                sp_template_with_path)
+
+        mock.patch.object(ucsm_network_driver.CiscoUcsmDriver,
+                          '_learn_sp_and_template_for_host',
+                          new=new_learn_sp_and_template_for_host).start()
+
+        self.ucsm_driver._learn_sp_and_template_for_host(HOST1)
+
+        self.assertEqual('ls-SP-Test',
+            self.ucsm_config.get_sp_template_for_host(HOST1))
+        self.assertEqual('/org-root/test',
+            self.ucsm_config.get_sp_template_path_for_host(HOST1))
