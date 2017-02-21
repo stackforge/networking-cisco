@@ -13,8 +13,9 @@
 #    under the License.
 
 import copy
-
 import mock
+import uuid
+
 from oslo_log import log as logging
 from oslo_utils import fileutils
 from oslo_utils import uuidutils
@@ -22,11 +23,13 @@ import webob.exc
 
 from neutron.common import test_lib
 from neutron import context
+from neutron.extensions import l3
 from neutron.extensions import providernet as pr_net
 from neutron.tests.unit.extensions import test_l3
 
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.common import cisco_constants
+from networking_cisco.plugins.cisco.db.l3 import ha_db  # noqa
 from networking_cisco.plugins.cisco.device_manager.plugging_drivers import (
     aci_vlan_trunking_driver as aci_vlan)
 from networking_cisco.plugins.cisco.extensions import routerrole
@@ -213,16 +216,62 @@ class TestAciVLANTrunkingPlugDriverBase(
                     'cidr_exposed': '1.209.200.1/24',
                     'segmentation_id': 1066
                 }
-             }""").encode('utf-8')
+             }""").encode('ascii', 'ignore')
         )
-        # TODO(thbachman): couldn't get assertRaises to work here,
+        # TODO(tbachman): couldn't get assertRaises to work here,
         # so used this construct instead
         try:
             # just accessing the member should trigger the exception
             self.plugging_driver.transit_nets_cfg
-            self.assertTrue(False)
+            self.fail("Did not throw AciDriverConfigInvalidFileFormat")
         except aci_vlan.AciDriverConfigInvalidFileFormat:
-            self.assertTrue(True)
+            pass
+        fileutils.delete_if_exists(self.plugging_driver._cfg_file)
+
+    def test_transit_nets_cfg_file_format_yaml(self):
+        self.plugging_driver._cfg_file = fileutils.write_to_tempfile(
+            ("""---
+               EDGENAT:
+                 gateway_ip: 1.109.100.254
+                 cidr_exposed: 1.109.100.1/24
+                 segmentation_id: 1066
+               EDGENATBackup:
+                 gateway_ip: 1.209.200.254
+                 cidr_exposed: 1.209.200.1/24
+                 segmentation_id: 1066
+            """).encode('ascii', 'ignore')
+        )
+        # TODO(tbachman): couldn't get assertRaises to work here,
+        # so used this construct instead
+        try:
+            # just accessing the member should trigger the exception
+            self.plugging_driver.transit_nets_cfg
+        except aci_vlan.AciDriverConfigInvalidFileFormat:
+            self.fail("Test threw AciDriverConfigInvalidFileFormat")
+        fileutils.delete_if_exists(self.plugging_driver._cfg_file)
+
+    def test_transit_nets_cfg_invalid_file_format_yaml(self):
+        self.plugging_driver._cfg_file = fileutils.write_to_tempfile(
+            ("""---
+               EDGENAT:
+               ---
+                 gateway_ip: 1.109.100.254
+                 - cidr_exposed: 1.109.100.1/24
+                 segmentation_id: 1066
+               EDGENATBackup:
+                 gateway_ip: 1.209.200.254
+                 cidr_exposed: 1.209.200.1/24
+                 segmentation_id: 1066
+            """).encode('ascii', 'ignore')
+        )
+        # TODO(tbachman): couldn't get assertRaises to work here,
+        # so used this construct instead
+        try:
+            # just accessing the member should trigger the exception
+            self.plugging_driver.transit_nets_cfg
+            self.fail("Did not throw AciDriverConfigInvalidFileFormat")
+        except aci_vlan.AciDriverConfigInvalidFileFormat:
+            pass
         fileutils.delete_if_exists(self.plugging_driver._cfg_file)
 
     def test_config_sanity_check(self):
@@ -259,9 +308,10 @@ class TestAciVLANTrunkingPlugDriverBase(
         # so used this construct instead
         try:
             self.plugging_driver.apic_driver()
-            self.assertTrue(False)
+            self.fail("Did not throw "
+                "AciDriverNoAciDriverInstalledOrConfigured")
         except aci_vlan.AciDriverNoAciDriverInstalledOrConfigured:
-            self.assertTrue(True)
+            pass
 
 
 class TestAciVLANTrunkingPlugDriverGbp(
@@ -302,8 +352,10 @@ class TestAciVLANTrunkingPlugDriverGbp(
                    bc.constants.L3: self.l3_plugin,
                    cisco_constants.DEVICE_MANAGER: self.core_plugin}
         g_p_mock.side_effect = lambda svc='CORE': plugins.get(svc)
-        mock.patch('networking_cisco.backwards_compatibility.get_plugin',
-                   g_p_mock).start()
+        self.plugin_mock = mock.patch(
+            'networking_cisco.backwards_compatibility.get_plugin',
+            g_p_mock)
+        self.plugin_mock.start()
         plug = aci_vlan.AciVLANTrunkingPlugDriver()
         plug.apic_driver.gbp_plugin.get_l3p_id_from_router_id = mock.Mock(
             return_value='somerouterid')
@@ -318,8 +370,8 @@ class TestAciVLANTrunkingPlugDriverGbp(
             test_lib.test_config.pop('config_files', None)
         else:
             test_lib.test_config['config_files'] = self._old_config_files
+        self.plugin_mock.stop()
 
-#        manager.NeutronManager.get_service_plugins = self._real_get_plugins
         super(TestAciVLANTrunkingPlugDriverGbp, self).tearDown()
 
     def _stub_vlan(self, net, vrf, vrf_tenant):
@@ -442,7 +494,10 @@ class TestAciVLANTrunkingPlugDriverGbp(
                 self._set_apic_driver_mocks(r1)
                 self.plugging_driver.extend_hosting_port_info(ctx,
                     fake_port_db_obj, hosting_device, hosting_info)
-                self.assertEqual([{'id': r1['tenant_id'],
+                snat_id = str((r1['tenant_id'] +
+                               sn1['id']).encode('ascii', 'ignore'))
+                snat_id = str(uuid.uuid3(uuid.NAMESPACE_DNS, snat_id))
+                self.assertEqual([{'id': snat_id,
                                    'ip': FAKE_IP,
                                    'cidr': sn1['cidr']}],
                                  hosting_info['snat_subnets'])
@@ -563,7 +618,8 @@ class TestAciVLANTrunkingPlugDriverGbp(
             binding_db = plugin._allocate_hosting_port(
                 ctx, r['id'], port_db, hd['id'], plugging_driver)
             self.assertIsNotNone(binding_db.hosting_port_id)
-            self.assertEqual(port_db.id, binding_db.hosting_port_id)
+            self.assertEqual(port_db.id,
+                             binding_db.hosting_port_id)
             self.assertEqual(test_info['vlan_tags'][i],
                              binding_db.segmentation_id)
         with self.network(name=self._gen_ext_net_name(
@@ -668,14 +724,15 @@ class TestAciVLANTrunkingPlugDriverGbp(
                 )
                 hosting_device = {'id': '00000000-0000-0000-0000-000000000002'}
                 tenant_id = 'tenant_uuid1'
-                dummy_rid = 'dummy_router_id'
                 ctx = context.Context('', tenant_id, is_admin=True)
                 with mock.patch.object(self.core_plugin, 'get_network') as m1:
                     m1.side_effect = _return_mocked_net
-                    allocations = self.plugging_driver.allocate_hosting_port(
-                        ctx, dummy_rid, fake_port_db_obj,
-                        'opflex', hosting_device['id'])
-                    self.assertEqual(3003, allocations['allocated_vlan'])
+                    with self.router(tenant_id=tenant_id) as router1:
+                        r1 = router1['router']
+                        allocs = self.plugging_driver.allocate_hosting_port(
+                            ctx, r1['id'], fake_port_db_obj,
+                            'opflex', hosting_device['id'])
+                        self.assertEqual(allocs['allocated_vlan'], 3003)
 
     def test_allocate_hosting_port_info_exception(self):
         self.plugging_driver._default_ext_dict = {
@@ -702,15 +759,16 @@ class TestAciVLANTrunkingPlugDriverGbp(
                 )
                 hosting_device = {'id': '00000000-0000-0000-0000-000000000002'}
                 tenant_id = 'tenant_uuid1'
-                dummy_rid = 'dummy_router_id'
                 ctx = context.Context('', tenant_id, is_admin=True)
                 with mock.patch.object(self.core_plugin, 'get_network') as m1:
                     m1.side_effect = _return_mocked_net
-                    self.assertRaises(
-                        aci_vlan.AciDriverConfigMissingSegmentationId,
-                        self.plugging_driver.allocate_hosting_port,
-                        ctx, dummy_rid, fake_port_db_obj,
-                        'opflex', hosting_device['id'])
+                    with self.router(tenant_id=tenant_id) as router1:
+                        r1 = router1['router']
+                        self.assertRaises(
+                            aci_vlan.AciDriverConfigMissingSegmentationId,
+                            self.plugging_driver.allocate_hosting_port,
+                            ctx, r1['id'], fake_port_db_obj,
+                            'opflex', hosting_device['id'])
 
 
 class TestAciVLANTrunkingPlugDriverNeutron(TestAciVLANTrunkingPlugDriverGbp):
@@ -806,7 +864,10 @@ class TestAciVLANTrunkingPlugDriverNeutron(TestAciVLANTrunkingPlugDriverGbp):
                     self._set_apic_driver_mocks(r1)
                     self.plugging_driver.extend_hosting_port_info(ctx,
                         fake_port_db_obj, hosting_device, hosting_info)
-                    self.assertEqual([{'id': r1['tenant_id'],
+                    snat_id = str((r1['tenant_id'] +
+                                   sn1['id']).encode('ascii', 'ignore'))
+                    snat_id = str(uuid.uuid3(uuid.NAMESPACE_DNS, snat_id))
+                    self.assertEqual([{'id': snat_id,
                                        'ip': FAKE_IP,
                                        'cidr': sn1['cidr']}],
                                      hosting_info['snat_subnets'])
@@ -919,15 +980,24 @@ class TestAciVLANTrunkingPlugDriverNeutron(TestAciVLANTrunkingPlugDriverGbp):
                 self.device_id = router_id
                 self.device_owner = None
 
+            def get(self, member):
+                if member == 'dveice_id':
+                    return self.device_id
+                elif member == 'device_owner':
+                    return self.device_owner
+                else:
+                    return None
+
         drv = self.plugging_driver
         tenant_id = 'some_tenant_id'
         ctx = context.Context('', tenant_id, is_admin=True)
         with self.router() as router1:
             r1 = router1['router']
             dummy_port = DummyPort(r1['id'])
-            net_dict, net = drv._get_external_network_dict(ctx, dummy_port)
+            net_dict, net = drv._get_external_network_dict(ctx,
+                                                           dummy_port, r1)
             self.assertIsNone(net)
-            self.assertEqual({}, net_dict)
+            self.assertEqual(net_dict, {})
 
     def test_allocate_hosting_port_no_router(self):
         drv = self.plugging_driver
@@ -935,8 +1005,9 @@ class TestAciVLANTrunkingPlugDriverNeutron(TestAciVLANTrunkingPlugDriverGbp):
         ctx = context.Context('', tenant_id, is_admin=True)
         with self.port() as port1:
             p1 = port1['port']
-            self.assertIsNone(drv.allocate_hosting_port(ctx,
-                None, p1, None, None))
+            self.assertRaises(l3.RouterNotFound,
+                              drv.allocate_hosting_port,
+                              ctx, None, p1, None, None)
 
     def test_allocate_hosting_port_router_no_gw(self):
         drv = self.plugging_driver
