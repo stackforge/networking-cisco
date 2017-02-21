@@ -13,6 +13,8 @@
 #    under the License.
 
 import re
+import uuid
+import yaml
 
 from neutron.extensions import l3
 from neutron_lib import exceptions as n_exc
@@ -21,6 +23,7 @@ from oslo_log import log as logging
 
 from networking_cisco._i18n import _, _LI, _LE
 from networking_cisco import backwards_compatibility as bc
+from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.device_manager.plugging_drivers import (
     hw_vlan_trunking_driver as hw_vlan)
 from networking_cisco.plugins.cisco.extensions import routerrole
@@ -33,6 +36,7 @@ APIC_SNAT_SUBNET = 'host-snat-pool-for-internal-use'
 APIC_SNAT_NET = 'host-snat-network-for-internal-use'
 EXTERNAL_GW_INFO = l3.EXTERNAL_GW_INFO
 UUID_REGEX = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+DEVICE_OWNER_GLOBAL_ROUTER_GW = cisco_constants.DEVICE_OWNER_GLOBAL_ROUTER_GW
 DEVICE_OWNER_ROUTER_GW = bc.constants.DEVICE_OWNER_ROUTER_GW
 DEVICE_OWNER_ROUTER_INTF = bc.constants.DEVICE_OWNER_ROUTER_INTF
 ROUTER_ROLE_ATTR = routerrole.ROUTER_ROLE_ATTR
@@ -50,7 +54,8 @@ DEFAULT_EXT_DICT = {'gateway_ip': '1.103.2.254',
 
 
 class AciDriverConfigInvalidFileFormat(n_exc.BadRequest):
-    message = _("The ACI Driver config file format is invalid")
+    message = _("The ACI Driver config file format is invalid -- it must "
+                "either be valid JSON or YAML data")
 
 
 class AciDriverConfigMissingGatewayIp(n_exc.BadRequest):
@@ -70,7 +75,9 @@ class AciDriverConfigMissingSegmentationId(n_exc.BadRequest):
 
 class AciDriverNoAciDriverInstalledOrConfigured(n_exc.BadRequest):
     message = _("The ACI plugin driver is either not installed or "
-                "the neutron configuration is incorrect.")
+                "the neutron configuration is incorrect. You must "
+                "configure the APIC mapping driver for GBP workflow "
+                "or the APIC ML2 mechanism driver for neutron workflow")
 
 
 class AciVLANTrunkingPlugDriver(hw_vlan.HwVLANTrunkingPlugDriver):
@@ -104,12 +111,21 @@ class AciVLANTrunkingPlugDriver(hw_vlan.HwVLANTrunkingPlugDriver):
     @property
     def transit_nets_cfg(self):
         if self._cfg_file:
-            networks_dict = open(self._cfg_file, 'r').read()
-            try:
-                self._transit_nets_cfg = eval(networks_dict)
-                self._sanity_check_config(self._transit_nets_cfg)
-            except SyntaxError:
-                raise AciDriverConfigInvalidFileFormat
+            with open(self._cfg_file, 'r') as f:
+                networks_dict = f.read()
+                #networks_dict = open(self._cfg_file, 'r').read()
+                try:
+                    self._transit_nets_cfg = eval(networks_dict)
+                    self._sanity_check_config(self._transit_nets_cfg)
+                except SyntaxError:
+                    # Check for YAML file format
+                    try:
+                        self._transit_nets_cfg = yaml.load(networks_dict)
+                        self._sanity_check_config(self._transit_nets_cfg)
+                    except (yaml.parser.ParserError,
+                            yaml.scanner.ScannerError,
+                            SyntaxError):
+                        raise AciDriverConfigInvalidFileFormat()
         else:
             self._transit_nets_cfg = {}
         return self._transit_nets_cfg
@@ -145,14 +161,14 @@ class AciVLANTrunkingPlugDriver(hw_vlan.HwVLANTrunkingPlugDriver):
         details['vrf_tenant'] = vrf_info['aci_tenant']
         return details
 
-    def _get_external_network_dict(self, context, port_db):
+    def _get_external_network_dict(self, context, port_db, router):
         """Get external network information
 
         Get the information about the external network,
         so that it can be used to create the hidden port,
         subnet, and network.
         """
-        if port_db.device_owner == DEVICE_OWNER_ROUTER_GW:
+        if self._is_external_interface(port_db, router.get(ROUTER_ROLE_ATTR)):
             network = self._core_plugin.get_network(context,
                 port_db.network_id)
         else:
@@ -250,7 +266,13 @@ class AciVLANTrunkingPlugDriver(hw_vlan.HwVLANTrunkingPlugDriver):
                     # network
                     if not self._snat_subnet_for_ext_net(context, subnet, net):
                         continue
-                    snat_subnet = {'id': router['tenant_id'],
+                    # Uniquify the SNAT ID per VRF. This needs to be
+                    # Changed to handle different SNAT IP allocation
+                    # strategies, once they're supported
+                    snat_id = router['tenant_id'] + subnet['id']
+                    snat_id = str(uuid.uuid3(uuid.NAMESPACE_DNS,
+                                             snat_id.encode('utf-8')))
+                    snat_subnet = {'id': snat_id,
                                    'ip': snat_ips['host_snat_ip'],
                                    'cidr': subnet['cidr']}
                     hosting_info['snat_subnets'].append(snat_subnet)
@@ -269,23 +291,26 @@ class AciVLANTrunkingPlugDriver(hw_vlan.HwVLANTrunkingPlugDriver):
             LOG.debug('No segmentation ID in hosting_info -- assigning')
             hosting_info['segmentation_id'] = (
                 port_db.hosting_info.get('segmentation_id'))
-        is_external = (port_db.device_owner == DEVICE_OWNER_ROUTER_GW)
+        router_id = port_db.device_id
+        router = self.l3_plugin.get_router(context, router_id)
+        is_external = self._is_external_interface(port_db,
+                                                  router.get(ROUTER_ROLE_ATTR))
         hosting_info['physical_interface'] = self._get_interface_info(
             hosting_device['id'], port_db.network_id, is_external)
-        ext_dict, net = self._get_external_network_dict(context, port_db)
+        ext_dict, net = self._get_external_network_dict(context, port_db,
+                                                        router)
         if is_external and ext_dict:
             hosting_info['network_name'] = ext_dict['network_name']
             hosting_info['cidr_exposed'] = ext_dict['cidr_exposed']
             hosting_info['gateway_ip'] = ext_dict['gateway_ip']
             details = self.get_vrf_context(context,
                                            port_db['device_id'], port_db)
-            router_id = port_db.device_id
-            router = self.l3_plugin.get_router(context, router_id)
             # skip routers not created by the user -- they will have
             # empty-string tenant IDs
             if router.get(ROUTER_ROLE_ATTR):
                 return
-            hosting_info['vrf_id'] = details['vrf_id']
+            if details and details.get('vrf_id'):
+                hosting_info['vrf_id'] = details['vrf_id']
             if ext_dict.get('global_config'):
                 hosting_info['global_config'] = (
                     ext_dict['global_config'])
@@ -293,6 +318,11 @@ class AciVLANTrunkingPlugDriver(hw_vlan.HwVLANTrunkingPlugDriver):
         else:
             if ext_dict.get('interface_config'):
                 hosting_info['interface_config'] = ext_dict['interface_config']
+
+    def _is_external_interface(self, port, router_role):
+        return ((router_role and (port.get('device_owner') ==
+            DEVICE_OWNER_GLOBAL_ROUTER_GW)) or (port.get('device_owner') ==
+            DEVICE_OWNER_ROUTER_GW))
 
     def allocate_hosting_port(self, context, router_id, port_db, network_type,
                               hosting_device_id):
@@ -304,10 +334,15 @@ class AciVLANTrunkingPlugDriver(hw_vlan.HwVLANTrunkingPlugDriver):
         to look up the VLAN to use for this port to the external router
         (kept as part of the L3 Out policy in ACI).
         """
+        if self.apic_driver is None:
+            return
+
+        router = self.l3_plugin.get_router(context, router_id)
         # If this is a router interface, the VLAN comes from APIC.
         # If it's the gateway, the VLAN comes from the segment ID
-        if port_db.get('device_owner') == DEVICE_OWNER_ROUTER_GW:
-            ext_dict, net = self._get_external_network_dict(context, port_db)
+        if self._is_external_interface(port_db, router.get(ROUTER_ROLE_ATTR)):
+            ext_dict, net = self._get_external_network_dict(context, port_db,
+                                                            router)
             # If an OpFlex network is used on the external network,
             # the actual segment ID comes from the config file
             if net and net.get('provider:network_type') == 'opflex':
@@ -329,11 +364,11 @@ class AciVLANTrunkingPlugDriver(hw_vlan.HwVLANTrunkingPlugDriver):
         # if there isn't an external gateway yet on the router,
         # then don't allocate a port
 
-        router = self.l3_plugin.get_router(context, router_id)
-        gw_info = router[EXTERNAL_GW_INFO]
-        if not gw_info:
+        if router.get(EXTERNAL_GW_INFO) is None:
             return
-        network_id = gw_info.get('network_id')
+        network_id = router[EXTERNAL_GW_INFO].get('network_id')
+        if network_id is None:
+            return
 
         networks = self._core_plugin.get_networks(
             context.elevated(), {'id': [network_id]})
@@ -371,7 +406,7 @@ class AciVLANTrunkingPlugDriver(hw_vlan.HwVLANTrunkingPlugDriver):
         the GBP workflow
         """
         prefix = network_name[:re.search(UUID_REGEX, network_name).start() - 1]
-        return prefix.strip(APIC_OWNED)
+        return prefix.replace(APIC_OWNED, '')
 
     def _get_ext_net_name_neutron(self, network_name):
         """Get the external network name
