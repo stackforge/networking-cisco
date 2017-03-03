@@ -67,7 +67,7 @@ class RouterHostingDeviceBinding(bc.model_base.BASEV2):
                           sa.ForeignKey('routers.id', ondelete='CASCADE'),
                           primary_key=True)
     router = orm.relationship(
-        l3_db.Router,
+        bc.Router,
         backref=orm.backref('hosting_info', cascade='all', uselist=False))
     # 'router_role' specifies the type of role the router serves in
     role = sa.Column(sa.String(255), default=None)

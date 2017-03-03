@@ -43,11 +43,11 @@ class L3RouterTypeAwareScheduler(l3_agent_scheduler.L3Scheduler):
             context, plugin = plugin, context
         # TODO(gongysh) consider the disabled agent's router
         no_agent_binding = ~sql.exists().where(
-            l3_db.Router.id ==
+            bc.Router.id ==
             l3_agentschedulers_db.RouterL3AgentBinding.router_id)
         # Modified to only include routers of network namespace type
         ns_routertype_id = plugin.get_namespace_router_type_id(context)
-        query = context.session.query(l3_db.Router.id)
+        query = context.session.query(bc.Router.id)
         query = query.join(l3_models.RouterHostingDeviceBinding)
         query = query.filter(
             l3_models.RouterHostingDeviceBinding.router_type_id ==
