@@ -104,7 +104,9 @@ class CiscoUcsmDriver(object):
         # Check if Service Profile to Hostname mapping config has been provided
         if cfg.CONF.ml2_cisco_ucsm.ucsm_host_list:
             self.ucsm_sp_dict, self.ucsm_host_dict = (
-                config.parse_ucsm_host_config())
+                config.parse_ucsm_host_config(
+                    cfg.CONF.ml2_cisco_ucsm.ucsm_ip,
+                    cfg.CONF.ml2_cisco_ucsm.ucsm_host_list))
         else:
             self._create_ucsm_host_to_service_profile_mapping()
 
