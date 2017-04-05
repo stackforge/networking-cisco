@@ -1530,6 +1530,18 @@ def _notify_routers_callback(resource, event, trigger, **kwargs):
                                           'disassociate_floatingips')
 
 
+def _notify_subnet_create(resource, event, trigger, **kwargs):
+    context = kwargs['context']
+    subnet = kwargs['subnet']
+    l3plugin = bc.get_plugin(L3_ROUTER_NAT)
+    for router in l3plugin.get_routers(context):
+        if (router['external_gateway_info'] and
+                (router['external_gateway_info']['network_id'] ==
+                 subnet['network_id'])):
+            router_data = {'router': router}
+            l3plugin.update_router(context, router['id'], router_data)
+
+
 def _notify_cfg_agent_port_update(resource, event, trigger, **kwargs):
     """Called when router port/interface is enabled/disabled"""
     original_port = kwargs.get('original_port')
@@ -1562,6 +1574,8 @@ def modify_subscribe():
     # register for updates on a port
     registry.subscribe(_notify_cfg_agent_port_update, resources.PORT,
                        events.AFTER_UPDATE)
+    registry.subscribe(
+        _notify_subnet_create, resources.SUBNET, events.AFTER_CREATE)
 
 
 modify_subscribe()
