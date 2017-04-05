@@ -708,7 +708,14 @@ class RoutingServiceHelper(object):
         existing_port_ids = set([p['id'] for p in ri.internal_ports])
         current_port_ids = set([p['id'] for p in internal_ports
                                 if p['admin_state_up']])
-        new_ports = [p for p in internal_ports
+        new_ports = []
+        if existing_port_ids == current_port_ids:
+            # Check if a new subnet is connected to the port
+            for p in internal_ports:
+                new_ports = [p for q in ri.internal_ports if (
+                              len(p['fixed_ips']) > len(q['fixed_ips']))]
+        else:
+            new_ports = [p for p in internal_ports
                      if
                      p['id'] in (current_port_ids - existing_port_ids)]
         old_ports = [p for p in ri.internal_ports

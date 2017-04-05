@@ -276,18 +276,38 @@ class ASR1kL3RouterDriver(drivers.L3RouterBaseDriver):
         filters = {
             'device_id': [global_router['id']],
             'device_owner': [port_type]}
-        connected_nets = {
-            p['network_id']: p['fixed_ips'] for p in
+        ext_net_port = {
+            p['network_id']: p for p in
             self._core_plugin.get_ports(context, filters=filters)}
-        if ext_net_id in connected_nets:
-            # already connected to the external network so we're done
-            return
+        if ext_net_id in ext_net_port:
+            # already connected to the external network, called if
+            # new subnets are added to the network
+            self._update_auxiliary_external_gateway_port(
+                context, global_router, ext_net_id, ext_net_port)
         else:
             # not connected to the external network, so let's fix that
             aux_gw_port = self._create_auxiliary_external_gateway_port(
                 context, global_router, ext_net_id, tenant_router, port_type)
             if provision_ha:
                 self._provision_port_ha(context, aux_gw_port, global_router)
+
+    def _update_auxiliary_external_gateway_port(
+            self, context, global_router, ext_net_id, port):
+        # When a new subnet is added to an external network, the auxillary
+        # gateway port in the global router must be updated with the new
+        # subnet_id so an ip from that subnet is assigned to the gateway port
+        ext_network = self._core_plugin.get_network(context, ext_net_id)
+        fixed_ips = port[ext_net_id]['fixed_ips']
+        # fetch the subnets the port is currently connected to
+        subnet_id_list = [fixedip['subnet_id'] for fixedip in fixed_ips]
+        # add the new subnet
+        for subnet_id in ext_network['subnets']:
+            if subnet_id not in subnet_id_list:
+                fixed_ip = {'subnet_id': subnet_id}
+                fixed_ips.append(fixed_ip)
+                self._core_plugin.update_port(context, port[ext_net_id]['id'],
+                                              ({'port': {'fixed_ips':
+                                                         fixed_ips}}))
 
     def _create_auxiliary_external_gateway_port(
             self, context, global_router, ext_net_id, tenant_router,
