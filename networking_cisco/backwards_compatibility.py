@@ -61,6 +61,11 @@ if NEUTRON_VERSION >= NEUTRON_OCATA_VERSION:
     except ImportError:
         from neutron_lib import context
 
+    try:
+        from neutron.extensions import portbindings
+    except ImportError:
+        from neutron_lib.api.definitions import portbindings
+
     get_plugin = directory.get_plugin
     n_c_attr_names = dir(n_c)
     HasProject = model_base.HasProject
