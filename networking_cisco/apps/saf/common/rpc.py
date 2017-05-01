@@ -19,6 +19,7 @@ import time
 
 from oslo_config import cfg
 import oslo_messaging as messaging
+from oslo_messaging.rpc import dispatcher
 
 from networking_cisco._i18n import _LE
 from networking_cisco.apps.saf.common import dfa_logger as logging
@@ -72,8 +73,10 @@ class DfaRpcServer(object):
         target = messaging.Target(exchange=exchange, topic=topic,
                                   server=server, fanout=fanout)
         endpoints = [endpoints]
+        access_policy = dispatcher.DefaultRPCAccessPolicy
         self._server = messaging.get_rpc_server(transport, target, endpoints,
-                                                executor=executor)
+                                                executor=executor,
+                                                access_policy=access_policy)
         LOG.debug('RPC server: topic=%s, server=%s, endpoints=%s' % (
             topic, server, endpoints))
 
