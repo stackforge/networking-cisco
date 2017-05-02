@@ -31,6 +31,7 @@ from oslo_utils import excutils
 from networking_cisco import backwards_compatibility as bc
 
 from neutron.common import utils as neutron_utils
+from neutron_lib.api.definitions import provider_net as provider
 from neutron.plugins.common import constants as p_const
 
 if bc.NEUTRON_VERSION <= bc.NEUTRON_NEWTON_VERSION:
@@ -1715,6 +1716,17 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         if self.timer:
             self.timer.cancel()
             self.timer = None
+
+    def create_network_precommit(self, context):
+        network = context.current
+
+        if network.get('is_provider_network', False):
+            nxos_db.add_provider_network(
+                network['id'], network(provider.SEGMENTATION_ID))
+
+    def delete_network_postcommit(self, context):
+        if nxos_db.is_provider_network(context.current['id']):
+            nxos_db.delete_provider_network(context.current['id'])
 
     @lockutils.synchronized('cisco-nexus-portlock')
     def create_port_postcommit(self, context):
