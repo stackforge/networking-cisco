@@ -30,8 +30,6 @@ class NexusPortBinding(bc.model_base.BASEV2):
     vni = sa.Column(sa.Integer)
     switch_ip = sa.Column(sa.String(255))
     instance_id = sa.Column(sa.String(255))
-    is_provider_vlan = sa.Column(sa.Boolean(), nullable=False, default=False,
-                                 server_default=sa.sql.false())
     channel_group = sa.Column(sa.Integer, default=0)
     is_native = sa.Column(sa.Boolean(), nullable=False, default=False,
                           server_default=sa.sql.false())
@@ -94,3 +92,11 @@ class NexusMcastGroup(bc.model_base.BASEV2, bc.model_base.HasId):
                                    'ml2_nexus_vxlan_allocations.vxlan_vni',
                                    ondelete="CASCADE"),
                                nullable=False)
+
+
+class NexusProviderNetwork(bc.model_base.BASEV2):
+
+    __tablename__ = 'ml2_nexus_provider_networks'
+
+    network_id = sa.Column(sa.String(36), nullable=False, primary_key=True)
+    vlan_id = sa.Column(sa.Integer, nullable=False)

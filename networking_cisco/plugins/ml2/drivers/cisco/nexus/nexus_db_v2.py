@@ -239,6 +239,31 @@ def is_reserved_binding(binding):
             const.RESERVED_NEXUS_PORT_DEVICE_ID_R1])
 
 
+def add_provider_network(network_id, vlan_id):
+    session = db.get_session()
+    row = nexus_models_v2.NexusProviderNetwork(network_id=network_id,
+                                               vlan_id=vlan_id)
+    session.add(row)
+    session.flush()
+    return row
+
+def delete_provider_network(network_id):
+    session = db.get_session()
+    row = session.query(nexus_models_v2.NexusProviderNetwork).filter_by(
+        network_id=network_id).one_or_none()
+    if row:
+        session.delete(row)
+        session.flush()
+
+def is_provider_network(network_id):
+    session.db.get_session()
+    row = session.query(nexus_models_v2.NexusProviderNetwork).filter_by(
+        network_id=network_id).one_or_none()
+    if row:
+        return True
+
+    return False
+
 def get_nexusport_switch_bindings(switch_ip):
     """Lists all Nexus port switch bindings."""
     LOG.debug("get_nexusport_switch_bindings() called")
