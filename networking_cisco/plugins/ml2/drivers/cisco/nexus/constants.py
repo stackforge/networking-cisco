@@ -15,6 +15,7 @@
 #
 
 
+RESERVED_PORT_HOST_ID = 'reserved_port'
 CREDENTIAL_USERNAME = 'user_name'
 CREDENTIAL_PASSWORD = 'password'
 

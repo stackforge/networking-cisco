@@ -77,6 +77,7 @@ if NEUTRON_VERSION >= NEUTRON_OCATA_VERSION:
 
     def get_tunnel_session(context):
         return context.session
+
 else:
     from neutron.api import extensions  # noqa
     from neutron.db import agents_db
