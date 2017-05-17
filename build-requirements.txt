@@ -1,0 +1,6 @@
+pip
+tox
+pep8
+ansible
+kolla
+six

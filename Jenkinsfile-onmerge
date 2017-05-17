@@ -1,0 +1,67 @@
+#!groovy
+pipeline {
+  agent { label 'ci-runner' }
+  options {
+    timeout(time: 20, unit: 'MINUTES')
+  }
+  stages {
+    stage('Clean workspace') {
+      steps {
+        sh '''
+          git clean -f -d
+        '''
+      }
+    }
+    stage('Python package: build package (release)') {
+      steps {
+        sh '''
+          make build
+        '''
+      }
+    }
+    stage('Python package: upload to devpi (release)') {
+      steps {
+        withCredentials([[$class: "UsernamePasswordMultiBinding",
+                          credentialsId: "harmony-networking-cisco-devpi-postmerge",
+                          usernameVariable: "USERNAME",
+                          passwordVariable: "PASSWORD"]]) {
+          sh '''
+              devpi use https://pypi.ci.dfj.io/harmony_networking-cisco_postmerge/postmerge
+              devpi login "$USERNAME" --password="$PASSWORD"
+              devpi upload dist/*
+          '''
+        }
+      }
+    }
+    stage('Login to Docker Registry') {
+      steps {
+        withCredentials([[$class: "UsernamePasswordMultiBinding",
+                  credentialsId: "harmony-networking-cisco-registry",
+                  usernameVariable: "USERNAME",
+                  passwordVariable: "PASSWORD"]]) {
+          sh '''
+            set +x
+            export DOCKER_CONFIG=$WORKSPACE
+            docker login -u "$USERNAME" -p "$PASSWORD" registry-write.ci.dfj.io
+          '''
+        }
+      }
+    }
+    stage('Docker image: kolla-build (premerge)') {
+      steps {
+        sh '''
+          export DOCKER_CONFIG=$WORKSPACE
+          make kolla-build
+        '''
+      }
+    }
+    stage('Docker image: ship-it (premerge)') {
+      steps {
+        sh '''
+          export DOCKER_CONFIG=$WORKSPACE
+          make docker-push
+        '''
+      }
+    }
+  }
+}

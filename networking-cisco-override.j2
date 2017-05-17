@@ -1,0 +1,8 @@
+{% extends parent_template %}
+
+
+{% block neutron_server_footer %}
+
+RUN pip --no-cache-dir install --upgrade -i https://pypi.ci.dfj.io/harmony_networking-cisco_postmerge/postmerge/ "harmony-networking-cisco"
+
+{% endblock %}

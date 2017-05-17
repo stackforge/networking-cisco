@@ -1,0 +1,3 @@
+OSCORE_REGISTRY ?= registry-write.ci.dfj.io
+OSCORE_NAMESPACE ?= harmony_lui
+OSCORE_VERSION ?= ${GERRIT_CHANGE_NUMBER}
