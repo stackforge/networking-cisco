@@ -23,7 +23,6 @@ from networking_cisco.plugins.ml2.drivers.cisco.n1kv import (
 from networking_cisco.plugins.ml2.drivers.cisco.n1kv import config
 from networking_cisco.plugins.ml2.drivers.cisco.n1kv import n1kv_models
 
-from neutron import context as ncontext
 import neutron.db.api as db
 from neutron.db import models_v2
 from neutron.plugins.common import constants as p_const
@@ -335,7 +334,7 @@ def get_networks(db_base_plugin):
     :param db_base_plugin: Instance of the NeutronDbPluginV2 class
     :returns: list of network dictionaries
     """
-    context = ncontext.get_admin_context()
+    context = bc.context.get_admin_context()
     return db_base_plugin.get_networks(context)
 
 
@@ -346,7 +345,7 @@ def get_subnets(db_base_plugin):
     :param db_base_plugin: Instance of the NeutronDbPluginV2 class
     :returns: list of subnet dictionaries
     """
-    context = ncontext.get_admin_context()
+    context = bc.context.get_admin_context()
     return db_base_plugin.get_subnets(context)
 
 
@@ -357,7 +356,7 @@ def get_ports(db_base_plugin):
     :param db_base_plugin:  Instance of the NeutronDbPluginV2 class
     :returns: list of port dictionaries
     """
-    context = ncontext.get_admin_context()
+    context = bc.context.get_admin_context()
     return db_base_plugin.get_ports(context)
 
 
