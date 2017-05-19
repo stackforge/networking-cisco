@@ -145,6 +145,30 @@ class TestCiscoNexusDeviceConfig(object):
                 test_cisco_nexus_base.DEVICE_OWNER_ROUTER_HA_INTF,
                 {},
                 test_cisco_nexus_base.NORMAL_VNIC),
+        'test_config_router_intf':
+            test_cisco_nexus_base.TestCiscoNexusBase.TestConfigObj(
+                test_cisco_nexus_base.NEXUS_IP_ADDRESS_1,
+                test_cisco_nexus_base.HOST_NAME_1,
+                test_cisco_nexus_base.NEXUS_PORT_1,
+                test_cisco_nexus_base.INSTANCE_1,
+                test_cisco_nexus_base.VLAN_ID_1,
+                test_cisco_nexus_base.NO_VXLAN_ID,
+                None,
+                test_cisco_nexus_base.DEVICE_OWNER_ROUTER_INTF,
+                {},
+                test_cisco_nexus_base.NORMAL_VNIC),
+        'test_config_router_gw':
+            test_cisco_nexus_base.TestCiscoNexusBase.TestConfigObj(
+                test_cisco_nexus_base.NEXUS_IP_ADDRESS_1,
+                test_cisco_nexus_base.HOST_NAME_1,
+                test_cisco_nexus_base.NEXUS_PORT_1,
+                test_cisco_nexus_base.INSTANCE_1,
+                test_cisco_nexus_base.VLAN_ID_1,
+                test_cisco_nexus_base.NO_VXLAN_ID,
+                None,
+                test_cisco_nexus_base.DEVICE_OWNER_ROUTER_GW,
+                {},
+                test_cisco_nexus_base.NORMAL_VNIC),
         'test_config_portchannel2':
             test_cisco_nexus_base.TestCiscoNexusBase.TestConfigObj(
                 test_cisco_nexus_base.NEXUS_IP_ADDRESS_6,
