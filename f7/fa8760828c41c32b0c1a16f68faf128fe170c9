@@ -1,0 +1,9 @@
+Code-Review+2: Sandhya Dasu <sadasu@cisco.com>
+Code-Review+2: Bob Melander <bob.melander@gmail.com>
+Workflow+1: Bob Melander <bob.melander@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 23 May 2017 03:35:41 +0000
+Reviewed-on: https://review.openstack.org/465719
+Project: openstack/networking-cisco
+Branch: refs/heads/master
