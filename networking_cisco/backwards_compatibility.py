@@ -50,6 +50,7 @@ else:
 
 
 if NEUTRON_VERSION >= NEUTRON_OCATA_VERSION:
+    from neutronclient._i18n import _
     from neutron.db.models import agent as agent_model
     from neutron.db.models import l3 as l3_models
     from neutron_lib.api.definitions import portbindings
@@ -86,6 +87,7 @@ if NEUTRON_VERSION >= NEUTRON_OCATA_VERSION:
         return nclient.glance
 else:
     from neutron.api import extensions  # noqa
+    from neutronclient.i18n import _  # noqa
     from neutron.common import utils as common_utils  # noqa
     from neutron import context
     from neutron.db import agents_db
