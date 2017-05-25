@@ -59,6 +59,7 @@ if NEUTRON_VERSION >= NEUTRON_OCATA_VERSION:
     from neutron_lib.plugins import directory
     from neutron_lib.services import base as service_base
     from neutron_lib.utils import helpers as common_utils
+    from neutronclient._i18n import _
 
     try:
         from neutron import context
@@ -98,6 +99,7 @@ else:
     from neutron import manager
     from neutron.plugins.common import constants as svc_constants
     from neutron.services import service_base  # noqa
+    from neutronclient.i18n import _  # noqa
 
     def get_plugin(service=None):
         if service is None:

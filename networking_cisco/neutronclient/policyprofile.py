@@ -14,8 +14,8 @@
 #    under the License.
 #
 
+from networking_cisco.backwards_compatibility import _
 from neutronclient.common import extension
-from neutronclient.i18n import _
 
 
 class PolicyProfile(extension.NeutronClientExtension):
