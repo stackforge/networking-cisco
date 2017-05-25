@@ -15,7 +15,7 @@
 
 from collections import defaultdict
 import six
-import sys
+import ssl
 from threading import Timer
 
 from contextlib import contextmanager
@@ -58,21 +58,21 @@ class CiscoUcsmDriver(object):
 
     def _disable_ssl_cert_check(self):
         """Disable SSL certificate checks.
-
         Starting from Python version 2.7.9, SSL class performs certificate
         checks by default. UcsSdk is currently unable to handle these
         SSL certificate checks. This method disables this behavior. Once
         support for SSL certificates is added to ucssdk, this method can be
         removed.
         """
-        if sys.version_info >= (2, 6):
-            from functools import partial
-            import ssl
-            ssl.wrap_socket = partial(ssl.wrap_socket,
-                ssl_version=ssl.PROTOCOL_TLSv1)
-            if sys.version_info >= (2, 7, 9):
-                ssl._create_default_https_context = (
-                    ssl._create_unverified_context)
+        try:
+            _create_unverified_https_context = ssl._create_unverified_context
+        except AttributeError:
+            # Python versions that don't verify HTTPS certificates by default
+            pass
+        else:
+            # Handle target environment that doesn't support HTTPS verification
+            ssl._create_default_https_context = (
+                _create_unverified_https_context)
 
     def check_vnic_type_and_vendor_info(self, vnic_type, profile):
         """Checks if this vnic_type and vendor device info are supported.
