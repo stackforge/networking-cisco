@@ -49,9 +49,8 @@ LOG = logging.getLogger(__name__)
 N_ROUTER_PREFIX = 'nrouter-'
 ROUTER_ROLE_ATTR = routerrole.ROUTER_ROLE_ATTR
 
-# Number of routers to fetch from server at a time on resync.
+# Minimum number of routers to fetch from server at a time on resync.
 # Needed to reduce load on server side and to speed up resync on agent side.
-SYNC_ROUTERS_MAX_CHUNK_SIZE = 64
 SYNC_ROUTERS_MIN_CHUNK_SIZE = 8
 
 
@@ -196,7 +195,8 @@ class RoutingServiceHelper(object):
         self.sync_devices = set()
         self.sync_devices_attempts = 0
         self.fullsync = True
-        self.sync_routers_chunk_size = SYNC_ROUTERS_MAX_CHUNK_SIZE
+        self.sync_routers_chunk_size = (
+            cfg.CONF.cfg_agent.max_device_sync_batch_size)
         self.topic = '%s.%s' % (c_constants.CFG_AGENT_L3_ROUTING, host)
 
         self.hardware_router_type = None
@@ -395,15 +395,15 @@ class RoutingServiceHelper(object):
                 self.sync_routers_chunk_size = max(
                     self.sync_routers_chunk_size / 2,
                     SYNC_ROUTERS_MIN_CHUNK_SIZE)
-                LOG.error(_LE('Server failed to return info for routers in '
-                              'required time, decreasing chunk size to: %s'),
-                          self.sync_routers_chunk_size)
+                LOG.warning(_LW('Server failed to return info for routers in '
+                                'required time, decreasing chunk size to: %s'),
+                            self.sync_routers_chunk_size)
             else:
-                LOG.error(_LE('Server failed to return info for routers in '
-                              'required time even with min chunk size: %s. '
-                              'It might be under very high load or '
-                              'just inoperable'),
-                          self.sync_routers_chunk_size)
+                LOG.warning(_LW('Server failed to return info for routers in '
+                                'required time even with min chunk size: %s. '
+                                'It might be under very high load or just '
+                                'inoperable'),
+                            self.sync_routers_chunk_size)
             raise
         except oslo_messaging.MessagingException:
             LOG.exception(_LE("RPC Error in fetching routers from plugin"))
@@ -413,10 +413,11 @@ class RoutingServiceHelper(object):
 
         LOG.debug("Periodic_sync_routers_task successfully completed")
         # adjust chunk size after successful sync
-        if self.sync_routers_chunk_size < SYNC_ROUTERS_MAX_CHUNK_SIZE:
+        if (self.sync_routers_chunk_size <
+                cfg.CONF.cfg_agent.max_device_sync_batch_size):
             self.sync_routers_chunk_size = min(
                 self.sync_routers_chunk_size + SYNC_ROUTERS_MIN_CHUNK_SIZE,
-                SYNC_ROUTERS_MAX_CHUNK_SIZE)
+                cfg.CONF.cfg_agent.max_device_sync_batch_size)
 
     def _fetch_router_chunk_data(self, router_ids=None):
 
