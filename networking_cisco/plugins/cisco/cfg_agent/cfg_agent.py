@@ -480,7 +480,7 @@ class CiscoCfgAgentWithStateReport(CiscoCfgAgent):
             self.heartbeat.stop()
             return
         except Exception:
-            LOG.exception(_LE("Failed sending agent report!"))
+            LOG.warning(_LW("Failed sending agent report!"))
 
 
 def _mock_stuff():
