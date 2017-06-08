@@ -65,6 +65,45 @@ class NexusHostMappingNotFound(exceptions.NeutronException):
         super(NexusHostMappingNotFound, self).__init__(filters=filters)
 
 
+class NexusVpcAllocNotFound(exceptions.NeutronException):
+    """Nexus Vpc alloc is not present."""
+    message = _("Nexus Vpc Alloc (%(filters)s) is not present")
+
+    def __init__(self, **kwargs):
+        filters = ','.join('%s=%s' % i for i in kwargs.items())
+        super(NexusVpcAllocNotFound, self).__init__(filters=filters)
+
+
+class NexusVpcAllocInvalidArgValue(exceptions.NeutronException):
+    """Nexus Vpc alloc arg values not valid."""
+    message = _("Nexus Vpc Alloc init failed. Args "
+                "start (%(vpcstart)s) and end (%(vpcend)s) "
+                "difference should be greater than 0.  ")
+
+
+class NexusVpcAllocIncorrectArgCount(exceptions.NeutronException):
+    """Nexus Vpc alloc args count incorrect."""
+    message = _("Nexus Vpc Alloc init failed. "
+                "Expected 2 args for start,end "
+                "received %(count)d), content %(content)s.")
+
+
+class NexusVpcLearnedNotConsistent(exceptions.NeutronException):
+    """Learned Channel group not consistent on interface set in switches."""
+    message = _("Learned Nexus Channel Group not consistent on"
+                "this interface set: first interface %(first)s, "
+                "second interface %(second)s.  "
+                "Check Nexus Config and make consistent.")
+
+
+class NexusVpcExpectedNoChgrp(exceptions.NeutronException):
+    """Allocated Channel group not consistent on interface set in switches."""
+    message = _("Channel Group state in baremetal interface set not "
+                "consistent: first interface %(first)s, "
+                "second interface %(second)s.  "
+                "Check Nexus Config and make consistent.")
+
+
 class NexusMissingRequiredFields(exceptions.NeutronException):
     """Missing required fields to configure nexus switch."""
     message = _("Missing required field(s) to configure nexus switch: "

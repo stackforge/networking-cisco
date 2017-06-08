@@ -304,7 +304,13 @@ class CiscoNexusSshDriver(basedrvr.CiscoNexusBaseDriver):
             "config", {'if_type': intf_type, 'interface': interface})
         return response
 
-    def initialize_all_switch_interfaces(self, interfaces):
+    def initialize_baremetal_switch_interfaces(self, interfaces):
+        """Initialize Nexus interfaces and for initial baremetal event."""
+
+        self.initialize_all_switch_interfaces(interfaces)
+
+    def initialize_all_switch_interfaces(self, interfaces, switch_ip=None,
+                                         replay=True):
         """Configure Nexus interface and get port channel number.
 
         Receive a list of interfaces containing:
@@ -323,7 +329,7 @@ class CiscoNexusSshDriver(basedrvr.CiscoNexusBaseDriver):
         starttime = time.time()
         ifs = []
         for i in range(len(interfaces)):
-            nexus_host, intf_type, nexus_port, is_native = interfaces[i]
+            nexus_host, intf_type, nexus_port, is_native, _ = interfaces[i]
             response = self.get_interface_switch(
                            nexus_host, intf_type, nexus_port)
             # Collect the port-channel number from response
@@ -337,7 +343,9 @@ class CiscoNexusSshDriver(basedrvr.CiscoNexusBaseDriver):
                 # instead of the provided ethernet interface
                 intf_type = 'port-channel'
                 nexus_port = str(ch_grp)
-            interfaces[i] += (ch_grp,)
+                #substitute content of ch_grp
+                no_chgrp_len = len(interfaces[i]) - 1
+                interfaces[i] = interfaces[i][:no_chgrp_len] + (ch_grp,)
             if (response and
                "switchport trunk allowed vlan" in response):
                 pass

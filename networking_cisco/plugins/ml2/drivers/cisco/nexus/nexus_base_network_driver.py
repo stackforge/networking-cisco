@@ -95,7 +95,8 @@ class CiscoNexusBaseDriver(object):
         """
         return None
 
-    def initialize_all_switch_interfaces(self, interfaces):
+    def initialize_all_switch_interfaces(self, interfaces,
+                                         new_baremetal_set=False):
         """Configure Nexus interface and get port channel number.
 
         Receive a list of interfaces containing:
