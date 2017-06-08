@@ -95,15 +95,15 @@ class CiscoNexusBaseDriver(object):
         """
         return None
 
-    def initialize_all_switch_interfaces(self, interfaces):
+    def initialize_all_switch_interfaces(self, interfaces,
+                                         switch_ip=None, replay=True):
         """Configure Nexus interface and get port channel number.
 
         Receive a list of interfaces containing:
-        :param nexus_host: IP address of Nexus switch
-        :param intf_type:  String which specifies interface type.
-                           example: ethernet
-        :param interface:  String indicating which interface.
+        :param interfaces:  String indicating which interface.
                            example: 1/19
+        :param switch_ip: IP address of Nexus switch
+        :param replay: Whether in replay path
         :returns interface: Appends port channel to each entry
                             channel number is 0 if none
         """
