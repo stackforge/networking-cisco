@@ -14,12 +14,15 @@
 #    under the License.
 
 from oslo_config import cfg
+from oslo_log import log as logging
 
 from networking_cisco._i18n import _
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     constants as const)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     nexus_db_v2 as nxos_db)
+from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
+    nexus_helpers as help)
 
 ml2_cisco_opts = [
     cfg.StrOpt('vlan_name_prefix', default='q-',
@@ -59,6 +62,7 @@ ml2_cisco_opts = [
 
 cfg.CONF.register_opts(ml2_cisco_opts, "ml2_cisco")
 
+LOG = logging.getLogger(__name__)
 #
 # Format for ml2_conf_cisco.ini 'ml2_mech_cisco_nexus' is:
 # {('<device ipaddr>', '<keyword>'): '<value>', ...}
@@ -85,7 +89,7 @@ class ML2MechCiscoConfig(object):
         keys (host systems) are saved in the host mapping db.
         """
         defined_attributes = [const.USERNAME, const.PASSWORD, const.SSHPORT,
-                              const.PHYSNET, const.NVE_SRC_INTF]
+                              const.PHYSNET, const.NVE_SRC_INTF, const.VPCPOOL]
         multi_parser = cfg.MultiConfigParser()
         read_ok = multi_parser.read(cfg.CONF.config_file)
 
@@ -102,5 +106,9 @@ class ML2MechCiscoConfig(object):
                             self.nexus_dict[dev_ip, dev_key] = value[0]
                         else:
                             for if_id in value[0].split(','):
+                                if_type, port = help.split_interface_name(
+                                    if_id)
+                                interface = help.format_interface_name(
+                                    if_type, port)
                                 nxos_db.add_host_mapping(
-                                    dev_key, dev_ip, if_id, 0, True)
+                                    dev_key, dev_ip, interface, 0, True)
