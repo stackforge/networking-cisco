@@ -67,7 +67,6 @@ if NEUTRON_VERSION >= NEUTRON_OCATA_VERSION:
 
     get_plugin = directory.get_plugin
     n_c_attr_names = dir(n_c)
-    HasProject = model_base.HasProject
     VXLAN_TUNNEL_TYPE = type_tunnel.ML2TunnelTypeDriver
     Agent = agent_model.Agent
     RouterPort = l3_models.RouterPort
@@ -92,7 +91,6 @@ else:
     from neutron.db import api as db_api
     from neutron.db import l3_db
     from neutron.db import model_base  # noqa
-    from neutron.db import models_v2
     from neutron.extensions import portbindings  # noqa
     from neutron.extensions import providernet  # noqa
     from neutron import manager
@@ -105,7 +103,6 @@ else:
         else:
             return manager.NeutronManager.get_service_plugins().get(service)
 
-    HasProject = models_v2.HasTenant
     setattr(constants, 'L3', getattr(svc_constants, 'L3_ROUTER_NAT'))
     VXLAN_TUNNEL_TYPE = type_tunnel.TunnelTypeDriver
     Agent = agents_db.Agent

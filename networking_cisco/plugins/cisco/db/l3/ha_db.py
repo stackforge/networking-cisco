@@ -33,6 +33,7 @@ from networking_cisco._i18n import _, _LW
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.common import utils as cisco_utils
+from networking_cisco.plugins.cisco.db import base
 from networking_cisco.plugins.cisco.extensions import ha
 from networking_cisco.plugins.cisco.extensions import routerrole
 from networking_cisco.plugins.cisco.extensions import routertype
@@ -124,7 +125,7 @@ class RouterHASetting(bc.model_base.BASEV2):
 
 
 class RouterHAGroup(bc.model_base.BASEV2, bc.model_base.HasId,
-                    bc.HasProject):
+                    base.HasProject):
     """Represents an HA group as used in VRRP, HSRP, and GLBP."""
     __tablename__ = 'cisco_router_ha_groups'
 

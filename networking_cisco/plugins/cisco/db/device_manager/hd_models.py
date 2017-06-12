@@ -18,10 +18,11 @@ from sqlalchemy import orm
 from neutron.db import models_v2
 
 from networking_cisco import backwards_compatibility as bc
+from networking_cisco.plugins.cisco.db import base
 
 
 class HostingDeviceTemplate(bc.model_base.BASEV2, bc.model_base.HasId,
-                            bc.HasProject):
+                            base.HasProject):
     """Represents a template for devices used to host service.
 
        Such devices may be physical or virtual.
@@ -71,7 +72,7 @@ class HostingDeviceTemplate(bc.model_base.BASEV2, bc.model_base.HasId,
 
 
 class HostingDevice(bc.model_base.BASEV2, bc.model_base.HasId,
-                    bc.HasProject):
+                    base.HasProject):
     """Represents an appliance hosting Neutron router(s).
 
        When the hosting device is a Nova VM 'id' is uuid of that VM.
