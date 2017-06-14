@@ -18,7 +18,9 @@ import collections
 import mock
 from oslo_config import cfg
 import six
+import unittest
 
+from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     nexus_network_driver)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import exceptions
@@ -621,6 +623,22 @@ class TestCiscoNexusDevice(test_cisco_nexus_base.TestCiscoNexusBase,
         self.assertEqual(
             test_cisco_nexus_base.NEXUS_PORT_2,
             binding.port_id)
+
+    @unittest.skipIf(bc.NEUTRON_VERSION < bc.NEUTRON_OCATA_VERSION,
+                     "Test not applicable prior to stable/ocata.")
+    def test_nexus_trunk_port(self):
+        """Test to verify that trunk method process_subports is called."""
+        mock_process_subports = mock.patch.object(
+            bc.trunk.NexusMDTrunkHandler,
+            'process_subports').start()
+        port_context = self._generate_port_context(
+                self.test_configs['test_config1'])
+        port_context.current['trunk_details'] = {}
+        self._cisco_mech_driver.update_port_precommit(port_context)
+
+        mock_process_subports.assert_called_once_with(
+            port_context.current,
+            self._cisco_mech_driver._configure_nxos_db)
 
 
 class TestCiscoNexusDeviceFailure(test_cisco_nexus_base.TestCiscoNexusBase,
