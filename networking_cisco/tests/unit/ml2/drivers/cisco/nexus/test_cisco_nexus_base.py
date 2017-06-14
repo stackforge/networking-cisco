@@ -49,7 +49,7 @@ from networking_cisco.plugins.ml2.drivers.cisco.nexus import nexus_db_v2
 
 from neutron.plugins.common import constants as p_const
 from neutron.plugins.ml2 import driver_api as api
-from neutron.tests.unit import testlib_api
+from neutron.tests.unit.db import test_db_base_plugin_v2
 
 
 # Static variables used in testing
@@ -369,7 +369,7 @@ class TestCiscoNexusBaseResults(object):
             return None
 
 
-class TestCiscoNexusBase(testlib_api.SqlTestCase):
+class TestCiscoNexusBase(test_db_base_plugin_v2.NeutronDbPluginV2TestCase):
     """Feature Base Test Class for Cisco ML2 Nexus driver."""
 
     TestConfigObj = collections.namedtuple(
@@ -456,6 +456,7 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
 
             mech_instance._switch_state = {}
             mech_instance._nexus_switches = collections.OrderedDict()
+            mech_instance.trunk = bc.trunk.NexusMDTrunkHandler()
             for name, config in self.test_configs.items():
                 ip_addr = config.nexus_ip_addr
                 host_name = config.host_name

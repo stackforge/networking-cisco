@@ -283,6 +283,13 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
 
     """Cisco Nexus ML2 Mechanism Driver."""
 
+    def __init__(self):
+        # Extract configuration parameters from the configuration file.
+        self._nexus_switches = conf.ML2MechCiscoConfig.nexus_dict
+        LOG.debug("nexus_switches found = %s", self._nexus_switches)
+        self.driver = self._load_nexus_cfg_driver()
+        self.trunk = bc.trunk.NexusMDTrunkHandler()
+
     def _load_nexus_cfg_driver(self):
         """Load Nexus Config driver.
         :raises SystemExit of 1 if driver cannot be loaded
@@ -302,14 +309,8 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         # Create ML2 device dictionary from ml2_conf.ini entries.
         conf.ML2MechCiscoConfig()
 
-        # Extract configuration parameters from the configuration file.
-        self._nexus_switches = conf.ML2MechCiscoConfig.nexus_dict
-        LOG.debug("nexus_switches found = %s", self._nexus_switches)
-
         # Save dynamic switch information
         self._switch_state = {}
-
-        self.driver = self._load_nexus_cfg_driver()
 
         # This method is only called once regardless of number of
         # api/rpc workers defined.
@@ -320,6 +321,7 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         self.monitor_timeout = conf.cfg.CONF.ml2_cisco.switch_heartbeat_time
         self.monitor_lock = threading.Lock()
         self.context = bc.get_context()
+        bc.nexus_trunk.NexusTrunkDriver.create()
         LOG.info(_LI("CiscoNexusMechanismDriver: initialize() called "
                     "pid %(pid)d thid %(tid)d"), {'pid': self._ppid,
                     'tid': threading.current_thread().ident})
@@ -586,10 +588,38 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
 
         return switch_info
 
+    def _baremetal_set_binding(self, context, all_link_info=None):
+        selected = False
+        for segment in context.segments_to_bind:
+            if (segment[api.NETWORK_TYPE] == p_const.TYPE_VLAN and
+                segment[api.SEGMENTATION_ID]):
+                context.set_binding(
+                    segment[api.ID],
+                    bc.portbindings.VIF_TYPE_OTHER,
+                    {},
+                    status=bc.constants.PORT_STATUS_ACTIVE)
+                LOG.debug(
+                    "Baremetal binding selected: segment ID %(id)s, segment "
+                    "%(seg)s, phys net %(physnet)s, and network type "
+                    "%(nettype)s with %(count)d link_info",
+                    {'id': segment[api.ID],
+                     'seg': segment[api.SEGMENTATION_ID],
+                     'physnet': segment[api.PHYSICAL_NETWORK],
+                     'nettype': segment[api.NETWORK_TYPE],
+                     'count': len(all_link_info) if all_link_info else 0})
+                selected = True
+                break
+
+        return selected
+
     def _supported_baremetal_transaction(self, context):
         """Verify transaction is complete and for us."""
 
         port = context.current
+
+        if self.trunk.is_trunk_subport_baremetal(port):
+            self._baremetal_set_binding(context)
+            return True
 
         if not self._is_baremetal(port):
             return False
@@ -626,27 +656,10 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         if not selected:
             return False
 
-        selected = False
-        for segment in context.segments_to_bind:
+        selected = self._baremetal_set_binding(context, all_link_info)
 
-            # if valid 'vlan' type and vlan_id
-            if (segment[api.NETWORK_TYPE] == p_const.TYPE_VLAN and
-                segment[api.SEGMENTATION_ID]):
-                context.set_binding(segment[api.ID],
-                    bc.portbindings.VIF_TYPE_OTHER,
-                    {},
-                    status=bc.constants.PORT_STATUS_ACTIVE)
-                selected = True
-                LOG.debug("Baremetal binding selected: segment ID %(id)s, "
-                          "segment %(seg)s, phys net %(physnet)s, and "
-                          "network type %(nettype)s with %(count)d "
-                          "link_info",
-                          {'id': segment[api.ID],
-                           'seg': segment[api.SEGMENTATION_ID],
-                           'physnet': segment[api.PHYSICAL_NETWORK],
-                           'nettype': segment[api.NETWORK_TYPE],
-                           'count': len(all_link_info)})
-                break
+        if selected is True and self.trunk.is_trunk_parentport(port):
+            self.trunk.update_subports(port)
 
         return selected
 
@@ -700,7 +713,14 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
 
         connections = []
 
-        all_link_info = port[bc.portbindings.PROFILE]['local_link_information']
+        if self.trunk.is_trunk_subport(port):
+            all_link_info = self.trunk.get_link_info(port)
+            is_native = False
+        else:
+            all_link_info = (
+                port[bc.portbindings.PROFILE]['local_link_information'])
+            is_native = True
+
         for link_info in all_link_info:
 
             # Extract port info
@@ -723,10 +743,6 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
                 not self.is_switch_active(switch_ip)):
                 continue
 
-            if 'is_native' in switch_info:
-                is_native = switch_info['is_native']
-            else:
-                is_native = const.NOT_NATIVE
             if not from_segment:
                 try:
                     reserved = nxos_db.get_switch_if_host_mappings(
@@ -920,6 +936,12 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
                     is_provider_vlan,
                     is_native)
 
+        # if parent trunk port then create subports in the database.
+        # (For baremetal deployments, update precommit method does not
+        # process event.)
+        if self.trunk.is_trunk_parentport(port_seg):
+            self.trunk.process_subports(port_seg, self._configure_nxos_db)
+
     def _get_host_switches(self, host_id):
         """Get switch IPs from configured host mapping.
 
@@ -988,12 +1010,11 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
 
     def _get_port_connections(self, port, host_id,
                               only_active_switch=False):
-        if self._is_baremetal(port):
-            return self._get_baremetal_connections(
-                       port, only_active_switch)
+        if (self._is_baremetal(port) or
+            self.trunk.is_trunk_subport_baremetal(port)):
+            return self._get_baremetal_connections(port, only_active_switch)
         else:
-            return self._get_host_connections(
-                       host_id, only_active_switch)
+            return self._get_host_connections(host_id, only_active_switch)
 
     def _get_active_port_connections(self, port, host_id):
         return self._get_port_connections(port, host_id, True)
@@ -1626,6 +1647,10 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         # Verify segment.
         if not self._is_valid_segment(segment):
             return
+
+        # if parent trunk port then process event for subports.
+        if self.trunk.is_trunk_parentport(port):
+            self.trunk.process_subports(port, func)
 
         device_id = port.get('device_id')
         if self._is_baremetal(port):
