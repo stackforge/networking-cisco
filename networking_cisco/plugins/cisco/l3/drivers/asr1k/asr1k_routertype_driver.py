@@ -533,7 +533,7 @@ class ASR1kL3RouterDriver(drivers.L3RouterBaseDriver):
                                               l3_port_check=False)
             except (exc.ObjectDeletedError, n_exc.PortNotFound) as e:
                 LOG.info(_LI('Unable to delete port for Global router '
-                             '%(r_id). It has likely been concurrently '
+                             '%(r_id)s. It has likely been concurrently '
                              'deleted. %(err)s'), {'r_id': router_id,
                                                    'err': e})
 
