@@ -72,23 +72,6 @@ class Asr1kRouterTypeDriverTestCase(
     #  that router type in the test setup which makes scheduling deterministic
     router_type = 'Nexus_ToR_Neutron_router'
 
-    def setUp(self, core_plugin=None, l3_plugin=None, dm_plugin=None,
-              ext_mgr=None):
-        if l3_plugin is None:
-            l3_plugin = cisco_test_case.L3_PLUGIN_KLASS
-        if ext_mgr is None:
-            ext_mgr = TestSchedulingL3RouterApplianceExtensionManager()
-        super(Asr1kRouterTypeDriverTestCase, self).setUp(
-            core_plugin, l3_plugin, dm_plugin, ext_mgr)
-
-        #TODO(bobmel): Remove this mock once bug/#1676435 is fixed
-        def noop_pre_backlog_processing(context):
-            LOG.debug('No-op pre_backlog_processing during UTs')
-
-        mock.patch('networking_cisco.plugins.cisco.l3.drivers.asr1k'
-                '.asr1k_routertype_driver.ASR1kL3RouterDriver'
-                '.pre_backlog_processing', new=noop_pre_backlog_processing)
-
     def _verify_global_router(self, role, hd_id, ext_net_ids):
         # The 'ext_net_ids' argument is a dict where key is ext_net_id and
         # value is a list of subnet_ids that the global router should be
