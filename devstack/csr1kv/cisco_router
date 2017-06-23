@@ -53,8 +53,11 @@ function neutron_cisco_router_configure_common() {
 
     _patch_neutron_legacy
 
-    iniset $NEUTRON_CONF_DIR$Q_CISCO_ROUTER_PLUGIN_CONF_FILE routing default_router_type $Q_CISCO_DEFAULT_ROUTER_TYPE
-
+    if [[ NEUTRON_VERSION -ge 10 ]]; then
+        iniset $NEUTRON_CONF_DIR$Q_CISCO_ROUTER_PLUGIN_CONF_FILE routing default_router_type $Q_CISCO_DEFAULT_ROUTER_TYPE
+    else
+        iniset $Q_CISCO_ROUTER_PLUGIN_CONF_FILE routing default_router_type $Q_CISCO_DEFAULT_ROUTER_TYPE
+    fi
  }
 
 function neutron_cisco_router_configure_driver() {
