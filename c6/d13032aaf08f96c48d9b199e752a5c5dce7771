@@ -1,0 +1,9 @@
+Code-Review+2: Bob Melander <bob.melander@gmail.com>
+Code-Review+2: Sridar Kandaswamy <skandasw@cisco.com>
+Workflow+1: Sridar Kandaswamy <skandasw@cisco.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 26 Jun 2017 14:49:20 +0000
+Reviewed-on: https://review.openstack.org/473619
+Project: openstack/networking-cisco
+Branch: refs/heads/master
