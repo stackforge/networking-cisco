@@ -27,6 +27,7 @@ apply to ssh only OR because rerunning the test would be
 redundant.
 """
 
+import mock
 from oslo_config import cfg
 
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
@@ -782,6 +783,12 @@ class TestCiscoNexusRestBaremetalDevice(
 
     def setUp(self):
         """Sets up mock ncclient, and switch and credentials dictionaries."""
+        def new_alloc_vpcid(nexus_ips):
+            return nxos_db._alloc_vpcid(nexus_ips, sorted=True)
+
+        mock.patch.object(nxos_db,
+                         'alloc_vpcid',
+                          new=new_alloc_vpcid).start()
 
         cfg.CONF.set_override('nexus_driver', 'restapi', 'ml2_cisco')
         cfg.CONF.set_override('never_cache_ssh_connection', False, 'ml2_cisco')

@@ -15,6 +15,8 @@
 #
 
 from oslo_log import log as logging
+from random import shuffle
+import sqlalchemy as sa
 import sqlalchemy.orm.exc as sa_exc
 from sqlalchemy.sql import func
 
@@ -648,32 +650,32 @@ def init_vpc_entries(nexus_ip, vpc_start, vpc_end):
     session.flush()
 
 
-def update_vpc_entry(nexus_ip, vpc_id, learned, active):
+def update_vpc_entry(nexus_ips, vpc_id, learned, active):
     """Change active state in vpc_allocate data base."""
 
     LOG.debug("update_vpc_entry called")
 
     session = db.get_session()
-    try:
-        vpc_alloc = _lookup_one_vpc_allocs(
-            switch_ip=nexus_ip,
-            vpc_id=vpc_id)
-    except c_exc.NexusVPCAllocNotFound:
-        return None
 
-    vpc_alloc.learned = learned
-    vpc_alloc.active = active
+    with session.begin():
+        for n_ip in nexus_ips:
+            flipit = not active
+            x = session.execute(
+                sa.update(nexus_models_v2.NexusVPCAlloc).values({
+                    'learned': learned,
+                    'active': active}).where(sa.and_(
+                        nexus_models_v2.NexusVPCAlloc.switch_ip == n_ip,
+                        nexus_models_v2.NexusVPCAlloc.vpc_id == vpc_id,
+                        nexus_models_v2.NexusVPCAlloc.active == flipit
+                    )))
+            if x.rowcount != 1:
+                raise c_exc.NexusVPCAllocNotFound(
+                    switch_ip=n_ip, vpc_id=vpc_id, active=active)
 
-    session.merge(vpc_alloc)
-    session.flush()
 
-    return vpc_alloc
+def _get_vpcid_switch_intersect(nexus_ips, sorted):
+    """Get list of free vpcids common between list of switch_ips."""
 
-
-def alloc_vpcid(nexus_ips):
-    """Allocate a vpc id for the given list of switch_ips."""
-
-    LOG.debug("alloc_vpc() called")
     vpc_list = []
 
     # First build a set of vlans for each switch
@@ -684,39 +686,60 @@ def alloc_vpcid(nexus_ips):
             vpc_set.add(vpcid[1])
         vpc_list.append(vpc_set)
 
-    # Now get intersection
+    # Now get intersection between all switches
     intersect = vpc_list[0]
     for switch_list in vpc_list:
         intersect = intersect & switch_list
 
     intersect = list(intersect)
     if len(intersect) > 0:
-        intersect.sort()
-        vpc_id = intersect[0]    # get smallest
-        for n_ip in nexus_ips:
-            update_vpc_entry(n_ip, vpc_id, False, True)
-    else:
-        vpc_id = 0
+        if sorted:
+            # For testing, predictability is better
+            intersect.sort()
+        else:
+            # In real life, an unpredictable list order
+            # reduces the likelihood to deliver same
+            # vpc_id so randomly shuffle list.
+            shuffle(intersect)
+
+    return intersect
+
+
+def _alloc_vpcid(nexus_ips, sorted):
+    """Allocate a vpc id for the given list of switch_ips."""
+
+    vpc_id = 0
+    intersect = _get_vpcid_switch_intersect(nexus_ips, sorted)
+    for vpc_id in intersect:
+        try:
+            update_vpc_entry(nexus_ips, vpc_id, False, True)
+            break
+        except Exception:
+            # Another controller may have beaten us to this vpcid
+            pass
 
     return vpc_id
+
+
+def alloc_vpcid(nexus_ips):
+    """Allocate a vpc id for the given list of switch_ips."""
+
+    LOG.debug("alloc_vpc() called")
+
+    return _alloc_vpcid(nexus_ips, sorted=False)
 
 
 def free_vpcid_for_switch_list(vpc_id, nexus_ips):
     """Free a vpc id for the given list of switch_ips."""
 
     LOG.debug("free_vpcid_for_switch_list() called")
-    if vpc_id == 0:
-        return
-
-    for n_ip in nexus_ips:
-        update_vpc_entry(n_ip, vpc_id, False, False)
+    if vpc_id != 0:
+        update_vpc_entry(nexus_ips, vpc_id, False, False)
 
 
 def free_vpcid_for_switch(vpc_id, nexus_ip):
     """Free a vpc id for the given switch_ip."""
 
     LOG.debug("free_vpcid_for_switch() called")
-    if vpc_id == 0:
-        return
-
-    update_vpc_entry(nexus_ip, vpc_id, False, False)
+    if vpc_id != 0:
+        update_vpc_entry([nexus_ip], vpc_id, False, False)
