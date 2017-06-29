@@ -22,10 +22,7 @@ import base64
 import netaddr
 from networking_cisco.apps.saf.common import dfa_logger as logging
 from oslo_serialization import jsonutils
-try:
-    import urllib2
-except ImportError:
-    import urllib.request as urllib2
+from six.moves import urllib
 
 from networking_cisco._i18n import _LE, _LI
 
@@ -50,7 +47,7 @@ class Asa5585(object):
         # Use request library instead of urllib2. Also for status codes,
         # use the literals provided by request library, instead of hardcoding.
         # TODO(padkrish)
-        req = urllib2.Request(url, jsonutils.dumps(data), headers)
+        req = urllib.request.Request(url, jsonutils.dumps(data), headers)
         byte_str = ('%s:%s' % ('user', 'user')).encode()
         base64string = base64.encodestring(byte_str).decode().replace('\n', '')
 
@@ -58,11 +55,11 @@ class Asa5585(object):
         f = None
         status_code = 400
         try:
-            f = urllib2.urlopen(req)
+            f = urllib.request.urlopen(req)
             status_code = f.getcode()
             LOG.info(_LI("Status code is %d"), status_code)
 
-        except (urllib2.HTTPError, netaddr.err):
+        except (urllib.error.HTTPError, netaddr.err):
             LOG.error(_LE("Error received from server. HTTP status code "
                       "is %d"), netaddr.err.code)
             try:
@@ -177,14 +174,14 @@ class Asa5585(object):
         api_path = "/api/cli"    # param
         url = self.server + api_path
 
-        req = urllib2.Request(url, jsonutils.dumps(data), headers)
+        req = urllib.request.Request(url, jsonutils.dumps(data), headers)
         byte_str = ('%s:%s' % ('user', 'user')).encode()
         base64string = base64.encodestring(byte_str).decode().replace('\n', '')
         req.add_header("Authorization", "Basic %s" % base64string)
         max_ctx_count = 0
         f = None
         try:
-            f = urllib2.urlopen(req)
+            f = urllib.request.urlopen(req)
             status_code = f.getcode()
             LOG.info(_LI("Status code is %d"), status_code)
             if status_code in range(200, 300):
@@ -195,7 +192,7 @@ class Asa5585(object):
                     max_ctx_count = 0
                 LOG.info(_LI("Max Context Count is %d"), max_ctx_count)
 
-        except (urllib2.HTTPError, netaddr.err):
+        except (urllib.error.HTTPError, netaddr.err):
             LOG.info(_LI("Error received from server. HTTP status code is %d"),
                      netaddr.err.code)
             try:
