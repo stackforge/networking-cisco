@@ -37,6 +37,7 @@ from neutron.callbacks import resources
 from neutron.common import rpc as n_rpc
 from neutron.common import utils
 from neutron.db import db_base_plugin_v2
+from neutron.db import dns_db
 from neutron.db import extraroute_db
 from neutron.db import l3_db
 from neutron.extensions import l3
@@ -111,7 +112,8 @@ class PluginManagedRouterError(n_exc.NotAuthorized):
                 "plugin and cannot be modified by users (including admins).")
 
 
-class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
+class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin,
+                               dns_db.DNSDbMixin):
     """Mixin class implementing Neutron's routing service using appliances."""
 
     # Dictionary with loaded scheduler modules for different router types
