@@ -19,6 +19,7 @@ import mock
 from neutron.api.v2 import attributes
 from neutron.common import test_lib
 from neutron.db import agents_db
+from neutron.db import dns_db
 from neutron.extensions import agent
 from neutron.tests.unit.extensions import test_l3
 from novaclient import exceptions as nova_exc
@@ -307,10 +308,11 @@ class TestDeviceManagerExtensionManager(object):
 # agent scheduling functionality
 class TestCorePlugin(test_l3.TestNoL3NatPlugin,
                      cfg_agentschedulers_db.CfgAgentSchedulerDbMixin,
-                     hosting_device_manager_db.HostingDeviceManagerMixin):
+                     hosting_device_manager_db.HostingDeviceManagerMixin,
+                     dns_db.DNSDbMixin):
 
     supported_extension_aliases = [
-        "agent", "external-net",
+        "agent", "external-net", "dns-integration",
         cfgagtscheduler.CFG_AGENT_SCHEDULER_ALIAS,
         ciscodevmgr.HOSTING_DEVICE_MANAGER_ALIAS]
 

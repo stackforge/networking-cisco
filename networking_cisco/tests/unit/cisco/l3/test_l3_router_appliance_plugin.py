@@ -15,6 +15,7 @@
 import contextlib
 import mock
 import os
+import pdb
 import unittest
 
 from neutron.api.v2 import attributes
@@ -448,7 +449,9 @@ class L3RouterApplianceRouterTypeDriverTestCase(test_l3.L3NatTestCaseMixin,
                 p1 = p['port']
                 fip = {'floatingip': {'floating_network_id': ext_net_id,
                                       'port_id': p1['id'],
-                                      'tenant_id': s1['tenant_id']}}
+                                      'tenant_id': s1['tenant_id'],
+                                      'dns_name': 'dns_test',
+                                      'dns_domain': 'dns_domain'}}
                 ctx = bc.context.get_admin_context()
                 self.l3_plugin.create_floatingip(ctx, fip)
                 driver.create_floatingip_postcommit.assert_called_once_with(
@@ -470,7 +473,9 @@ class L3RouterApplianceRouterTypeDriverTestCase(test_l3.L3NatTestCaseMixin,
                 p1 = p['port']
                 fip = {'floatingip': {'floating_network_id': ext_net_id,
                                       'port_id': p1['id'],
-                                      'tenant_id': s1['tenant_id']}}
+                                      'tenant_id': s1['tenant_id'],
+                                      'dns_name': 'dns_test',
+                                      'dns_domain': 'dns_domain'}}
                 ctx = bc.context.get_admin_context()
                 floating_ip = self.l3_plugin.create_floatingip(ctx, fip)
                 fip = {'floatingip': {'port_id': None}}
@@ -479,7 +484,9 @@ class L3RouterApplianceRouterTypeDriverTestCase(test_l3.L3NatTestCaseMixin,
                     ctx, mock.ANY)
                 fip = {'floatingip': {'floating_network_id': ext_net_id,
                                       'port_id': p1['id'],
-                                      'tenant_id': s1['tenant_id']}}
+                                      'tenant_id': s1['tenant_id'],
+                                      'dns_name': 'dns_test',
+                                      'dns_domain': 'dns_domain'}}
                 self.l3_plugin.update_floatingip(ctx, floating_ip['id'], fip)
                 driver.update_floatingip_postcommit.assert_called_once_with(
                     ctx, mock.ANY)
@@ -500,7 +507,9 @@ class L3RouterApplianceRouterTypeDriverTestCase(test_l3.L3NatTestCaseMixin,
                 p1 = p['port']
                 fip = {'floatingip': {'floating_network_id': ext_net_id,
                                       'port_id': p1['id'],
-                                      'tenant_id': s1['tenant_id']}}
+                                      'tenant_id': s1['tenant_id'],
+                                      'dns_name': 'dns_test',
+                                      'dns_domain': 'dns_domain'}}
                 ctx = bc.context.get_admin_context()
                 floating_ip = self.l3_plugin.create_floatingip(ctx, fip)
                 self.l3_plugin.delete_floatingip(ctx, floating_ip['id'])
@@ -800,7 +809,9 @@ class L3RouterApplianceGbpTestCase(test_l3.L3NatTestCaseMixin,
                 network = net['network']
                 floating_ip = {
                     'floatingip': {'floating_network_id': network['id'],
-                                   'tenant_id': net['network']['tenant_id']}
+                                   'tenant_id': net['network']['tenant_id'],
+                                   'dns_name': 'dns_test',
+                                   'dns_domain': 'dns_domain'}
                 }
                 ctx = bc.context.get_admin_context()
                 with self._mock_neutron_service_plugins():
