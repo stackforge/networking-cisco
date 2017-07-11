@@ -1718,14 +1718,17 @@ class L3CfgAgentHARouterApplianceTestCase(
                         s_ext['subnet']['network_id'],
                         port_id=private_p1['port']['id'])
                     fip1['floatingip']['fixed_ip_address_scope'] = None
+                    fip1['floatingip']['dns_name'] = ''
+                    fip1['floatingip']['dns_domain'] = ''
                     fip2 = self._make_floatingip(
                         self.fmt,
                         s_ext['subnet']['network_id'],
                         port_id=private_p2['port']['id'])
                     fip2['floatingip']['fixed_ip_address_scope'] = None
+                    fip2['floatingip']['dns_name'] = ''
+                    fip2['floatingip']['dns_domain'] = ''
                     fips_dict = {fip1['floatingip']['id']: fip1['floatingip'],
                                  fip2['floatingip']['id']: fip2['floatingip']}
-
                     e_context = bc.context.get_admin_context()
                     query_params = """fixed_ips=ip_address%%3D%s""".strip() % (
                                    '10.0.1.2')
