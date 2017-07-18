@@ -1,0 +1,8 @@
+Code-Review+2: Baodong (Robert) Li <baoli@cisco.com>
+Workflow+1: Baodong (Robert) Li <baoli@cisco.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 18 Jul 2017 14:12:19 +0000
+Reviewed-on: https://review.openstack.org/478970
+Project: openstack/networking-cisco
+Branch: refs/heads/master
