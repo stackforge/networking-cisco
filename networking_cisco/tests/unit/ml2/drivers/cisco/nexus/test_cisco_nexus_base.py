@@ -145,6 +145,7 @@ GET_INTERFACE_RESPONSE = {
         {
             "l1PhysIf": {
                 "attributes": {
+                    "mode": "trunk",
                     "trunkVlans": ""
                 }
             }
@@ -158,6 +159,7 @@ GET_INTERFACE_PCHAN_RESPONSE = {
         {
             "pcAggrIf": {
                 "attributes": {
+                    "mode": "trunk",
                     "trunkVlans": ""
                 }
             }
