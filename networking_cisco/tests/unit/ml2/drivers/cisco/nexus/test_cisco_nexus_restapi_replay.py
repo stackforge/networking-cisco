@@ -631,14 +631,14 @@ class TestCiscoNexusRestBaremetalReplayResults(base.TestCiscoNexusBaseResults):
              base.NEXUS_IP_ADDRESS_1,
              (snipp.BODY_ADD_PORT_CH_P2 % (1001, 1001)),
              base.POST],
+            [snipp.PATH_ALL,
+             base.NEXUS_IP_ADDRESS_1,
+             (snipp.BODY_ADD_CH_GRP % (1001, 1001, 'phys-[eth1/10]')),
+             base.POST],
             [(snipp.PATH_IF % 'aggr-[po1001]'),
              base.NEXUS_IP_ADDRESS_1,
              (snipp.BODY_TRUNKVLAN % (
                  'pcAggrIf', snipp.BODY_PORT_CH_MODE, '')),
-             base.POST],
-            [snipp.PATH_ALL,
-             base.NEXUS_IP_ADDRESS_1,
-             (snipp.BODY_ADD_CH_GRP % (1001, 1001, 'phys-[eth1/10]')),
              base.POST],
             [(snipp.PATH_IF % 'aggr-[po1001]'),
              base.NEXUS_IP_ADDRESS_1,
@@ -662,14 +662,14 @@ class TestCiscoNexusRestBaremetalReplayResults(base.TestCiscoNexusBaseResults):
              base.NEXUS_IP_ADDRESS_2,
              (snipp.BODY_ADD_PORT_CH_P2 % (1001, 1001)),
              base.POST],
+            [snipp.PATH_ALL,
+             base.NEXUS_IP_ADDRESS_2,
+             (snipp.BODY_ADD_CH_GRP % (1001, 1001, 'phys-[eth1/20]')),
+             base.POST],
             [(snipp.PATH_IF % 'aggr-[po1001]'),
              base.NEXUS_IP_ADDRESS_2,
              (snipp.BODY_TRUNKVLAN % (
                  'pcAggrIf', snipp.BODY_PORT_CH_MODE, '')),
-             base.POST],
-            [snipp.PATH_ALL,
-             base.NEXUS_IP_ADDRESS_2,
-             (snipp.BODY_ADD_CH_GRP % (1001, 1001, 'phys-[eth1/20]')),
              base.POST],
             [(snipp.PATH_IF % 'aggr-[po1001]'),
              base.NEXUS_IP_ADDRESS_2,
@@ -733,14 +733,14 @@ class TestCiscoNexusRestBaremetalReplayResults(base.TestCiscoNexusBaseResults):
              base.NEXUS_IP_ADDRESS_1,
              (snipp.BODY_ADD_PORT_CH_P2 % (1001, 1001)),
              base.POST],
+            [snipp.PATH_ALL,
+             base.NEXUS_IP_ADDRESS_1,
+             (snipp.BODY_ADD_CH_GRP % (1001, 1001, 'phys-[eth1/10]')),
+             base.POST],
             [(snipp.PATH_IF % 'aggr-[po1001]'),
              base.NEXUS_IP_ADDRESS_1,
              (snipp.BODY_TRUNKVLAN % (
                  'pcAggrIf', snipp.BODY_PORT_CH_MODE, '')),
-             base.POST],
-            [snipp.PATH_ALL,
-             base.NEXUS_IP_ADDRESS_1,
-             (snipp.BODY_ADD_CH_GRP % (1001, 1001, 'phys-[eth1/10]')),
              base.POST],
             [snipp.PATH_ALL,
              base.NEXUS_IP_ADDRESS_2,
@@ -750,14 +750,14 @@ class TestCiscoNexusRestBaremetalReplayResults(base.TestCiscoNexusBaseResults):
              base.NEXUS_IP_ADDRESS_2,
              (snipp.BODY_ADD_PORT_CH_P2 % (1001, 1001)),
              base.POST],
+            [snipp.PATH_ALL,
+             base.NEXUS_IP_ADDRESS_2,
+             (snipp.BODY_ADD_CH_GRP % (1001, 1001, 'phys-[eth1/20]')),
+             base.POST],
             [(snipp.PATH_IF % 'aggr-[po1001]'),
              base.NEXUS_IP_ADDRESS_2,
              (snipp.BODY_TRUNKVLAN % (
                  'pcAggrIf', snipp.BODY_PORT_CH_MODE, '')),
-             base.POST],
-            [snipp.PATH_ALL,
-             base.NEXUS_IP_ADDRESS_2,
-             (snipp.BODY_ADD_CH_GRP % (1001, 1001, 'phys-[eth1/20]')),
              base.POST],
             [snipp.PATH_ALL,
              base.NEXUS_IP_ADDRESS_1,
@@ -855,6 +855,19 @@ GET_PORT_CH_RESPONSE = {
     ]
 }
 
+GET_INTERFACE_PCHAN_NO_TRUNK_RESPONSE = {
+    "totalCount": "1",
+    "imdata": [
+        {
+            "pcAggrIf": {
+                "attributes": {
+                    "trunkVlans": "1-4094"
+                }
+            }
+        }
+    ]
+}
+
 
 class TestCiscoNexusRestBaremetalReplay(
     test_cisco_nexus_replay.TestCiscoNexusBaremetalReplay):
@@ -873,6 +886,23 @@ class TestCiscoNexusRestBaremetalReplay(
             return base.GET_INTERFACE_RESPONSE
         elif port_chan_path in action:
             return base.GET_INTERFACE_PCHAN_RESPONSE
+
+        return {}
+
+    def get_init_side_effect2(
+        self, action, ipaddr=None, body=None, headers=None):
+
+        eth_path = 'api/mo/sys/intf/phys-'
+        port_chan_path = 'api/mo/sys/intf/aggr-'
+
+        if action == snipp.PATH_GET_NEXUS_TYPE:
+            return base.GET_NEXUS_TYPE_RESPONSE
+        elif action in snipp.PATH_GET_PC_MEMBERS:
+            return base.GET_NO_PORT_CH_RESPONSE
+        elif eth_path in action:
+            return base.GET_INTERFACE_RESPONSE
+        elif port_chan_path in action:
+            return GET_INTERFACE_PCHAN_NO_TRUNK_RESPONSE
 
         return {}
 
@@ -937,6 +967,10 @@ class TestCiscoNexusRestBaremetalReplay(
 
     def test_replay_automated_vPC_ports_and_vm(self):
         """Provides replay data and result data for unique ports. """
+
+        data_json = {'rest_get.side_effect':
+                    self.get_init_side_effect2}
+        self.mock_ncclient.configure_mock(**data_json)
 
         switch_list = ['1.1.1.1', '2.2.2.2']
 
