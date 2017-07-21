@@ -1,0 +1,9 @@
+Code-Review+1: Carol Bouchard <caboucha@cisco.com>
+Code-Review+2: Baodong (Robert) Li <baoli@cisco.com>
+Workflow+1: Baodong (Robert) Li <baoli@cisco.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 21 Jul 2017 13:38:19 +0000
+Reviewed-on: https://review.openstack.org/485742
+Project: openstack/networking-cisco
+Branch: refs/heads/master
