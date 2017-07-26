@@ -186,18 +186,18 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
     def do_create_router(self, context, router, router_type_id, auto_schedule,
                          share_host, hosting_device_id=None, role=None,
                          inflated_slot_need=0):
-        with context.session.begin(subtransactions=True):
-            router_created = (super(L3RouterApplianceDBMixin, self).
-                              create_router(context, router))
-            r_hd_b_db = l3_models.RouterHostingDeviceBinding(
-                router_id=router_created['id'],
-                role=role,
-                router_type_id=router_type_id,
-                inflated_slot_need=inflated_slot_need,
-                auto_schedule=auto_schedule,
-                share_hosting_device=share_host,
-                hosting_device_id=hosting_device_id)
-            context.session.add(r_hd_b_db)
+        router_created = (super(L3RouterApplianceDBMixin, self).
+                          create_router(context, router))
+        r_hd_b_db = l3_models.RouterHostingDeviceBinding(
+            router_id=router_created['id'],
+            role=role,
+            router_type_id=router_type_id,
+            inflated_slot_need=inflated_slot_need,
+            auto_schedule=auto_schedule,
+            share_hosting_device=share_host,
+            hosting_device_id=hosting_device_id)
+        context.session.add(r_hd_b_db)
+        context.session.flush()
         router_created[routertype.TYPE_ATTR] = router_type_id
         router_created[routertypeawarescheduler.AUTO_SCHEDULE_ATTR] = (
             auto_schedule)
@@ -1066,7 +1066,7 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
         LOG.debug('Trying to backlog router %s' % binding_info_db.router_id)
         # Ensure we get latest state from DB in case it was updated while
         # thread was waiting for lock to enter this function
-        context.session.expire(binding_info_db)
+        #context.session.expire(binding_info_db)
         # call unsynchronized version to actually add to backlog
         self._backlog_router(context, binding_info_db)
 
