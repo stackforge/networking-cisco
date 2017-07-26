@@ -465,16 +465,7 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
         info = (super(L3RouterApplianceDBMixin, self).
                 add_router_interface(context, router_id, interface_info))
         context.session.expire_all()
-        is_ha = (utils.is_extension_supported(self, ha.HA_ALIAS) and
-                 r_hd_binding_db.router_type_id !=
-                 self.get_namespace_router_type_id(context))
-        if is_ha:
-            # process any HA
-            setattr(context, 'GUARD_TRANSACTION', False)
-            self._add_redundancy_router_interfaces(
-                context, self._make_router_dict(r_hd_binding_db.router),
-                interface_info, self._core_plugin.get_port(context,
-                                                           info['port_id']))
+
         routers = [self.get_router(context, router_id)]
         self.add_type_and_hosting_device_info(context.elevated(), routers[0])
         if driver:
@@ -488,6 +479,7 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
                     interface_info['port_id'])
             port_ctxt._port = port
             driver.add_router_interface_postcommit(context, port_ctxt)
+
         self.notify_router_interface_action(context, info, routers, 'add')
         return info
 
@@ -1585,7 +1577,30 @@ def _notify_cfg_agent_port_update(resource, event, trigger, **kwargs):
                                                      'update_port_status_cfg')
 
 
+def _create_redundancy_router_interfaces(resource, event, trigger, **kwargs):
+    context = kwargs['context']
+    context.session.flush()
+    l3plugin = bc.get_plugin(L3_ROUTER_NAT)
+    r_hd_binding_db = l3plugin._get_router_binding_info(context.elevated(),
+                                                        kwargs['router_id'])
+    is_ha = (utils.is_extension_supported(l3plugin, ha.HA_ALIAS) and
+             r_hd_binding_db.router_type_id !=
+             l3plugin.get_namespace_router_type_id(context))
+    if not is_ha:
+        return
+
+    router = l3plugin.get_router(context, kwargs['router_id'])
+
+    l3plugin._add_redundancy_router_interfaces(
+        context, router, kwargs['interface_info'],
+        l3plugin._core_plugin.get_port(context, kwargs['port_id']))
+
+
 def modify_subscribe():
+    registry.subscribe(
+        _create_redundancy_router_interfaces, resources.ROUTER_INTERFACE,
+        events.AFTER_CREATE)
+
     # unregister the function in l3_db as it does not do what we need
     registry.unsubscribe(l3_db._notify_routers_callback, resources.PORT,
                          events.AFTER_DELETE)
