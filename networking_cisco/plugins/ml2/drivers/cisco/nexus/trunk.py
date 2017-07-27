@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron_lib.api.definitions import dns
 from oslo_log import log
 
 from neutron.api.v2 import attributes
-from neutron.extensions import dns
 
 from networking_cisco import backwards_compatibility as bc
 

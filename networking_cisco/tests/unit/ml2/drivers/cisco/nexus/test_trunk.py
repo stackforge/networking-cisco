@@ -18,9 +18,9 @@ import testtools
 
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import trunk
+from neutron_lib.api.definitions import dns
 
 from neutron.api.v2 import attributes
-from neutron.extensions import dns
 from neutron.tests.unit.db import test_db_base_plugin_v2
 
 
