@@ -1,10 +1,5 @@
-================================
- networking-cisco Release Notes
-================================
+=======================================
+Full Release Notes for networking-cisco
+=======================================
 
-.. toctree::
-   :maxdepth: 1
-
-   unreleased
-   newton
-   mitaka
+.. release-notes::

@@ -15,7 +15,7 @@
 #
 
 from neutronclient.common import extension
-from neutronclient.i18n import _
+from neutronclient._i18n import _
 
 
 class PolicyProfile(extension.NeutronClientExtension):
