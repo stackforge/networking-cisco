@@ -16,6 +16,7 @@
 import mock
 import testtools
 
+from neutron_lib.api.definitions import dns
 from oslo_config import cfg
 
 from networking_cisco import backwards_compatibility as bc
@@ -24,7 +25,6 @@ from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
 from networking_cisco.services.trunk import nexus_trunk
 
 from neutron.callbacks import events
-from neutron.extensions import dns
 from neutron.tests.unit.db import test_db_base_plugin_v2
 from neutron.tests.unit import testlib_api
 
