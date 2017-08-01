@@ -1,0 +1,9 @@
+Code-Review+2: Bob Melander <bob.melander@gmail.com>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 01 Aug 2017 13:57:26 +0000
+Reviewed-on: https://review.openstack.org/476985
+Project: openstack/networking-cisco
+Branch: refs/heads/master
