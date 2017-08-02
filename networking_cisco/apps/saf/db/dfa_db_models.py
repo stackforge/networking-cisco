@@ -354,6 +354,8 @@ class DfaVmInfo(db.Base):
     fwd_mod = sa.Column(sa.String(16))
     gw_mac = sa.Column(sa.String(17))
     host = sa.Column(sa.String(255))
+    vdp_vlan = sa.Column(sa.Integer)
+    local_vlan = sa.Column(sa.Integer)
     result = sa.Column(sa.String(16))
 
 
@@ -471,6 +473,18 @@ class DfaDBMixin(object):
             projs = session.query(DfaTenants).all()
         return projs
 
+    def get_project_by_filters(self, name, tenant_id):
+        """Get all projects for filters from the database.  """
+
+        session = db.get_session()
+        with session.begin(subtransactions=True):
+            projs = session.query(DfaTenants)
+            if name:
+                projs = projs.filter(DfaTenants.name == name)
+            if tenant_id:
+                projs = projs.filter(DfaTenants.id == tenant_id)
+        return projs.all()
+
     def update_project_entry(self, pid, dci_id, result):
         session = db.get_session()
         with session.begin(subtransactions=True):
@@ -537,6 +551,26 @@ class DfaDBMixin(object):
         except orm_exc.MultipleResultsFound:
             LOG.error(_LE('More than one enty found for seg-id %(id)s.'),
                       {'id': segid})
+
+    def get_network_by_filters(self, filters):
+        """Get all networks for filters from the database.  """
+
+        session = db.get_session()
+        with session.begin(subtransactions=True):
+            net = session.query(DfaNetwork)
+            if filters.get('name'):
+                net = net.filter(DfaNetwork.name == filters.get('name'))
+            if filters.get('id'):
+                net = net.filter(DfaNetwork.network_id == filters.get('id'))
+            if filters.get('tenant_id'):
+                net = net.filter(DfaNetwork.tenant_id ==
+                                 filters.get('tenant_id'))
+            if filters.get('tenant_name'):
+                net = net.join(
+                    DfaTenants,
+                    DfaTenants.name == filters.get('tenant_name')).filter(
+                        DfaNetwork.tenant_id == DfaTenants.id)
+        return net.all()
 
     def update_network_db(self, net_id, result):
         session = db.get_session()
@@ -608,6 +642,56 @@ class DfaDBMixin(object):
             vms = session.query(DfaVmInfo).filter_by(**req).all()
         return vms
 
+    def get_vms_by_filters(self, filters):
+        """Get all vms for filters from the database.  """
+
+        session = db.get_session()
+        with session.begin(subtransactions=True):
+            vms = session.query(DfaVmInfo)
+            if filters.get('name'):
+                vms = vms.filter(DfaVmInfo.name == filters.get('name'))
+            if filters.get('seg_id'):
+                vms = vms.filter(DfaVmInfo.segmentation_id ==
+                                 filters.get('seg_id'))
+            if filters.get('vdp_vlan'):
+                vms = vms.filter(DfaVmInfo.vdp_vlan == filters.get('vdp_vlan'))
+            if filters.get('local_vlan'):
+                vms = vms.filter(DfaVmInfo.local_vlan == filters.get(
+                    'local_vlan'))
+            if filters.get('host'):
+                vms = vms.filter(DfaVmInfo.host == filters.get('host'))
+            if filters.get('port'):
+                vms = vms.filter(DfaVmInfo.port_id == filters.get('port'))
+            if filters.get('network_name'):
+                vms = vms.join(
+                        DfaNetwork,
+                        DfaNetwork.name == filters.get('network_name')).filter(
+                        DfaVmInfo.network_id == DfaNetwork.network_id)
+            if filters.get('tenant_id'):
+                vms = vms.join(
+                        DfaNetwork,
+                        DfaVmInfo.network_id == DfaNetwork.network_id).filter(
+                        DfaNetwork.tenant_id == filters.get('tenant_id'))
+            if filters.get('tenant_name'):
+                vms = vms.join(
+                        DfaTenants,
+                        DfaTenants.name == filters.get('tenant_name')).join(
+                                DfaNetwork,
+                                DfaNetwork.tenant_id == DfaTenants.id).filter(
+                                DfaVmInfo.network_id == DfaNetwork.network_id)
+        return vms.all()
+
+    def get_vms_per_tenant(self, tenant_id):
+        """Get all VM's for a tenant from the database. """
+
+        session = db.get_session()
+        with session.begin(subtransactions=True):
+            vms = (session.query(DfaVmInfo, DfaNetwork)
+                          .join(DfaNetwork,
+                                DfaVmInfo.network_id == DfaNetwork.network_id)
+                          .filter(DfaNetwork.tenant_id == tenant_id).all())
+        return vms
+
     def get_fialed_projects_entries(self, fail_res):
         session = db.get_session()
         with session.begin(subtransactions=True):
@@ -648,6 +732,18 @@ class DfaDBMixin(object):
             except orm_exc.MultipleResultsFound:
                 LOG.error(_LE('More than one enty found for agent %(host)s.'),
                           {'host': host})
+
+    def get_agents_by_filters(self, host):
+        """Get Enabler agents by filters from the database. """
+
+        session = db.get_session()
+        with session.begin(subtransactions=True):
+            if host:
+                agent = session.query(DfaAgentsDb).filter_by(host=host).one()
+            else:
+                agent = session.query(DfaAgentsDb).all()
+
+        return agent
 
     def update_agent_configurations(self, host, configs):
         session = db.get_session()
