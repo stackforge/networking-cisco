@@ -20,11 +20,13 @@ neutron, keystone and DCNM events. Also interacting with DFA enabler agent
 module for port events.
 """
 
+import datetime
 import eventlet
 eventlet.monkey_patch()
 import os
 import paramiko
 import platform
+import pytz
 import re
 import six
 from six.moves import queue
@@ -227,18 +229,18 @@ class RpcCallBacks(object):
         The result reflects the success of failure of operation when an
         agent processes the vm info.
         """
-        args = jsonutils.loads(msg)
+        payload = jsonutils.loads(msg)
         agent = context.get('agent')
-        port_id = args.get('port_uuid')
-        result = args.get('result')
-        LOG.debug('update_vm_result received from %(agent)s: '
-                  '%(port_id)s %(result)s', {'agent': agent,
-                                             'port_id': port_id,
-                                             'result': result})
+        payload.update({'agent': agent})
+        #port_id = payload.get('port_uuid')
+        #result = payload.get('result')
+        LOG.debug('update_vm_result received from %(agent)s:  %(payload)s',
+                  {'agent': agent, 'payload': payload})
 
         # Add the request into queue for processing.
         event_type = 'agent.vm_result.update'
-        payload = {'port_id': port_id, 'result': result}
+        #payload = {'port_id': port_id, 'result': result}
+        data = (event_type, payload)
         timestamp = time.ctime()
         data = (event_type, payload)
         # TODO(nlahouti) use value defined in constants
@@ -247,6 +249,273 @@ class RpcCallBacks(object):
         LOG.debug('Added request vm result update into queue.')
 
         return 0
+
+    def cli_get_networks(self, context, msg):
+        """Process request to get Network Details. """
+
+        nets = self.obj.get_network_by_filters(msg)
+
+        data = []
+        for net in nets:
+            tenant_name = self.obj.get_project_name(net.tenant_id)
+            data.append(dict(name=net.name, net_id=net.network_id,
+                             seg=net.segmentation_id, vlan=net.vlan,
+                             md=net.mob_domain, cfgp=net.config_profile,
+                             tenant_id=net.tenant_id, result=net.result,
+                             tenant_name=tenant_name, source=net.source,
+                             reason=self.obj.get_network_reason(
+                                 net.network_id)))
+        return data
+
+    def cli_get_instances(self, context, msg):
+        """Process request to get Instance Details. """
+
+        vms = self.obj.get_vms_by_filters(msg)
+
+        data = []
+        for v in vms:
+            net = self.obj.get_network(v.network_id)
+            if not net:
+                continue
+            tenant_name = self.obj.get_project_name(net.tenant_id)
+            reason = self.obj.get_port_reason(v.port_id)
+            data.append(dict(id=v.instance_id, ip=v.ip, name=v.name,
+                             mac=v.mac, net_id=v.network_id, host=v.host,
+                             local=v.local_vlan, seg=v.segmentation_id,
+                             vdp=v.vdp_vlan, port=v.port_id, result=v.result,
+                             net_name=net.name, tenant_name=tenant_name,
+                             reason=reason))
+        return data
+
+    def cli_get_projects(self, context, msg):
+        """Process request to get Project Details. """
+
+        name = msg.get('name')
+        tenant_id = msg.get('tenant_id')
+
+        projs = self.obj.get_project_by_filters(name, tenant_id)
+        return [(p.id, p.name, p.dci_id, p.result,
+                 self.obj.project_info_cache[p.id].get('reason'))
+                for p in projs]
+
+    def get_fabric_summary(self, context, msg):
+        """Process request to get DCNM and Fabric Details. """
+
+        summary = []
+
+        lan = self.obj.dcnm_client.default_lan_settings()
+        dcnm_version = self.obj.dcnm_client.get_version()
+        enabler_version = constants.VERSION
+        dcnm_ip = self.obj.cfg.dcnm.dcnm_ip
+        switch_type = lan.get('deviceType')
+        fabric_type = lan.get('fabricEncapsulationMode')
+        fabric_id = lan.get('id')
+        seg_id = str(self.obj.cfg.dcnm.segmentation_id_min) + '-' + \
+            str(self.obj.cfg.dcnm.segmentation_id_max)
+
+        summary = [{'key': "Fabric Enabler Version", 'value': enabler_version},
+                {'key': "DCNM Version", 'value': dcnm_version},
+                {'key': "DCNM IP", 'value': dcnm_ip},
+                {'key': "Switch Type", 'value': switch_type},
+                {'key': "Fabric Type", 'value': fabric_type},
+                {'key': "Fabric ID", 'value': fabric_id},
+                {'key': "Segment ID Range", 'value': seg_id}]
+
+        return summary
+
+    def get_per_config_profile_detail(self, context, msg):
+        """Process request to get per config profiles details from DCNM. """
+
+        profile = msg.get('profile')
+        ftype = msg.get('ftype')
+
+        cfg = self.obj.dcnm_client._config_profile_get_detail(profile, ftype)
+        if not cfg:
+            LOG.debug("Unable to extract config Profile")
+        return cfg
+
+    def get_config_profiles_detail(self, context, msg):
+        """Process request to get all config profiles from DCNM. """
+
+        try:
+            cfplist = self.obj.dcnm_client._config_profile_list()
+            if not cfplist:
+                LOG.debug("Unable to extract config Profile")
+                return False
+
+            lan = self.obj.dcnm_client.default_lan_settings()
+            if not lan:
+                LOG.debug("Unable to extract LAN settings")
+                return False
+
+            switch_type = lan.get('deviceType')
+            fabric_type = lan.get('fabricEncapsulationMode')
+            if fabric_type == 'fabricpath':
+                fwding_mode = 'FPVLAN'
+            elif fabric_type == 'vxlan' and switch_type == 'n6k':
+                fwding_mode = 'IPVLAN'
+            else:
+                fwding_mode = 'IPBD'
+
+            result = [p for p in cfplist
+                      if (p.get('profileType') == fwding_mode)]
+            if not result:
+                LOG.debug("Unable to extract config Profile")
+                return False
+
+            return result
+        except dexc.DfaClientRequestFailed as exc:
+            raise Exception(exc.args[0])
+
+    def associate_dci_id_to_project(self, context, msg):
+        """Proccess request to Associated DCI ID to Project. """
+
+        tenant_id = msg.get('tenant_id')
+        tenant_name = msg.get('tenant_name')
+        dci_id = msg.get('dci_id')
+        tenant_name = self.obj.get_project_name(tenant_id)
+        if not tenant_name:
+            LOG.error(_LE('Failed to associate %(dci_id)s because Project '
+                          '%(tenant_id)s does not exist.'),
+                      {'dci_id': dci_id, 'tenant_id': tenant_id})
+            return
+        self.obj.update_project_entry(pid=tenant_id,
+                                      dci_id=dci_id,
+                                      result=constants.RESULT_SUCCESS)
+        try:
+            self.obj.dcnm_client.update_project(tenant_name,
+                                                self.obj.cfg.dcnm.
+                                                default_partition_name,
+                                                dci_id=dci_id)
+        except dexc.DfaClientRequestFailed:
+            LOG.error("Failed to update project %s on DCNM.", tenant_name)
+
+    def get_all_networks_for_tenant(self, context, msg):
+        """Process request to get all the networks for particular tenant. """
+
+        tenant_id = msg.get('tenant_id')
+        tenant_name = self.obj.get_project_name(tenant_id)
+        if not tenant_name:
+            return False
+
+        net = self.obj.get_network_by_filters(msg)
+        netList = []
+        for row in net:
+            gui_result = row.result
+            if row.result in ('CREATE:FAIL', 'DELETE:FAIL'):
+                gui_result = (row.result).replace(":", "_")
+            netList.append(dict(network_id=row.network_id,
+                                network_name=row.name,
+                                config_profile=row.config_profile,
+                                seg_id=row.segmentation_id,
+                                vlan_id=row.vlan, result=gui_result,
+                                reason=self.obj.get_network_reason(
+                                    row.network_id)))
+        return netList
+
+    def get_instance_by_tenant_id(self, context, msg):
+        """Process request to get all the instances for particular tenant. """
+
+        project_id = msg.get('tenant_id')
+        tenant_name = self.obj.get_project_name(project_id)
+        if not tenant_name:
+            return False
+
+        vmlist = []
+        vms = self.obj.get_vms_per_tenant(project_id)
+        for row in vms:
+            gui_result = row[0].result
+            if row[0].result in ('CREATE:FAIL', 'DELETE:FAIL'):
+                gui_result = (row[0].result).replace(":", "_")
+
+            reason = self.obj.get_port_reason(row[0].port_id)
+            vmlist.append(dict(port_id=row[0].port_id, name=row[0].name,
+                               network_name=row[1].name,
+                               instance_id=row[0].instance_id,
+                               mac=row[0].mac, ip=row[0].ip,
+                               seg_id=row[0].segmentation_id,
+                               host=row[0].host, vdp_vlan=row[0].vdp_vlan,
+                               local_vlan=row[0].local_vlan,
+                               result=gui_result,
+                               reason=reason))
+        return vmlist
+
+    def get_project_detail(self, context, msg):
+        """Process request to get project details from Enabler and DCNM. """
+
+        tenant_id = msg.get('tenant_id')
+        project = (self.obj.get_project_by_filters(None, tenant_id))[0]
+        if not project:
+            return False
+
+        part = self.obj.cfg.dcnm.default_partition_name
+        seg = self.obj.dcnm_client.get_partition_segmentId(project.name, part)
+        project_list = []
+        project_list.append(dict(project_id=tenant_id,
+                                 project_name=project.name,
+                                 dci_id=project.dci_id, seg_id=seg,
+                                 result=project.result,
+                                 reason=self.obj.get_project_reason(
+                                     tenant_id)))
+        return project_list
+
+    def get_agents_details(self, context, msg):
+        """Process request to get all agents details from DB. """
+
+        agents = self.obj.get_agents_by_filters(None)
+        if not agents:
+            return False
+        agent_list = []
+        for agent in agents:
+            heartbeat = pytz.timezone('US/Pacific').localize(agent.heartbeat)
+            tz_info = heartbeat.tzinfo
+            time_diff = datetime.datetime.now(tz_info) - heartbeat
+            timestamp = datetime.timedelta(seconds=constants.HB_INTERVAL)
+            active = 'Active' if time_diff < timestamp else 'Not Active'
+            agent_conf = jsonutils.loads(agent.configurations)
+            params = {'host': agent.host,
+                      'protocol_interface': agent_conf.get('veth_intf')}
+            topo_disc = self.obj.topology_db.query_topology_db(
+                dict_convert=True, **params)
+            topo_dict = {agent_conf.get('veth_intf'): topo_disc[0]}
+            agent_conf.update({'topo': topo_dict})
+            agent_list.append(dict(host=agent.host, created=agent.created,
+                                   heartbeat=agent.heartbeat,
+                                   agent_status=active,
+                                   config=agent_conf))
+        return agent_list
+
+    def get_agent_details_per_host(self, context, msg):
+        """Process request to get details for particular agent. """
+
+        host = msg.get('host')
+        agent = self.obj.get_agents_by_filters(host)
+        if not agent:
+            return False
+        agent_list = []
+        agent_conf = jsonutils.loads(agent.configurations)
+        params = {'host': agent.host,
+            'protocol_interface': agent_conf.get('veth_intf')}
+        topo_disc = self.obj.topology_db.query_topology_db(
+            dict_convert=True, **params)
+        topo_dict = {agent_conf.get('veth_intf'): topo_disc[0]}
+        agent_conf.update({'topo': topo_dict})
+        agent_list.append(dict(host=agent.host, created=agent.created,
+                               heartbeat=agent.heartbeat,
+                               config=agent_conf))
+        return agent_list
+
+    def associate_profile_with_network(self, context, msg):
+        """Process request to associate profile with particular network. """
+
+        event_type = 'associate.network.profile'
+        if self.obj.pqueue is None:
+            raise Exception("DFA Queue is not initialized!")
+
+        payload = (event_type, msg)
+        self.obj.pqueue.put(((self.obj.PRI_MEDIUM_START + 1),
+                             time.ctime(), payload))
+        return True
 
 
 class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
@@ -284,11 +553,13 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
             'agent.vm_result.update': self.vm_result_update,
             'service.vnic.create': self.service_vnic_create,
             'service.vnic.delete': self.service_vnic_delete,
+            'associate.network.profile': self.associate_network_profile,
         })
         self.project_info_cache = {}
         self.network = {}
         self.subnet = {}
         self.port = {}
+        self.port_result = {}
         self.dfa_threads = []
         self.agents_status_table = {}
         self.dcnm_event = None
@@ -447,20 +718,43 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
                           " on DCNM: %s"), exc)
             raise SystemExit(exc)
 
+    def get_network_reason(self, net_id):
+        if net_id in self.network:
+            return self.network.get(net_id).get('reason')
+
+    def get_port_reason(self, port_id):
+        if port_id in self.port_result:
+            return self.port_result[port_id].get('failure_reason')
+
+    def get_project_reason(self, project_id):
+        if project_id in self.project_info_cache:
+            return self.project_info_cache[project_id].get('reason')
+
+    def update_reason_in_port_result(self, port_id, reason):
+        # Update Failure reason in port_result cache i.e RPC failed
+        if port_id in self.port_result:
+            self.port[port_id].update({'failure_reason': reason})
+        else:
+            self.port[port_id] = {'failure_reason': reason}
+
     def update_project_info_cache(self, pid, dci_id=None,
                                   name=None, opcode='add',
-                                  result=constants.RESULT_SUCCESS):
+                                  result=constants.RESULT_SUCCESS,
+                                  reason=constants.RESULT_SUCCESS):
         if 'add' in opcode:
-            self.project_info_cache[pid] = dict(name=name, dci_id=dci_id)
+            self.project_info_cache[pid] = dict(name=name, dci_id=dci_id,
+                                                reason=reason)
             self.add_project_db(pid, name, dci_id, result)
         if 'update' in opcode:
-            self.project_info_cache[pid] = dict(name=name, dci_id=dci_id)
+            self.project_info_cache[pid] = dict(name=name, dci_id=dci_id,
+                                                reason=reason)
             self.update_project_entry(pid, dci_id, result)
         if 'delete' in opcode:
             if pid in self.project_info_cache:
                 if result == constants.DELETE_FAIL:
                     # Update the database entry with failure in the result.
                     # The entry should be deleted later in periodic task.
+                    self.project_info_cache[pid] = dict(reason=reason)
                     self.update_project_entry(pid, dci_id, result)
                 else:
                     self.project_info_cache.pop(pid)
@@ -516,12 +810,13 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
             self.dcnm_client.create_project(self.cfg.dcnm.orchestrator_id,
                                             proj_name, part_name, dci_id,
                                             proj.description)
-        except dexc.DfaClientRequestFailed:
+        except dexc.DfaClientRequestFailed as e:
             # Failed to send create project in DCNM.
             # Save the info and mark it as failure and retry it later.
             self.update_project_info_cache(proj_id, name=proj_name,
                                            dci_id=dci_id,
-                                           result=constants.CREATE_FAIL)
+                                           result=constants.CREATE_FAIL,
+                                           reason=str(e))
             LOG.error(_LE("Failed to create project %s on DCNM."), proj_name)
         else:
             self.update_project_info_cache(proj_id, name=proj_name,
@@ -590,7 +885,7 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
                                             self.cfg.dcnm.
                                             default_partition_name,
                                             dci_id=new_dci_id)
-        except dexc.DfaClientRequestFailed:
+        except dexc.DfaClientRequestFailed as e:
             # Failed to update project in DCNM.
             # Save the info and mark it as failure and retry it later.
             LOG.error(_LE("Failed to update project %s on DCNM."),
@@ -598,7 +893,8 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
             self.update_project_info_cache(proj_id, name=new_proj_name,
                                            dci_id=new_dci_id,
                                            opcode='update',
-                                           result=constants.UPDATE_FAIL)
+                                           result=constants.UPDATE_FAIL,
+                                           reason=str(e))
         else:
             self.update_project_info_cache(proj_id, name=new_proj_name,
                                            dci_id=new_dci_id,
@@ -617,14 +913,15 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
                 self.dcnm_client.delete_project(proj_name,
                                                 self.cfg.dcnm.
                                                 default_partition_name)
-            except dexc.DfaClientRequestFailed:
+            except dexc.DfaClientRequestFailed as e:
                 # Failed to delete project in DCNM.
                 # Save the info and mark it as failure and retry it later.
                 LOG.error(_LE("Failed to create project %s on DCNM."),
                           proj_name)
                 self.update_project_info_cache(proj_id, name=proj_name,
                                                opcode='delete',
-                                               result=constants.DELETE_FAIL)
+                                               result=constants.DELETE_FAIL,
+                                               reason=str(e))
             else:
                 self.update_project_info_cache(proj_id, opcode='delete')
                 LOG.debug('Deleted project:%s', proj_name)
@@ -663,11 +960,11 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
                       {'network_id': self.subnet[snet_id].get('network_id')})
             return
 
-        # Check if the network is created by DCNM.
         query_net = self.get_network(net.get('id'))
         if query_net.result != constants.SUBNET_PENDING:
             LOG.info("Subnet exists, returning")
             return
+        # Check if the network is created by DCNM.
         if query_net and query_net.source.lower() == 'dcnm':
             # The network is created by DCNM.
             # No need to process this event.
@@ -683,17 +980,22 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
             LOG.error(_LE('Project %(tenant_id)s does not exist.'),
                       {'tenant_id': subnet.tenant_id})
             self.update_network_db(dcnm_net.id, constants.CREATE_FAIL)
+            reason = (('Project %(tenant_id)s does not exist.'),
+                      {'tenant_id': subnet.tenant_id})
+            self.network[net.get('id')].update({'reason': reason})
             return
 
         try:
             self.dcnm_client.create_network(tenant_name, dcnm_net, subnet,
                                             self.dcnm_dhcp)
             self.update_network_db(net.get('id'), constants.RESULT_SUCCESS)
-        except dexc.DfaClientRequestFailed:
+            self.network[net.get('id')].update({'reason': 'SUCCESS'})
+        except dexc.DfaClientRequestFailed as e:
             LOG.exception(_LE('Failed to create network %(net)s.'),
                           {'net': dcnm_net.name})
             # Update network database with failure result.
             self.update_network_db(dcnm_net.id, constants.CREATE_FAIL)
+            self.network[net.get('id')].update({'reason': str(e)})
         self.network_sub_create_notif(snet.get('tenant_id'), tenant_name,
                                       snet.get('cidr'))
 
@@ -717,9 +1019,12 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
         if self.fw_api.is_network_source_fw(network_db_elem, net_name):
             LOG.info(_LI("Service network %s, returning"), net_name)
             return
-        if not network_db_elem:
-            self.network[net_id] = {}
-            self.network[net_id].update(net)
+        if network_db_elem:
+            LOG.debug("Network %s exists, not processing" % net_name)
+            return
+
+        self.network[net_id] = {}
+        self.network[net_id].update(net)
 
         net_name = net.get('name')
         tenant_id = net.get('tenant_id')
@@ -763,14 +1068,12 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
                                   '%(network)s. Reason %(err)s.'),
                                   {'network': updated_net_name,
                                    'err': str(exc)})
+                    self.network[net_id].update({'reason': str(exc)})
                     return
 
             LOG.info(_LI('network_create_event: network %(name)s was created '
                      'by %(source)s. Ignoring processing the event.'),
                      {'name': net_name, 'source': 'dcnm'})
-            return
-        if network_db_elem:
-            LOG.debug("Network %s exists, not processing" % net_name)
             return
 
         # Check if project (i.e. tenant) exist.
@@ -787,19 +1090,71 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
         try:
             cfgp, fwd_mod = self.dcnm_client.get_config_profile_for_network(
                 net.get('name'))
+            if 'config_profile' in net and net['config_profile']:
+                cfgp = net['config_profile']
             self.network[net_id]['config_profile'] = cfgp
             self.network[net_id]['fwd_mod'] = fwd_mod
             self.add_network_db(net_id, self.network[net_id],
-                                'openstack',
-                                constants.SUBNET_PENDING)
+                                'openstack', constants.SUBNET_PENDING)
             LOG.debug('network_create_event: network=%s', self.network)
+            self.network[net_id].update({'reason': 'SUCCESS'})
         except dexc.DfaClientRequestFailed:
             # Fail to get config profile from DCNM.
             # Save the network info with failure result and send the request
             # to DCNM later.
             self.add_network_db(net_id, self.network[net_id], 'openstack',
                                 constants.CREATE_FAIL)
+            self.network[net_id].update({'reason': exc.args[0]})
             LOG.error(_LE('Failed to create network=%s.'), self.network)
+
+    def associate_network_profile(self, network):
+        """Process associate network profile event.
+
+        update network with config profle.
+        """
+
+        netid = network['id']
+        cfg_p = network['cfgp']
+        tenant_id = network['tenant_id']
+
+        net = self.get_network(netid)
+        if not net and tenant_id:
+            # Insert network into db and return
+            network_info = {'network': {'id': network['id'],
+                                        'name': network['name'],
+                                        'tenant_id': network['tenant_id'],
+                                        'config_profile': network['cfgp']}}
+            self.network_create_event(network_info)
+            return True
+
+        # network present in db, check if network.config_profile==cfg_p in db
+        if net.config_profile == cfg_p:
+            return True
+
+        # else update db with new cfg_profile
+        params = dict(columns=dict(config_profile=cfg_p))
+        self.update_network(netid, **params)
+        self.network[netid]['config_profile'] = cfg_p
+
+        # check if subnet is present in network
+        snet = self.neutronclient.list_subnets(network_id=netid).get('subnets')
+
+        # if present: send update network with config_profile to dcnm
+        # else return
+        if snet[0]:
+            if not tenant_id:
+                tenant_id = net.tenant_id
+            tenant_name = self.get_project_name(tenant_id)
+            subnet = utils.Dict2Obj(snet[0])
+            dcnm_net = utils.Dict2Obj(self.network[netid])
+            part = self.cfg.dcnm.default_partition_name
+            try:
+                self.dcnm_client.update_network(tenant_name, dcnm_net, subnet,
+                                                part, self.dcnm_dhcp)
+            except dexc.DfaClientRequestFailed:
+                LOG.exception(_LE('Failed to update network %(net)s.'),
+                        {'net': dcnm_net.name})
+        return
 
     def network_create_event(self, network_info):
         """Process network create event.
@@ -839,9 +1194,10 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
             snets = [k for k in self.subnet if (
                 self.subnet[k].get('network_id') == net_id)]
             [self.subnet.pop(s) for s in snets]
-        except dexc.DfaClientRequestFailed:
+        except dexc.DfaClientRequestFailed as exc:
             LOG.error(_LE('Failed to create network %(net)s.'),
                       {'net': net.name})
+            self.network[net_id].update({'reason': exc.args[0]})
             self.update_network_db(net_id, constants.DELETE_FAIL)
         # deleting all related VMs
         instances = self.get_vms()
@@ -1001,6 +1357,7 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
             LOG.exception(_LE('Failed to create subnet %(subnet)s for DCNM '
                           'request. Error %(err)s'),
                           {'subnet': body['subnet'], 'err': str(exc)})
+            self.network[net_id].update({'reason': str(exc)})
 
         LOG.debug('dcnm_network_create_event: Created subnet %(subnet)s', (
             body))
@@ -1028,6 +1385,7 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
             # Failed to delete network.
             # Put back the entry to the local cache???
             self.network[query_net.network_id] = del_net
+            self.network[query_net.network_id].update({'reason': str(exc)})
             LOG.exception(_LE('dcnm_network_delete_event: Failed to delete '
                           '%(network)s. Reason %(err)s.'),
                           {'network': query_net.name, 'err': str(exc)})
@@ -1105,6 +1463,9 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
             # database as failure to send it later.
             self.add_vms_db(vm_info, constants.CREATE_FAIL)
             LOG.error(_LE('Failed to send VM info to agent.'))
+            reason = ('Failed to send VM info to agent %s.' %
+                      str(vm_info.get('host')))
+            self.update_reason_in_port_result(port_id, reason)
         else:
             self.add_vms_db(vm_info, constants.RESULT_SUCCESS)
 
@@ -1155,6 +1516,9 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
                                            get('vm_name'),
                                            result=constants.CREATE_FAIL))
                 self.update_vm_db(vm.port_id, **params)
+                # Update Failure reason in port_result cache i.e RPC failed
+                reason = 'Failed to send VM info to agent %s.' % bhost_id
+                self.update_reason_in_port_result(vm.port_id, reason)
             else:
                 # Update the database with info.
                 params = dict(columns=dict(host=bhost_id,
@@ -1213,10 +1577,10 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
             self.delete_vm_db(vm.port_id)
             if vm.port_id in self.port:
                 del self.port[vm.port_id]
-        else:
-            params = {"columns":
-                      {"status": "down", "result": constants.DELETE_FAIL}}
-            self.update_vm_db(vm.port_id, **params)
+            else:
+                params = {"columns":
+                          {"status": "down", "result": constants.DELETE_FAIL}}
+                self.update_vm_db(vm.port_id, **params)
 
     def service_vnic_create(self, vnic_info_arg):
         LOG.info(_LI("Service vnic create %s"), vnic_info_arg)
@@ -1489,6 +1853,7 @@ class DfaServer(dfr.DfaFailureRecovery, dfa_dbm.DfaDBMixin,
                                     gw_mac=vm.gw_mac,
                                     fwd_mod=vm.fwd_mod,
                                     oui_id='cisco')))
+
         try:
             self.neutron_event.send_vm_info(agent, str(vm_info))
         except (rpc.MessagingTimeout, rpc.RPCException, rpc.RemoteError):
