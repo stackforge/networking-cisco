@@ -164,6 +164,49 @@ class DFARESTClient(object):
                  {'url': url, 'payload': payload})
         return self._send_request('POST', url, payload, 'network')
 
+    def _update_network(self, network_info):
+        """Send update network request to DCNM.
+
+        :param network_info: network parameters to be updated on DCNM
+        """
+
+        org_name = network_info['organizationName']
+        part_name = network_info['partitionName']
+        segment_id = network_info['segmentId']
+        url = self._network_url % (org_name, part_name, segment_id)
+
+        payload = network_info
+
+        LOG.info(_LI('url %(url)s payload %(payload)s'),
+                 {'url': url, 'payload': payload})
+
+        return self._send_request('PUT', url, payload, 'network')
+
+    def _config_profile_get_detail(self, profile, ftype):
+        """Get details of a config profile from DCNM.
+
+        :param profile and fabric type: network config profile in request
+        """
+        url = self._cfg_profile_get_url_detail % (profile, ftype)
+        payload = {}
+
+        res = self._send_request('GET', url, payload, 'config-profile')
+        if res and res.status_code in self._resp_ok:
+            return res.json()
+
+    def default_lan_settings(self):
+        """Get Default LAN settings from DCNM. """
+
+        url = self._default_lan_settings
+
+        res = self._send_request('GET', url, {}, 'lan_setting')
+        if res and res.status_code in self._resp_ok:
+            return res.json()
+        else:
+            LOG.error("Failed to get LAN settings DCNM: %s" % (res.text))
+            LOG.error(self._failure_msg(res))
+            raise dexc.DfaClientRequestFailed(reason=self._failure_msg(res))
+
     def _config_profile_get(self, thisprofile):
         """Get information of a config profile from DCNM.
 
@@ -470,9 +513,9 @@ class DFARESTClient(object):
         fwd_mod = self.config_profile_fwding_mode_get(prof)
         return (prof, fwd_mod)
 
-    def create_network(self, tenant_name, network, subnet,
-                       dhcp_range=True):
-        """Create network on the DCNM.
+    def create_network_info_payload(self, tenant_name, network, subnet,
+                                    part=None, dhcp_range=True):
+        """Build Create and update network info payload.
 
         :param tenant_name: name of tenant the network belongs to
         :param network: network parameters
@@ -523,6 +566,19 @@ class DFARESTClient(object):
                 # Otherwise, it should be left empty.
                 network_info["vrfName"] = ""
 
+        return network_info
+
+    def create_network(self, tenant_name, network, subnet,
+                       part=None, dhcp_range=True):
+        """Create network on the DCNM.
+
+        :param tenant_name: name of tenant the network belongs to
+        :param network: network parameters
+        :param subnet: subnet parameters of the network
+        """
+        network_info = self.create_network_info_payload(tenant_name, network,
+                                                        subnet, part,
+                                                        dhcp_range)
         LOG.info(_LI("Creating %s network in DCNM."), network_info)
 
         res = self._create_network(network_info)
@@ -532,6 +588,28 @@ class DFARESTClient(object):
             LOG.error(_LE("Failed to create %s network in DCNM."),
                       network_info)
             raise dexc.DfaClientRequestFailed(reason=res)
+
+    def update_network(self, tenant_name, network, subnet,
+                       part=None, dhcp_range=True):
+        """Update network on the DCNM.
+
+        :param tenant_name: name of tenant the network belongs to
+        :param network: network parameters
+        :param subnet: subnet parameters of the network
+        """
+        network_info = self.create_network_info_payload(tenant_name, network,
+                                                        subnet, part,
+                                                        dhcp_range)
+
+        LOG.debug("Updating %s network in DCNM.", network_info)
+
+        res = self._update_network(network_info)
+        if res and res.status_code in self._resp_ok:
+            LOG.debug("Updated %s network in DCNM.", network_info)
+        else:
+            LOG.error(_LE("Failed to update %s network in DCNM."),
+                    network_info)
+            raise dexc.DfaClientRequestFailed(reason=self._failure_msg(res))
 
     def create_service_network(self, tenant_name, network, subnet,
                                dhcp_range=True):
@@ -938,6 +1016,11 @@ class DFARESTClient(object):
             '/%s/partitions/%s/networks')
         self._cfg_profile_list_url = '%s://%s/rest/auto-config/profiles' % (
             (protocol, self._ip))
+        self._cfg_profile_get_url_detail = (('%s://%s/rest/auto-config/' %
+                                             (protocol, self._ip)) +
+                                            'profiles/%s/type/%s')
+        self._default_lan_settings = ('%s://%s/rest/settings/vxlan' %
+                                      (protocol, self._ip))
         self._cfg_profile_get_url = self._cfg_profile_list_url + '/%s'
         self._global_settings_url = self._build_url(
             'rest/auto-config/settings')
