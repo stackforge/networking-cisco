@@ -52,12 +52,11 @@ warnings.simplefilter('always')
                         removal_version="Cisco 7.0.0")
 class CiscoNexusSshDriver(basedrvr.CiscoNexusBaseDriver):
     """Nexus Driver Main Class."""
-    def __init__(self):
+    def __init__(self, nexus_dict):
+        super(CiscoNexusSshDriver, self).__init__(nexus_dict)
         self.ncclient = None
-        self.nexus_switches = conf.ML2MechCiscoConfig.nexus_dict
         self.connections = {}
         self.init_ssh_caching()
-        super(CiscoNexusSshDriver, self).__init__()
         LOG.debug("ML2 Nexus SSH Drivers initialized.")
 
     # Driver lock introduced to prevent replay thread and
@@ -247,9 +246,9 @@ class CiscoNexusSshDriver(basedrvr.CiscoNexusBaseDriver):
 
         if not self.ncclient:
             self.ncclient = self._import_client()
-        nexus_ssh_port = int(self.nexus_switches[nexus_host, const.SSHPORT])
-        nexus_user = self.nexus_switches[nexus_host, const.USERNAME]
-        nexus_password = self.nexus_switches[nexus_host, const.PASSWORD]
+        nexus_ssh_port = int(self.nexus_dict[nexus_host, const.SSHPORT])
+        nexus_user = self.nexus_dict[nexus_host, const.USERNAME]
+        nexus_password = self.nexus_dict[nexus_host, const.PASSWORD]
         hostkey_verify = cfg.CONF.ml2_cisco.host_key_checks
         try:
             # With new ncclient version, we can pass device_params...
