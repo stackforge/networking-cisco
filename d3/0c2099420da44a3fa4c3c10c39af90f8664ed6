@@ -1,0 +1,9 @@
+Code-Review+2: rcurran <rcurran@cisco.com>
+Code-Review+2: Sandhya Dasu <sadasu@cisco.com>
+Workflow+1: Sandhya Dasu <sadasu@cisco.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 14 Aug 2017 21:17:55 +0000
+Reviewed-on: https://review.openstack.org/493576
+Project: openstack/networking-cisco
+Branch: refs/heads/master
