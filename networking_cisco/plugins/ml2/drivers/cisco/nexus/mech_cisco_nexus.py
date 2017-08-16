@@ -556,10 +556,37 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
 
         return switch_info
 
+    def _baremetal_set_binding(self, context, all_link_info=None):
+        selected = False
+        for segment in context.segments_to_bind:
+            if (segment[api.NETWORK_TYPE] == p_const.TYPE_VLAN and
+                segment[api.SEGMENTATION_ID]):
+                context.set_binding(
+                    segment[api.ID],
+                    bc.portbindings.VIF_TYPE_OTHER,
+                    {},
+                    status=bc.constants.PORT_STATUS_ACTIVE)
+                LOG.debug(
+                    "Baremetal binding selected: segment ID %(id)s, segment "
+                    "%(seg)s, phys net %(physnet)s, and network type "
+                    "%(nettype)s with %(count)d link_info",
+                    {'id': segment[api.ID],
+                     'seg': segment[api.SEGMENTATION_ID],
+                     'physnet': segment[api.PHYSICAL_NETWORK],
+                     'nettype': segment[api.NETWORK_TYPE],
+                     'count': len(all_link_info) if all_link_info else 0})
+                selected = True
+                break
+
+        return selected
+
     def _supported_baremetal_transaction(self, context):
         """Verify transaction is complete and for us."""
 
         port = context.current
+
+        if self.trunk.is_trunk_subport_baremetal(port):
+            return self._baremetal_set_binding(context)
 
         if not nexus_help.is_baremetal(port):
             return False
@@ -596,32 +623,14 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         if not selected:
             return False
 
-        selected = False
-        for segment in context.segments_to_bind:
+        if self._baremetal_set_binding(context, all_link_info):
+            self._init_baremetal_trunk_interfaces(
+                context.current, context.top_bound_segment)
 
-            # if valid 'vlan' type and vlan_id
-            if (segment[api.NETWORK_TYPE] == p_const.TYPE_VLAN and
-                segment[api.SEGMENTATION_ID]):
-                context.set_binding(segment[api.ID],
-                    bc.portbindings.VIF_TYPE_OTHER,
-                    {},
-                    status=bc.constants.PORT_STATUS_ACTIVE)
-                selected = True
-                LOG.debug("Baremetal binding selected: segment ID %(id)s, "
-                          "segment %(seg)s, phys net %(physnet)s, and "
-                          "network type %(nettype)s with %(count)d "
-                          "link_info",
-                          {'id': segment[api.ID],
-                           'seg': segment[api.SEGMENTATION_ID],
-                           'physnet': segment[api.PHYSICAL_NETWORK],
-                           'nettype': segment[api.NETWORK_TYPE],
-                           'count': len(all_link_info)})
-                break
-
-        # if trunk parent port then generate update_port calls for all
-        # trunk subports configured.
-        if selected and self.trunk.is_trunk_parentport(port):
-            self.trunk.update_subports(port)
+            # if trunk parent port then generate update_port calls for all
+            # trunk subports configured.
+            if self.trunk.is_trunk_parentport(port):
+                self.trunk.update_subports(port)
 
         return selected
 
@@ -809,7 +818,7 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
                 reserved_port_id,
                 ch_grp)
 
-    def _init_baremetal_trunk_interfaces(self, port_seg, segment, vni):
+    def _init_baremetal_trunk_interfaces(self, port_seg, segment):
         """Initialize baremetal switch interfaces and DB entry.
 
         With baremetal transactions, the interfaces are not
@@ -817,7 +826,6 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         when the transactions are received.
         * Reserved switch entries are added if needed.
         * Reserved port entries are added.
-        * Port Bindings are added and initialized on the switch.
         * Determine if port channel is configured on the
           interface and store it so we know to create a port-channel
           binding instead of that defined in the transaction.
@@ -874,25 +882,6 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
                 switch_ip,
                 nexus_help.format_interface_name(intf_type, port),
                 ch_grp, False)
-
-        device_id = self._get_port_uuid(port_seg)
-
-        vlan_id = segment.get(api.SEGMENTATION_ID)
-
-        # Add reserved_exists list to list_to_init to create
-        # port_binding data base entries
-        list_to_init += reserved_exists
-        for switch_ip, intf_type, port, is_native, ch_grp in list_to_init:
-            port_id = nexus_help.format_interface_name(
-                intf_type, port, ch_grp)
-            try:
-                nxos_db.get_nexusport_binding(
-                    port_id, vlan_id, switch_ip, device_id)
-            except excep.NexusPortBindingNotFound:
-                nxos_db.add_nexusport_binding(
-                    port_id, str(vlan_id), str(vni),
-                    switch_ip, device_id,
-                    is_native)
 
     def _get_host_switches(self, host_id):
         """Get switch IPs from configured host mapping.
@@ -1806,8 +1795,7 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
                 if orig_vxlan_segment else 0)
             self._port_action_vlan(context.original, orig_vlan_segment,
                                    self._delete_nxos_db, vni)
-        elif (self._is_supported_deviceowner(context.current) and
-              not nexus_help.is_baremetal(context.current)):
+        elif self._is_supported_deviceowner(context.current):
             vni = self._port_action_vxlan(context.current, vxlan_segment,
                         self._configure_nve_db) if vxlan_segment else 0
             self._port_action_vlan(context.current, vlan_segment,
@@ -1831,12 +1819,6 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
                                    self._delete_switch_entry, vni)
         elif self._is_supported_deviceowner(context.current):
             if nexus_help.is_baremetal(context.current):
-                # Baremetal db entries are created here instead
-                # of precommit since a get operation to
-                # nexus device is required but blocking
-                # operation should not be done in precommit.
-                self._init_baremetal_trunk_interfaces(
-                    context.current, vlan_segment, 0)
                 all_switches, active_switches = (
                     self._get_baremetal_switches(context.current))
             else:
