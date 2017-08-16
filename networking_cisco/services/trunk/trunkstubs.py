@@ -15,12 +15,16 @@
 
 # Stub module containing the networking_cisco trunk APIs.
 #
-# Required for tox testing for neutron stable/mitaka.
 # TODO(rcurran): Remove once networking_cisco is no longer supporting
-# stable/mitaka.
+# stable/newton.
 
 TRUNK_SUBPORT_OWNER = ""
 VLAN = ""
+
+
+class SubPort(object):
+    def get_object(*args):
+        return None
 
 
 class DriverBase(object):
