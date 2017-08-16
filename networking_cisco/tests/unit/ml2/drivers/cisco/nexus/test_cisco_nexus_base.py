@@ -495,6 +495,14 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
             FakePortContext,
             'continue_binding').start()
 
+        self.mock_get_dynamic_segment = mock.patch.object(
+            bc.segments_db, 'get_dynamic_segment',
+            return_value={'testkey': 'testvalue'}).start()
+
+        mock.patch.object(
+            trunk.NexusMDTrunkHandler, 'is_trunk_subport_baremetal',
+            return_value=False).start()
+
         if cfg.CONF.ml2_cisco.nexus_driver == 'restapi':
             self.restapi_mock_init()
         else:
@@ -620,6 +628,7 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
             port_config, override_netid=override_netid)
 
         self._cisco_mech_driver.create_port_postcommit(port_context)
+        self._cisco_mech_driver.bind_port(port_context)
         self._cisco_mech_driver.update_port_precommit(port_context)
         self._cisco_mech_driver.update_port_postcommit(port_context)
 
