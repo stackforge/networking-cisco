@@ -1,0 +1,19 @@
+---
+features:
+  - |
+    Provider Network Limited Operations.
+
+    The Openstack/network administrator may want to control how the Openstack
+    create/update/delete port events program the Nexus switch for provider
+    networks. Two configuration variables have been introduced to address
+    limiting the actions taken for provider networks during port events.
+    The variables are defined in the [ml2_cisco] section of ml2_conf_cisco.ini::
+
+       [ml2_cisco]
+       # Provider VLANs are automatically created as needed on the Nexus switch.
+       provider_vlan_auto_create=[True|False]
+
+       # Provider VLANs are automatically trunked as needed on the ports of the
+       # Nexus switch.
+       provider_vlan_auto_trunk=[True|False]
+
