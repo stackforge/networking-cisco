@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Nexus:  Eliminate use of 'MultiConfigParser' from Nexus ML2 Plugin
+
+    The 'MultiConfigParser' class is deprecated as seen by warnings in the neutron
+    log file.  Refer to https://review.openstack.org/#/c/497533 for details.
