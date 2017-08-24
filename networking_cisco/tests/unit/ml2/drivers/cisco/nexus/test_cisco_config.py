@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
 from oslo_config import cfg
 
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
@@ -25,43 +24,47 @@ from networking_cisco.plugins.ml2.drivers.cisco.nexus import nexus_db_v2
 
 from neutron.tests.unit import testlib_api
 
+from networking_cisco.tests import base as nc_base
+
+test_config_file = """
+[ml2_mech_cisco_nexus:1.1.1.1]
+username=admin
+password=mySecretPassword
+ssh_port=22
+nve_src_intf=2
+physnet=physnet1
+vpc_pool=5,10
+intfcfg.portchannel=user cmd1;user cmd2
+compute1=1/1
+compute2=1/2
+compute5=1/3,1/4
+
+[ml2_mech_cisco_nexus:2.2.2.2]
+username=admin
+password=mySecretPassword
+ssh_port=22
+compute3=1/1
+compute4=1/2
+compute5=portchannel:20,portchannel:30
+"""
+
 
 class TestCiscoNexusPluginConfig(testlib_api.SqlTestCase):
 
     def setUp(self):
-        self.config_parse()
         super(TestCiscoNexusPluginConfig, self).setUp()
-
-    def test_config_parse_error(self):
-        """Check that config error is raised upon config parser failure."""
-        with mock.patch.object(cfg, 'MultiConfigParser') as parser:
-            parser.return_value.read.return_value = []
-            self.assertRaises(cfg.Error, cisco_config.ML2MechCiscoConfig)
+        nc_base.load_config_file(test_config_file)
 
     def test_create_device_dictionary(self):
         """Test creation of the device dictionary based on nexus config."""
-        test_config = {
-            'ml2_mech_cisco_nexus:1.1.1.1': {
-                'username': ['admin'],
-                'password': ['mySecretPassword'],
-                'ssh_port': [22],
-                'compute1': ['1/1'],
-                'compute2': ['1/2'],
-                'compute5': ['1/3,1/4']
-            },
-            'ml2_mech_cisco_nexus:2.2.2.2': {
-                'username': ['admin'],
-                'password': ['mySecretPassword'],
-                'ssh_port': [22],
-                'compute3': ['1/1'],
-                'compute4': ['1/2'],
-                'compute5': ['portchannel:20,portchannel:30']
-            },
-        }
         expected_dev_dict = {
             ('1.1.1.1', 'username'): 'admin',
             ('1.1.1.1', 'password'): 'mySecretPassword',
             ('1.1.1.1', 'ssh_port'): 22,
+            ('1.1.1.1', 'nve_src_intf'): '2',
+            ('1.1.1.1', 'physnet'): 'physnet1',
+            ('1.1.1.1', 'vpc_pool'): '5,10',
+            ('1.1.1.1', 'intfcfg.portchannel'): 'user cmd1 ;user cmd2',
             ('2.2.2.2', 'username'): 'admin',
             ('2.2.2.2', 'password'): 'mySecretPassword',
             ('2.2.2.2', 'ssh_port'): 22,
@@ -77,12 +80,9 @@ class TestCiscoNexusPluginConfig(testlib_api.SqlTestCase):
             ('compute5', '2.2.2.2', 'portchannel:30')
         ]
 
-        with mock.patch.object(cfg, 'MultiConfigParser') as parser:
-            parser.return_value.read.return_value = cfg.CONF.config_file
-            parser.return_value.parsed = [test_config]
-            cisco_config.ML2MechCiscoConfig()
-            self.assertEqual(expected_dev_dict,
-                             cisco_config.ML2MechCiscoConfig.nexus_dict)
+        cisco_config.ML2MechCiscoConfig()
+        self.assertEqual(expected_dev_dict,
+                         cisco_config.ML2MechCiscoConfig.nexus_dict)
 
         mappings = nexus_db_v2.get_all_host_mappings()
         idx = 0
@@ -101,3 +101,40 @@ class TestCiscoNexusPluginConfig(testlib_api.SqlTestCase):
             self.assertEqual(map[3], 0)
             self.assertTrue(map[4])
             idx += 1
+
+    def test_config_using_subsection_option(self):
+        expected = {
+            '1.1.1.1': {
+                'username': 'admin',
+                'password': 'mySecretPassword',
+                'ssh_port': 22,
+                'nve_src_intf': '2',
+                'physnet': 'physnet1',
+                'vpc_pool': '5,10',
+                'intfcfg.portchannel': 'user cmd1;user cmd2',
+                'compute_hosts': {
+                    'compute1': '1/1',
+                    'compute2': '1/2',
+                    'compute5': '1/3,1/4'
+                }
+            }, '2.2.2.2': {
+                'username': 'admin',
+                'password': 'mySecretPassword',
+                'ssh_port': 22,
+                'physnet': None,
+                'nve_src_intf': None,
+                'vpc_pool': None,
+                'intfcfg.portchannel': None,
+                'compute_hosts': {
+                    'compute3': '1/1',
+                    'compute4': '1/2',
+                    'compute5': 'portchannel:20,portchannel:30'
+                }
+            }
+        }
+
+        for switch_ip, options in expected.items():
+            for opt_name, option in options.items():
+                self.assertEqual(
+                    option, cfg.CONF.ml2_cisco.nexus_switches.get(
+                        switch_ip).get(opt_name))
