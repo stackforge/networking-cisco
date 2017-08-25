@@ -1,0 +1,22 @@
+---
+features:
+  - |
+    Nexus: Improved port-channel support with baremetal events
+
+    In previous releases of baremetal support by the Nexus plugin,
+    port-channel handling was somewhat limited.  Now when there
+    are multiple ethernet interfaces in the baremetal event, the
+    Nexus plugin will check to see if they are preconfigured
+    for port-channels.  If not, it will create a new port-channel
+    and apply a channel-group to the ethernet interfaces. In either
+    case, trunk vlans will be applied to the port-channel.
+  - |
+    Nexus: User customizable port-channels for baremetal interfaces
+
+    When Nexus plugin creates port-channels for baremetal events,
+    an additional capability was provided to allow the user to custom
+    configure port-channels that are created.  This is done by way
+    of the config variable 'intfcfg.portchannel'  beneath each switch's
+    section header [ml2_mech_cisco_nexus:<switch-ip-address>].
+    Nexus CLI commands are defined in this variable unique for each
+    switch and sent while creating the port-channel.
