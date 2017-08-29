@@ -1,0 +1,9 @@
+Code-Review+2: rcurran <rcurran@cisco.com>
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 29 Aug 2017 13:03:38 +0000
+Reviewed-on: https://review.openstack.org/495937
+Project: openstack/networking-cisco
+Branch: refs/heads/master
