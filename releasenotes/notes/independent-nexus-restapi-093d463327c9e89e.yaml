@@ -1,0 +1,8 @@
+---
+other:
+  - |
+    Nexus: Make restapi more independent
+
+    Eliminate import of nexus config.py file by restapi driver making it
+    easier to perform testing.  For details, refer to
+    https://bugs.launchpad.net/networking-cisco/+bug/1709070
