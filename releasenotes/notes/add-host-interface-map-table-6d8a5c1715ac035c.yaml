@@ -1,0 +1,11 @@
+---
+upgrade:
+  - |
+    Nexus: Add host to switch/interface mapping table.
+
+    A new mysql table for host to interface mapping is added
+    for baremetal deployments.  The administrator must perform a
+    database migration to incorporate this upgrade.  The new mysql
+    table name is 'cisco_ml2_nexus_host_interface_mapping'.
+    For more details, refer to 
+    https://bugs.launchpad.net/networking-cisco/+bug/1691194
