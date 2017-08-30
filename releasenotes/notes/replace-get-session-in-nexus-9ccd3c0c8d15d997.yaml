@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    Nexus:  Eliminate use of 'neutron.db.api.get_session' from Nexus ML2 Plugin
+
+    The 'neutron.db.api.get_session' API is deprecated as seen by warnings in
+    the neutron log file.  For further details, refer to
+    https://bugs.launchpad.net/networking-cisco/+bug/1713498
