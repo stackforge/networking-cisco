@@ -1,0 +1,12 @@
+---
+upgrade:
+  - |
+    Nexus: Add host to switch/interface mapping table.
+
+    Add host to switch/interface mapping table to allow this data to be
+    learned for baremetal events and shared with multiple controller.
+    When DNS is enabled, the host name for baremetal events is the
+    dns name. When not enabled, the host name defaults to 'reserved_port'.
+    For cleanliness, all statically configured host to interface mappings
+    are included to this table. For more details, refer to
+    https://bugs.launchpad.net/networking-cisco/+bug/1691194
