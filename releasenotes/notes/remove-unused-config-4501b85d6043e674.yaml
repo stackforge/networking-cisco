@@ -1,0 +1,10 @@
+---
+other:
+  - |
+    Nexus: Configuration clean-up of variables
+
+    At some point, use of some configuration variables were abandoned in the
+    code.  Since they are not used, the variables 'svi_round_robin',
+    'provider_vlan_name_prefix', and 'vlan_name_prefix' are removed.
+    For further details, refer to
+    https://bugs.launchpad.net/networking-cisco/+bug/1712118
