@@ -1,11 +1,10 @@
 ===================
-Administrator Guide
+Configuration Guide
 ===================
 
-Application specific Administrator guides
+Application specific Configuration guides
 =========================================
 
 .. toctree::
 
-  ml2-nexus
-
+  ml2_nexus

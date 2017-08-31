@@ -11,10 +11,11 @@ Or, if you have virtualenvwrapper installed::
     $ mkvirtualenv networking-cisco
     $ pip install networking-cisco
 
-Application specifc installation guides
-=======================================
+Application specific installation guides
+========================================
 
 .. toctree::
 
   cpnr
+  ml2-nexus
   saf
