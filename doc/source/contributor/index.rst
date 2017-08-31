@@ -8,6 +8,11 @@ How to contribute to networking-cisco
 
    faq
 
+.. toctree::
+  :maxdepth: 2
+
+  ml2-nexus
+
 Python Module Docs
 ==================
 
