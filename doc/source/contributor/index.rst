@@ -14,3 +14,8 @@ Python Module Docs
   :maxdepth: 1
 
   api/autoindex
+
+ .. include:: ../../../CONTRIBUTING.rst
+ .. toctree::
+  :maxdepth: 1
+  ml2-nexus
