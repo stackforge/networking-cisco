@@ -184,6 +184,15 @@ class CiscoCfgAgent(manager.Manager):
         self.loop.start(interval=self.conf.cfg_agent.rpc_loop_interval)
 
     def after_start(self):
+        hds = self.get_assigned_hosting_devices()
+        if hds is None:
+            LOG.warning(
+                _LW("Unable to fetch hosting devices to monitor. Certain "
+                    "hosting devices in DEAD state may not be revived. "
+                    "Restart config agent to trigger new attempts."))
+        else:
+            LOG.info(_LI("To manage hosting devices %s"), hds)
+            self._dev_status.backlog_hosting_devices(hds)
         LOG.info(_LI("Cisco cfg agent started"))
 
     def get_routing_service_helper(self):
@@ -346,10 +355,17 @@ class CiscoCfgAgent(manager.Manager):
                           "Payload is %(payload)s"), {'error': e,
                                                       'payload': payload})
 
-    def get_assigned_hosting_devices(self):
+    def get_assigned_hosting_devices(self, max_retry_attempts=3):
         context = bc.context.get_admin_context_without_session()
-        res = self.devmgr_rpc.get_hosting_devices_for_agent(context)
-        return res
+        for attempts in range(max_retry_attempts):
+            try:
+                return self.devmgr_rpc.get_hosting_devices_for_agent(context)
+            except Exception:
+                LOG.warning(_LW("Failed attempt to fetch hosting devices to "
+                                "manage. Retrying in %0.2f second."),
+                            REGISTRATION_RETRY_DELAY)
+                time.sleep(REGISTRATION_RETRY_DELAY)
+        return None
 
     def get_hosting_device_configuration(self, context, payload):
         LOG.debug('Processing request to fetching running config')
@@ -597,6 +613,20 @@ def mock_ncclient():
         indicator_filename = path + '/DEAD_' + str(ip).replace('.', '_')
         return not os.path.isfile(indicator_filename)
 
+    def _fake_can_connect(ip, port):
+        # if a file with a certain name (derived from the 'ip' and
+        # 'port's arguments):
+        #
+        #     /opt/stack/data/neutron/DEAD__10_0_5_8__22       (ip = 10.0.5.8
+        #                                                       port = 22)
+        #
+        # exists then the (faked) hosting device with that IP address
+        # will appear NOT to have that port open
+        path = '/opt/stack/data/neutron'
+        indicator_filename = (path + '/DEAD__' + str(ip).replace('.', '_') +
+                              '__' + str(port))
+        return not os.path.isfile(indicator_filename)
+
     targets = ['networking_cisco.plugins.cisco.cfg_agent.device_drivers.'
                'csr1kv.csr1kv_routing_driver.manager',
                'networking_cisco.plugins.cisco.cfg_agent.device_drivers.'
@@ -617,6 +647,12 @@ def mock_ncclient():
         is_pingable_mock)
     pingable_patcher.start()
 
+    can_connect_mock = mock.MagicMock(side_effect=_fake_can_connect)
+    can_connect_patcher = mock.patch(
+        'networking_cisco.plugins.cisco.cfg_agent.device_status._can_connect',
+        can_connect_mock)
+    can_connect_patcher.start()
+
 
 def main(manager='networking_cisco.plugins.cisco.cfg_agent.'
                  'cfg_agent.CiscoCfgAgentWithStateReport'):
@@ -624,7 +660,7 @@ def main(manager='networking_cisco.plugins.cisco.cfg_agent.'
     # This mocked mode of running the config agent is useful for end-2-end-like
     # debugging without actual backend hosting devices.
     #_mock_stuff()
-    #mock_ncclient()
+    mock_ncclient()
     conf = cfg.CONF
     conf.register_opts(OPTS, "cfg_agent")
     bc.config.register_agent_state_opts_helper(conf)
