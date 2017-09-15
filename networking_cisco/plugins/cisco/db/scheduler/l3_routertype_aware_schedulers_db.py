@@ -19,6 +19,7 @@ from sqlalchemy.sql import expression as expr
 
 from networking_cisco._i18n import _
 
+from neutron.agent.common import utils
 from neutron.common import topics
 from neutron.db import agents_db
 from neutron.db import l3_agentschedulers_db
@@ -230,7 +231,7 @@ class L3RouterTypeAwareSchedulerDbMixin(
         """Filters only active agents, if requested."""
         if not check_active:
             return True
-        return not agents_db.AgentDbMixin.is_agent_down(last_heartbeat)
+        return not utils.is_agent_down(last_heartbeat)
 
     def get_hosts_for_routers(self, context, routers, admin_state_up=None,
                               check_active=False):
