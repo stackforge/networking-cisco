@@ -24,7 +24,7 @@ from neutron.extensions import l3
 from neutron_lib import constants as l3_constants
 from neutron_lib import exceptions as n_exc
 
-from networking_cisco._i18n import _, _LI
+from networking_cisco._i18n import _
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.db.l3 import ha_db
@@ -195,7 +195,7 @@ class ASR1kL3RouterDriver(drivers.L3RouterBaseDriver):
             return group_id
 
     def pre_backlog_processing(self, context):
-        LOG.info(_LI('Performing pre-backlog processing'))
+        LOG.info('Performing pre-backlog processing')
         filters = {routerrole.ROUTER_ROLE_ATTR: [ROUTER_ROLE_GLOBAL]}
         global_routers = self._l3_plugin.get_routers(context, filters=filters)
         if not global_routers:
@@ -216,10 +216,10 @@ class ASR1kL3RouterDriver(drivers.L3RouterBaseDriver):
                        'hd': gr[HOSTING_DEVICE_ATTR], 'num': num_rtrs, })
             if num_rtrs == 0:
                 LOG.info(
-                    _LI("Global router %(name)s[id:%(id)s] is present for "
-                        "hosting device %(hd)s but there are no tenant or "
-                        "redundancy routers with gateway set on that hosting "
-                        "device. Proceeding to delete global router."),
+                    "Global router %(name)s[id:%(id)s] is present for "
+                    "hosting device %(hd)s but there are no tenant or "
+                    "redundancy routers with gateway set on that hosting "
+                    "device. Proceeding to delete global router.",
                     {'name': gr['name'], 'id': gr['id'],
                      'hd': gr[HOSTING_DEVICE_ATTR]})
                 self._delete_global_router(context, gr['id'])
@@ -531,10 +531,10 @@ class ASR1kL3RouterDriver(drivers.L3RouterBaseDriver):
                 self._core_plugin.delete_port(context, port['id'],
                                               l3_port_check=False)
             except (exc.ObjectDeletedError, n_exc.PortNotFound) as e:
-                LOG.info(_LI('Unable to delete port for Global router '
-                             '%(r_id)s. It has likely been concurrently '
-                             'deleted. %(err)s'), {'r_id': router_id,
-                                                   'err': e})
+                LOG.info('Unable to delete port for Global router '
+                         '%(r_id)s. It has likely been concurrently '
+                         'deleted. %(err)s', {'r_id': router_id,
+                                              'err': e})
 
     def _delete_global_router(self, context, global_router_id, logical=False):
         # ensure we clean up any stale auxiliary gateway ports
@@ -551,8 +551,8 @@ class ASR1kL3RouterDriver(drivers.L3RouterBaseDriver):
                     context, global_router_id, unschedule=False)
         except (exc.ObjectDeletedError, l3.RouterNotFound) as e:
             g_r_type = 'Logical Global' if logical is True else 'Global'
-            LOG.info(_LI('Unable to delete %(g_r_type)s router %(r_id)s. It '
-                         'has likely been concurrently deleted. %(err)s'),
+            LOG.info('Unable to delete %(g_r_type)s router %(r_id)s. It '
+                     'has likely been concurrently deleted. %(err)s',
                      {'g_r_type': g_r_type, 'r_id': global_router_id,
                      'err': e})
         except Exception as e:
