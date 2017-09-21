@@ -1,0 +1,10 @@
+Code-Review+1: Ngo Quoc Cuong <cuongngo.ict@gmail.com>
+Code-Review+1: Nguyen Van Trung <trungnv@vn.fujitsu.com>
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 21 Sep 2017 17:43:10 +0000
+Reviewed-on: https://review.openstack.org/479101
+Project: openstack/networking-cisco
+Branch: refs/heads/master
