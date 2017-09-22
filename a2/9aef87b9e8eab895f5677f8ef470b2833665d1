@@ -1,0 +1,9 @@
+Code-Review+2: Carol Bouchard <caboucha@cisco.com>
+Code-Review+2: rcurran <rcurran@cisco.com>
+Workflow+1: rcurran <rcurran@cisco.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 22 Sep 2017 15:38:35 +0000
+Reviewed-on: https://review.openstack.org/501199
+Project: openstack/networking-cisco
+Branch: refs/heads/master
