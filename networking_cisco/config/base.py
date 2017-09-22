@@ -113,9 +113,9 @@ class SubsectionOpt(cfg.DictOpt):
         identities = {}
         sections = cfg.CONF.list_all_sections()
         for section in sections:
-            subsection, sep, ident = section.partition(':')
-            if subsection.lower() != self.name.lower():
-                continue
-            cfg.CONF.register_opts(self.subopts, group=section)
-            identities[ident] = cfg.CONF.get(section)
+           subsection, sep, ident = section.partition(':')
+           if subsection.lower() != self.name.lower():
+               continue
+           cfg.CONF.register_opts(self.subopts, group=section)
+           identities[ident] = cfg.CONF.get(section)
         return identities

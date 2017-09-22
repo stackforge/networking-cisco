@@ -1,0 +1,4 @@
+[DEFAULT]
+output_file = nexus.conf
+wrap_width = 62
+namespace = nexus
