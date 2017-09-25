@@ -1,0 +1,16 @@
+---
+features:
+  - |
+    Cisco UCSM: Auto detection of Compute hosts
+
+    This feature allows a Cloud Admin to expand the size of the Openstack
+    cloud dynamically by adding more compute hosts to an existing UCS
+    Manager. The Cloud Admin would have to add the hostname of this new
+    compute host to the "Name" field of its Service Profile on the UCSM.
+    When a VM is scheduled on this compute host, the Cisco UCSM ML2 mechanism
+    driver, goes through all the Service Profiles of all the UCSMs known to
+    it, to figure out which UCSM this compute host is connected to and which
+    Service Profile is associated with this host. The learning process takes
+    some time, but after this 1st operation, the mechanism driver would have
+    permanantly learnt the host's UCSM and Service Profile association. Note
+    that this method cannot be used to add more Controller nodes to the cloud.
