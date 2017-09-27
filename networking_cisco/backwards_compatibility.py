@@ -30,6 +30,8 @@ NEUTRON_NEWTON_VERSION = StrictVersion('9.0.0')
 NEUTRON_OCATA_VERSION = StrictVersion('10.0.0')
 NEUTRON_PIKE_VERSION = StrictVersion('11.0.0')
 
+print(NEUTRON_VERSION)
+
 n_c = __import__('neutron.common.constants', fromlist=['common.constants'])
 constants = __import__('neutron_lib.constants', fromlist=['constants'])
 
