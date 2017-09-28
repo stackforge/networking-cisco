@@ -17,6 +17,7 @@ Using Networking Cisco
    install/index
    admin/index
    user/index
+   configuration/index
    cli/index
    contributor/index
    reference/index
