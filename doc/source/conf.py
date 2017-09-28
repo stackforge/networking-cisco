@@ -46,8 +46,11 @@ else:
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'reno.sphinxext'
+    'reno.sphinxext',
+    'openstackdocstheme',
     #'sphinx.ext.intersphinx',
+    'oslo_config.sphinxext',
+    'oslo_config.sphinxconfiggen',
 ]
 
 # autodoc generation is a bit aggressive and a nuisance when doing heavy
@@ -77,9 +80,9 @@ pygments_style = 'sphinx'
 # Sphinx are currently 'default' and 'sphinxdoc'.
 # html_theme_path = ["."]
 # html_theme = '_theme'
-# html_static_path = ['static']
+html_static_path = ['_static']
 
-html_theme = "sphinx_rtd_theme"
+html_theme = 'openstackdocs'
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = '%sdoc' % project
@@ -96,3 +99,22 @@ latex_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 #intersphinx_mapping = {'http://docs.python.org/': None}
+
+# -- Options for oslo_config.sphinxconfiggen ---------------------------------
+
+_config_generator_config_files = [
+    'ml2_nexus.ini',
+]
+
+def _get_config_generator_config_definition(config_file):
+    config_file_path = '../../etc/oslo-config-generator/%s' % conf
+    # oslo_config.sphinxconfiggen appends '.conf.sample' to the filename,
+    # strip file extentension (.conf or .ini).
+    output_file_path = '_static/config-samples/%s' % conf.rsplit('.', 1)[0]
+    return (config_file_path, output_file_path)
+
+
+config_generator_config_file = [
+    _get_config_generator_config_definition(conf)
+    for conf in _config_generator_config_files
+]
