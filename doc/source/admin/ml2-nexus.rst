@@ -481,6 +481,52 @@ wanted, the variable should be set to 0 which disables it.  Refer to the
 :doc:`Nexus Configuration Reference </configuration/ml2-nexus>` for more
 details on this setting.
 
+Provider Network Limited Operations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The Openstack/network administrator may want to control how the Openstack
+create/update/delete port events program the Nexus switch for provider
+networks. Two configuration variables have been introduced to address
+limiting the actions taken for provider networks during port events.
+The variables are defined under the [ml2_cisco] section header.
+
+.. code-block:: ini
+
+   [ml2_cisco]
+   # Provider VLANs are automatically created as needed on the Nexus switch.
+   provider_vlan_auto_create=[True|False]
+
+   # Provider VLANs are automatically trunked as needed on the ports of the
+   # Nexus switch.
+   provider_vlan_auto_trunk=[True|False]
+
+.. end
+
+Neutron Trunk Support
+~~~~~~~~~~~~~~~~~~~~~
+Nexus driver support for the neutron trunk feature consists of the driver
+programming the trunk parent port's and all subport's network segmentation ID(s)
+on the switch. (See 'VLAN Configuration' section above for details.)
+
+The segmentation IDs assigned from the openstack 'trunk set' command.
+
+.. code-block:: console
+
+   $ openstack network trunk set --subport port=<port ID>, segmentation-type=vlan,
+     segmentation-id=100 <trunk ID>
+
+.. end
+
+are not used to configure the nexus top-of-rack switch. These VLAN IDs are used
+by instances attached to a virtual switch (ex. OVS).
+
+There are no specific nexus configuration variables required for trunk support.
+To enable neutron trunking the service_plugin must include the 'trunk' service
+plugin.
+
+For more configuration and usage information on the neutron trunk feature refer
+to the `Neutron/TrunkPort <https://wiki.openstack.org/wiki/Neutron/TrunkPort>`_ and
+Neutron `Trunking <https://docs.openstack.org/ocata/networking-guide/config-trunking.html>`_ Openstack documentation.
+
 
 Troubleshooting
 ~~~~~~~~~~~~~~~~
