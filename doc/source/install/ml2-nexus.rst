@@ -23,7 +23,7 @@ The prerequisites for installing the ML2 Nexus MD are as follows:
     * Ubuntu 14.04 or above
 
 * Your Nexus switch must be set-up as described in the next section
-  `Nexus Switch Setup`_.
+  :ref:`switch_setup`.
 * Requires neutron installation as described in
   `Neutron install <https://docs.openstack.org/neutron/latest/install/>`_
 * If unable to upgrade your Nexus 9K Switch to a version that supports the
@@ -40,6 +40,8 @@ The prerequisites for installing the ML2 Nexus MD are as follows:
       clients.  Install the ncclient library by using the pip package
       manager at your shell prompt:
       :command:`pip install ncclient == 0.4.2`
+
+.. _switch_setup:
 
 Nexus Switch Setup
 ~~~~~~~~~~~~~~~~~~~
