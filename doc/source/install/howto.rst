@@ -47,7 +47,7 @@ The following lists steps to install the networking-cisco repository:
            yum install python-networking-cisco
        .. end
 
-#. Recent additions to Nexus ML2 data requires a data base migration to be
+#. Recent additions to Nexus ML2 data requires a database migration to be
    performed.  This can be done by running:
 
    .. code-block:: ini
