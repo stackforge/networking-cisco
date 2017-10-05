@@ -23,14 +23,14 @@ The prerequisites for installing the ML2 Nexus MD are as follows:
     * Ubuntu 14.04 or above
 
 * Your Nexus switch must be set-up as described in the next section
-  `Nexus Switch Setup`_.
+  :ref:`switch_setup`.
 * Requires neutron installation as described in
   `Neutron install <https://docs.openstack.org/neutron/latest/install/>`_
 * If unable to upgrade your Nexus 9K Switch to a version that supports the
   REST API driver needed by the Nexus MD, the ncclient driver can be
   configured temporarily for use instead.  This is temporary
   since ncclient option is being deprecated for removal.  Refer
-  to `nexus_driver` configuration variable in
+  to the `nexus_driver` configuration variable in
   :doc:`Nexus Configuration Reference </configuration/ml2-nexus>` for details
   on changing this setting.  The ncclient driver requires the following
   to be installed:
@@ -40,6 +40,8 @@ The prerequisites for installing the ML2 Nexus MD are as follows:
       clients.  Install the ncclient library by using the pip package
       manager at your shell prompt:
       :command:`pip install ncclient == 0.4.2`
+
+.. _switch_setup:
 
 Nexus Switch Setup
 ~~~~~~~~~~~~~~~~~~~
@@ -88,8 +90,8 @@ with the Nexus Driver.
 ML2 Nexus MD Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#. Install networking-cisco repository as described in the section
-   :doc:`How to install networking-cisco </install/howto>`.
+#. Install networking-cisco package as described in the section
+   :doc:`Installing the networking-cisco Package</install/howto>`.
 #. Configure Nexus ML2 Driver.
    Once the networking-cisco code is installed, it needs to be configured and
    enabled in Neutron, the :doc:`admin guide </admin/ml2-nexus>` provides full
