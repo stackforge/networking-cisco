@@ -1,6 +1,6 @@
-===============================
-How to install networking-cisco
-===============================
+=======================================
+Installing the networking-cisco Package
+=======================================
 
 The following lists steps to install the networking-cisco repository:
 
@@ -17,41 +17,47 @@ The following lists steps to install the networking-cisco repository:
 
 #. To install the Nexus ML2 driver, do as follows:
 
-     * When using pip for installs, do either:
+   * When using pip for installs, do either:
 
-       .. code-block:: ini
+     .. code-block:: ini
 
-           pip install networking-cisco
-           pip install <path to downloaded networking-cisco tarball>
+        pip install networking-cisco
+        pip install <path to downloaded networking-cisco tarball>
 
-       .. end
+     .. end
 
-     * To install the Nexus ML2 mechanism driver without pip, do:
+   * To install the Nexus ML2 mechanism driver without pip, do:
 
-       .. code-block:: ini
+     .. code-block:: ini
 
-           tar -zxfv <downloaded networking-cisco tarball>
-           cd ./networking-cisco-<version>
-           python setup.py install
+        tar -zxfv <downloaded networking-cisco tarball>
+        cd ./networking-cisco-<version>
+        python setup.py install
 
-       .. end
+     .. end
 
        If installing without pip, you should ensure that the python
        dependencies are all installed. They can be found in
        ``requirements.txt`` in the untarred directory.
 
-     * To install the Nexus ML2 mechanism driver from system packages, do:
+   * To install the Nexus ML2 mechanism driver from system packages, do:
 
-       .. code-block:: ini
+     .. code-block:: ini
 
-           yum install python-networking-cisco
-       .. end
+        yum install python-networking-cisco
+     .. end
 
 #. Recent additions to Nexus ML2 data requires a data base migration to be
    performed.  This can be done by running:
 
    .. code-block:: ini
 
-       su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini --config-file /etc/neutron/plugins/ml2/ml2_conf_cisco.ini upgrade head" neutron
+       su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head" neutron
 
    .. end
+
+   .. note::
+      If a separate file for cisco configuration exists, that file also should
+      be included by following other config files in the command with::
+
+        --config-file /etc/neutron/plugins/ml2/ml2_conf_cisco.ini
