@@ -484,51 +484,8 @@ details on this setting.
 
 Troubleshooting
 ~~~~~~~~~~~~~~~~
-How to view Nexus MD databases
-------------------------------
-To help triage issues, it may be helpful to peruse the following database
-tables:
 
-#. To view the content of the Nexus ML2 port binding database table:
-   In addition to port entries, the switch state is also saved in here.
-   These special entries can be identified with an instance_id of
-   ``RESERVED_NEXUS_SWITCH_DEVICE_ID_R1``.
+.. toctree::
+   :maxdepth: 1
 
-   .. code-block:: console
-
-       mysql -e "use neutron; select * from cisco_ml2_nexusport_bindings;"
-
-   .. end
-
-#. To view the content of the Nexus ML2 port mapping database table:
-
-   .. code-block:: console
-
-       mysql -e "use neutron; select * from cisco_ml2_nexus_host_interface_mapping;"
-
-   .. end
-
-#. To view the content of the Nexus ML2 VPC ID port database table:
-
-   .. code-block:: console
-
-       mysql -e "use neutron; select * from cisco_ml2_nexus_vpc_alloc;"
-
-   .. end
-
-#. To view the content of the Nexus ML2 VNI allocation port database table:
-
-   .. code-block:: console
-
-       mysql -e "use neutron; select * from ml2_nexus_vxlan_allocations;"
-
-   .. end
-
-#. To view the content of the Nexus ML2 Mcast mapping database table:
-
-   .. code-block:: console
-
-       mysql -e "use neutron; select * from ml2_nexus_vxlan_mcast_groups;"
-       mysql -e "use neutron; select * from cisco_ml2_nexus_nve;"
-
-   .. end
+   ml2-nexus-troubleshoot
