@@ -12,17 +12,11 @@
 
 import copy
 
-import networking_cisco.config.base as base
 import networking_cisco.plugins.ml2.drivers.cisco.nexus.config as config
-
-IGNORE_OBJ_TYPES = [base.RemainderOpt]
 
 
 def list_nexus_conf_opts():
     nexus_sub_opts = copy.deepcopy(config.nexus_sub_opts)
-    for option in nexus_sub_opts:
-        if type(option) in IGNORE_OBJ_TYPES:
-            nexus_sub_opts.remove(option)
 
     return [
         ('ml2_cisco', config.ml2_cisco_opts),
