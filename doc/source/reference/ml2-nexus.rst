@@ -4,7 +4,7 @@ Nexus Mechanism Driver Overview and Architecture
 
 Introduction
 ~~~~~~~~~~~~
-The ML2 Nexus driver adds and removes trunk vlans on the Cisco Nexus 9K switch
+The ML2 Nexus driver adds and removes trunk vlans on the Cisco Nexus switch
 for both ethernet interfaces and port-channel interfaces.  It also supports
 configuration of VXLAN Overlay, baremetal deployments (VLAN configurations
 only), and performs configuration replay on switch recovery.
@@ -31,6 +31,10 @@ as follows:
    (only if no trunk vlan have been configured manually by the user)
 #. Add a trunk vlan onto the specified interface using the interface
    CLI :command:`switchport trunk allowed vlan add <vlanid>`.
+#. If the port event is of type baremetal and is the parent port to trunking
+   configuration or the port is not a participent of trunking configuration,
+   the vlan will also be configured as native using the interface
+   CLI :command:`switchport trunk native vlan <vlanid>`.
 
 Both normal VM port events and baremetal port events are supported by
 the Nexus Driver for VLAN creation.  They can co-exist at the same
@@ -43,7 +47,7 @@ from the port event.  The administrator configures the host to
 interface mapping as well as switch credentials in the ML2 Nexus
 Driver switch configuration section of the neutron config file.
 (ref: section header ``ml2_mech_cisco_nexus`` of config file shown
-in the :doc:`admin guide </admin/ml2-nexus>`.)
+in the :doc:`/admin/ml2-nexus`.)
 
 In the case of baremetal port events, the switch and interface mapping
 are contained in the event itself.  The Nexus driver learns the
@@ -68,8 +72,9 @@ members.  In more detail, it will do the following:
 #. Apply either user customized port-channel config provided by
    administrator OR the default config :command:`spanning-tree port type edge
    trunk` and :command:`no lacp suspend-individual`
-   (refer to ``intfcfg.portchannel`` config in :doc:`admin </admin/ml2-nexus>`
-   and :doc:`config guide </configuration/ml2-nexus>`).
+   (refer to ``intfcfg.portchannel`` variable in the Nexus
+   :doc:`administration </admin/ml2-nexus>`
+   and :doc:`configuration </configuration/ml2-nexus>` guides).
 #. Apply :command:`channel-group <vpcid> force mode-active` to the
    ethernet interfaces to make each interface a member of the port-channel.
 
@@ -84,13 +89,25 @@ VLAN Removal
 When a VM is removed or a subnet is removed and dhcp is enabled, a delete
 port-event is received by the nexus driver.  If the port exists in the
 nexus driver's port data base, the driver will remove it from the data base
-as well as remove the trunk vlan on the Nexus 9K device.
+as well as remove the trunk vlan on the Nexus device.
 
 To remove the trunk vlan from interface on the Nexus switch, it
-sends :command:`switchport trunk allowed vlan remove <vlanid>`.  The driver
-then checks if the vlan is used on any other interfaces.  If not,
-it will remove the vlan from the Nexus switch as well by issuing
-:command:`no vlan <vlanid>`.
+sends :command:`switchport trunk allowed vlan remove <vlanid>` and possibly
+:command:`no switchport trunk native vlan <vlanid>` if it was sent during
+vlan creation.  The driver then checks if the vlan is used on any other
+interfaces.  If not, it will remove the vlan from the Nexus switch as well
+by issuing :command:`no vlan <vlanid>`.
+
+If a port-channel was previously created for baremetal port events as
+described in :ref:`nexus_vlan_create` and if there are no more port-bindings
+referencing the created port-channel, the Nexus Driver will do as follows:
+
+* The ethernet interfaces will be removed as members to the port-channel by
+  issuing :command:' no channel-group ' on each participating Nexus
+  Switch interface,
+* The port-channel will be completely removed from the Nexus Switch(s) by
+  issuing :command:`no port-channel <id>` on each participating switch,
+* And the port-channel/vpc id released back into the Nexus driver vpc-id pool.
 
 VXLAN Overlay Creation
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -122,7 +139,7 @@ steps done for the user is as follows:
 
 Configuration VXLAN vni ranges and multicast groups is done beneath
 the section header ``ml2_type_nexus_vxlan`` of the configuration file.
-See the :doc:`admin guide </admin/ml2-nexus>` for more details.
+See the :doc:`/admin/ml2-nexus` for more details.
 
 VXLAN Overlay Removal
 ~~~~~~~~~~~~~~~~~~~~~
