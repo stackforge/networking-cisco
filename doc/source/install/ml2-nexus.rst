@@ -30,7 +30,7 @@ The prerequisites for installing the ML2 Nexus MD are as follows:
   REST API driver needed by the Nexus MD, the ncclient driver can be
   configured temporarily for use instead.  This is temporary
   since ncclient option is being deprecated for removal.  Refer
-  to `nexus_driver` configuration variable in
+  to the `nexus_driver` configuration variable in
   :doc:`Nexus Configuration Reference </configuration/ml2-nexus>` for details
   on changing this setting.  The ncclient driver requires the following
   to be installed:
@@ -88,11 +88,11 @@ with the Nexus Driver.
 ML2 Nexus MD Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#. Install networking-cisco repository as described in the section
-   :doc:`How to install networking-cisco </install/howto>`.
+#. Install networking-cisco package as described in the section
+   :doc:`/install/howto`.
 #. Configure Nexus ML2 Driver.
    Once the networking-cisco code is installed, it needs to be configured and
-   enabled in Neutron, the :doc:`admin guide </admin/ml2-nexus>` provides full
+   enabled in Neutron, the :doc:`/admin/ml2-nexus` provides full
    details on how to create the neutron configs for various use cases.  For
    details on each configuration parameters, refer to
    :doc:`Nexus Configuration Reference</configuration/ml2-nexus>`.
