@@ -24,3 +24,4 @@ Tox environments provided in networking-cisco:
 * compare-coverage - compares coverage reports from before and after the current changes
 * pep8 - Checks code against the pep8 and OpenStack hacking rules
 * genconfig - Generate sample configuration files included in the documentation
+* docs - Generates documentation for viewing (hint: Run `genconfig` first)

@@ -43,7 +43,7 @@ from the port event.  The administrator configures the host to
 interface mapping as well as switch credentials in the ML2 Nexus
 Driver switch configuration section of the neutron config file.
 (ref: section header ``ml2_mech_cisco_nexus`` of config file shown
-in the :doc:`admin guide </admin/ml2-nexus>`.)
+in the :doc:`/admin/ml2-nexus`.)
 
 In the case of baremetal port events, the switch and interface mapping
 are contained in the event itself.  The Nexus driver learns the
@@ -122,7 +122,7 @@ steps done for the user is as follows:
 
 Configuration VXLAN vni ranges and multicast groups is done beneath
 the section header ``ml2_type_nexus_vxlan`` of the configuration file.
-See the :doc:`admin guide </admin/ml2-nexus>` for more details.
+See the :doc:`/admin/ml2-nexus` for more details.
 
 VXLAN Overlay Removal
 ~~~~~~~~~~~~~~~~~~~~~
