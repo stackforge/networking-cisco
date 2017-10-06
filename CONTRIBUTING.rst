@@ -24,3 +24,27 @@ Tox environments provided in networking-cisco:
 * compare-coverage - compares coverage reports from before and after the current changes
 * pep8 - Checks code against the pep8 and OpenStack hacking rules
 * genconfig - Generate sample configuration files included in the documentation
+* docs - Generates documentation for viewing (hint: Run `genconfig` first)
+
+Devstack is used by developers to install Openstack and not intended
+for production use.  To get details on using devstack, refer to other
+documentation links such as:
+
+* For general devstack information, refer to
+  `Devstack <https://docs.openstack.org/devstack/>`_
+* For general ML2 devstack details, refer to
+  `ML2_devstack <https://wiki.openstack.org/wiki/Neutron/ML2#ML2_Configuration/>`_
+
+As discussed in these links, ``local.conf`` is devstack's configuration file
+for defining Openstack installations.  To include installing the
+networking-cisco repository, add the following configuration.  For further
+Cisco feature configuration details using Devstack, look for other
+plugin/driver subsections in the Cisco contributor guide for sample devstack
+configurations.
+
+.. code-block:: ini
+
+    [[local|localrc]]
+    enable_plugin networking-cisco https://github.com/openstack/networking-cisco
+
+.. end
