@@ -253,7 +253,6 @@ enable_service cisco-saf
 # Log
 VERBOSE=True
 DEBUG=True
-USE_SCREEN=True
 SCREEN_LOGDIR=/opt/stack/logs
 LOGFILE=${SCREEN_LOGDIR}/stack.sh.log
 
