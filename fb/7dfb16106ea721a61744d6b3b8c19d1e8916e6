@@ -1,0 +1,10 @@
+Verified-1: Zuul
+Code-Review+2: rcurran <rcurran@cisco.com>
+Code-Review+2: Baodong (Robert) Li <baoli@cisco.com>
+Workflow+1: Baodong (Robert) Li <baoli@cisco.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 10 Oct 2017 16:19:02 +0000
+Reviewed-on: https://review.openstack.org/510127
+Project: openstack/networking-cisco
+Branch: refs/heads/master
