@@ -1,0 +1,9 @@
+Code-Review+2: rcurran <rcurran@cisco.com>
+Code-Review+2: Bradley Jones <jones.bradley@me.com>
+Workflow+1: Bradley Jones <jones.bradley@me.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 10 Oct 2017 16:09:50 +0000
+Reviewed-on: https://review.openstack.org/510186
+Project: openstack/networking-cisco
+Branch: refs/heads/master
