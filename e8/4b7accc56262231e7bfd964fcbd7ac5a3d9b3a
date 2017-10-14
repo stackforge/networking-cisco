@@ -1,0 +1,10 @@
+Code-Review+2: Carol Bouchard <caboucha@cisco.com>
+Verified-1: Zuul
+Code-Review+2: Sandhya Dasu <sadasu@cisco.com>
+Workflow+1: Sandhya Dasu <sadasu@cisco.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Sat, 14 Oct 2017 17:08:44 +0000
+Reviewed-on: https://review.openstack.org/505649
+Project: openstack/networking-cisco
+Branch: refs/heads/master
