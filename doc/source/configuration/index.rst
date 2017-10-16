@@ -17,6 +17,7 @@ Configuration Options
 .. toctree::
    :maxdepth: 1
 
+   l3-asr1k
    ml2-nexus
    ml2-nexus-vxlan-type-driver
 
@@ -26,5 +27,6 @@ Sample Configuration Files
 .. toctree::
    :maxdepth: 1
 
+   samples/l3-asr1k
    samples/ml2-nexus
    samples/ml2-nexus-vxlan-type-driver
