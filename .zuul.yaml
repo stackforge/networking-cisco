@@ -1,0 +1,52 @@
+- project:
+  name: openstack/networking-cisco
+  check:
+    jobs:
+      - networking-cisco-compare-coverage-ubuntu:
+          voting: false
+      - networking-cisco-tox-newton-ubuntu
+      - networking-cisco-tox-ocata-ubuntu
+      - networking-cisco-tox-pike-ubuntu:
+          voting: false
+      - networking-cisco-tox-master-ubuntu:
+          voting: false
+  gate:
+    jobs:
+      - networking-cisco-tox-newton-ubuntu
+      - networking-cisco-tox-ocata-ubuntu
+
+- job:
+    name: networking-cisco-tox-master
+    parent: legacy-base
+    run: playbooks/networking-cisco-tox-master/run
+    post-run: playbooks/networking-cisco-tox-master/post
+    timeout: 2400
+    required-projects:
+      - openstack/requirements
+
+- job:
+    name: networking-cisco-tox-newton
+    parent: legacy-base
+    run: playbooks/networking-cisco-tox-newton/run
+    post-run: playbooks/networking-cisco-tox-newton/post
+    timeout: 2400
+    required-projects:
+      - openstack/requirements
+
+- job:
+    name: networking-cisco-tox-ocata
+    parent: legacy-base
+    run: playbooks/networking-cisco-tox-ocata/run
+    post-run: playbooks/networking-cisco-tox-ocata/post
+    timeout: 2400
+    required-projects:
+      - openstack/requirements
+
+- job:
+    name: networking-cisco-tox-pike
+    parent: legacy-base
+    run: playbooks/networking-cisco-tox-pike/run
+    post-run: playbooks/networking-cisco-tox-pike/post
+    timeout: 2400
+    required-projects:
+      - openstack/requirements
