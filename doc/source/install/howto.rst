@@ -15,7 +15,8 @@ The following lists steps to install the networking-cisco repository:
 
    The neutron release is http://tarballs.openstack.org/neutron
 
-#. To install the Nexus ML2 driver, do as follows:
+#. To install the Nexus ML2 driver or the ASR1000 L3 router service plugin, do
+   as follows:
 
      * When using pip for installs, do either:
 
@@ -26,7 +27,8 @@ The following lists steps to install the networking-cisco repository:
 
        .. end
 
-     * To install the Nexus ML2 mechanism driver without pip, do:
+     * To install the Nexus ML2 mechanism driver or the ASR1000 L3 router
+       service pluginwithout pip, do:
 
        .. code-block:: ini
 
@@ -40,11 +42,13 @@ The following lists steps to install the networking-cisco repository:
        dependencies are all installed. They can be found in
        ``requirements.txt`` in the untarred directory.
 
-     * To install the Nexus ML2 mechanism driver from system packages, do:
+     * To install the Nexus ML2 mechanism driver or the ASR1000 L3 router
+       service plugin from system packages, do:
 
        .. code-block:: ini
 
            yum install python-networking-cisco
+
        .. end
 
 #. Recent additions to Nexus ML2 data requires a data base migration to be
