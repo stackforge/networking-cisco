@@ -17,6 +17,7 @@ Configuration Options
 .. toctree::
    :maxdepth: 1
 
+   l3-asr1k
    ml2-nexus
 
 Sample Configuration Files
@@ -25,4 +26,6 @@ Sample Configuration Files
 .. toctree::
    :maxdepth: 1
 
+   samples/l3-asr1k
    samples/ml2-nexus
+
