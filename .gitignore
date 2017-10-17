@@ -23,6 +23,7 @@ setuptools*.egg/
 *.sw?
 *~
 /.*
+!.zuul.yaml
 !/.coveragerc
 !/.gitignore
 !/.gitreview
