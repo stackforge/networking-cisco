@@ -21,7 +21,7 @@ class RemainderOpt(cfg.DictOpt):
     """A greedy dictionary option
 
     This option will greedily parse any unparsed options in the config section
-    this option is included in storing them in a dictionary structure. For
+    this option is included in storing them in a dictionary structure. For test
     example:
 
     A config file like this::
