@@ -1,0 +1,54 @@
+- job:
+    name: networking-cisco-tox-master
+    parent: legacy-base
+    voting: false
+    post-run: playbooks/legacy/networking-cisco-tox-master/post
+    required-projects:
+      - openstack/requirements
+      - openstack/python-neutronclient
+    run: playbooks/legacy/networking-cisco-tox-master/run
+    timeout: 2400
+
+- job:
+    name: networking-cisco-tox-newton
+    parent: legacy-base
+    post-run: playbooks/legacy/networking-cisco-tox-newton/post
+    required-projects:
+      - openstack/requirements
+      - openstack/python-neutronclient
+    run: playbooks/legacy/networking-cisco-tox-newton/run
+    timeout: 2400
+
+- job:
+    name: networking-cisco-tox-ocata
+    parent: legacy-base
+    post-run: playbooks/legacy/networking-cisco-tox-ocata/post
+    required-projects:
+      - openstack/requirements
+      - openstack/python-neutronclient
+    run: playbooks/legacy/networking-cisco-tox-ocata/run
+    timeout: 2400
+
+- job:
+    name: networking-cisco-tox-pike
+    parent: legacy-base
+    voting: false
+    post-run: playbooks/legacy/networking-cisco-tox-pike/post
+    required-projects:
+      - openstack/requirements
+      - openstack/python-neutronclient
+    run: playbooks/legacy/networking-cisco-tox-pike/run
+    timeout: 2400
+
+- project:
+    name: openstack/networking-cisco
+    check:
+      jobs:
+        - networking-cisco-tox-newton
+        - networking-cisco-tox-ocata
+        - networking-cisco-tox-pike
+        - networking-cisco-tox-master
+    gate:
+      jobs:
+        - networking-cisco-tox-newton
+        - networking-cisco-tox-ocata
