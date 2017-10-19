@@ -32,7 +32,10 @@ def configure_db(cfg):
         return
 
     connection = cfg.dfa_mysql.connection
-    engine = create_engine(connection, echo=False)
+    engine = create_engine(
+               sql_connection=connection,
+               mysql_enable_ndb=cfg.dfa_mysql.mysql_enable_ndb,
+               echo=False)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine, autocommit=True)
     DFA_db_session = Session()
