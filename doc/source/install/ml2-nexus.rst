@@ -133,7 +133,7 @@ ML2 Nexus MD Installation
 
    .. code-block:: ini
 
-       service neutron-service restart
+       $ service neutron-server restart
 
    .. end
 
