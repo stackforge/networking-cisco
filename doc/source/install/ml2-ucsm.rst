@@ -1,0 +1,132 @@
+========================================
+UCSM Mechanism Driver Installation Guide
+========================================
+
+This installation guide details enabling the Cisco Unified Computing
+System Manager (UCSM) Mechanism Driver (MD) to configure UCS Servers
+and Fabric Interconnects managed by one or more UCS Managers
+in an Openstack environment.
+
+Prerequisites
+~~~~~~~~~~~~~
+
+The prerequisites for installing the ML2 UCSM mechanism driver are as follows:
+
+* Cisco UCS B or C series servers connected to a Fabric Interconnect
+  running UCS Manager version 2.1 or above. Please refer to
+  `UCSM Install and Upgrade Guides <https://www.cisco.com/c/en/us/support/servers-unified-computing/ucs-manager/products-installation-guides-list.html>`_
+  for information on UCSM installation.
+
+* UCS servers associated with a Service Profile or Service Profile Template
+  on the UCS Manager. The vNICs for Openstack use identified before hand.
+  Instructions on how to do this via the UCSM GUI can be found in `UCS
+  Manager Server Management Guide <https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/sw/gui/config/guide/2-2/b_UCSM_GUI_Configuration_Guide_2_2/configuring_service_profiles.html>`_
+
+* Openstack Neutron installed according to instructions in `Neutron Install
+  Guide <https://docs.openstack.org/neutron/latest/install/>`_
+
+* Openstack running on the OSs:
+     * RHEL 6.1 or above OR
+     * Ubuntu 14.04 or above
+
+* UCS Manager version 2.2 running on the Fabric Interconnect. This software
+  can be downloaded from `UCS Manager Software Download <https://software.cisco.com/download/release.html?mdfid=283612660&softwareid=283655658&release=2.2(6c)&flowid=22121>`_
+
+
+ML2 UCSM MD Installation
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+#. Install networking-cisco repository as described in the section
+   :doc:`/install/howto`.
+
+#. Configure UCSM ML2 Driver.
+   Once the networking-cisco code is installed, it needs to be configured and
+   enabled in Neutron, the :doc:`/admin/ml2-ucsm` provides full
+   details on how to create the neutron configuration for various use cases.
+
+   Below is a simple VLAN configuration along with UCSM driver configuration
+   which can be applied to ML2 neutron config files ``ml2_conf.ini``.
+
+   .. code-block:: ini
+
+       [ml2]
+       #- This neutron config specifies to use vlan type driver and use
+       #  cisco ucsm mechanism driver.
+       type_drivers = vlan
+       tenant_network_types = vlan
+       mechanism_drivers = openvswitch,cisco_ucsm
+
+       #- This neutron config specifies the vlan range to use.
+       [ml2_type_vlan]
+       network_vlan_ranges = physnet1:1400:3900
+
+       #- Provide UCSM IP and credentials
+       #  This format can be used when there is 1 UCSM to be configured.
+       [ml2_cisco_ucsm]
+       ucsm_ip=10.10.10.10
+       ucsm_username=admin
+       ucsm_password=mysecretpassword
+
+       ucsm_host_list=controller-1:Controller-SP, compute-1:Compute-SP
+       ucsm_virtio_eth_ports=ucs-eth-0, ucs-eth-1
+
+   .. end
+
+#. Restart neutron to pick-up configuration changes.
+
+   .. code-block:: console
+
+       $ service neutron-server restart
+
+   .. end
+
+Prerequisites for SR-IOV port support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before the UCS Servers are purposed as compute host with SR-IOV ports, these
+hosts need to be pre-configured to have SR-IOV VFs enabled and ready for
+Openstack use and UCSM driver configuration. Here is the list of
+pre-requisites for SR-IOV port support:
+
+#. UCS Servers with any of the following VICs:
+   *  Cisco UCS VIC 1240
+   *  Cisco UCS VIC 1340 (both with vendor_id:product_id as 1137:0071)
+   *  Intel 92599 10 Gigabit Ethernet Controller (with vendor_id:product_id as 8086:10ed)
+
+#. Cisco UCS Python SDK version 0.8.2 installed on the Openstack
+   controller nodes. More information about the UCS SDK can be found here:
+   `Cisco UCS SDK information <https://communities.cisco.com/docs/DOC-37174>`_
+
+#. A Dynamic vNIC connection policy needs to be defined on the UCSM specifying
+   the number of VFs the PF would be split into. This profile also needs to
+   specify if the VFs would be created in ``direct`` or ``macvtap`` modes.
+   Detailed instructions for creating a Dynamic vNIC Policy and applying
+   it on a UCS Server vNIC can be found in `UCS
+   Manager VM-FEX configuration Guide <https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/sw/vm_fex/kvm/gui/config_guide/2-1/b_GUI_KVM_VM-FEX_UCSM_Configuration_Guide_2_1/b_GUI_KVM_VM-FEX_UCSM_Configuration_Guide_2_1_chapter_011.html#topic_C6C37CF9F34D426EB0C8C5C5C636B7D0>`_
+
+#. Associate the Dynamic vNIC connection policy with a PF (physical function
+   which is a static ethernet port) by updating its Service Profile.
+
+#. Intel VT-x and VT-d processor extensions for virtualization must be enabled
+   in the host BIOS. This can be achieved by adding ``intel_iommu=on`` to
+   ``GRUB_CMDLINE_LINUX`` in :file:`/etc/sysconfig/grub` [in RHEL] or
+   :file:`/etc/default/grub` [in Ubuntu] 
+
+#. After this grub.conf files on the SR-IOV capable compute hosts need to be
+   regenerated by running grub2-mkconfig -o /boot/grub2/grub.cfg on BIOS systems or
+   grub2-mkconfig -o /boot/efi/EFI/redhat/grub.cfg on UEFI systems.
+
+#. These SR-IOV capable compute hosts need to be rebooted. Due to this operation
+   it is better to install Openstack on these compute hosts after this list
+   of pre-requisites have been completed.
+
+#. Make sure that IOMMU is activated by running :command:`dmesg | grep -iE "dmar|iommu"`. The
+   output should include the following lines::
+
+   [ 0.000000] Kernel command line: BOOT_IMAGE=/vmlinuz-3.13.0-24-generic root=/dev/mapper/devstack--38--vg-root ro quiet intel_iommu=on
+   [ 0.000000] Intel-IOMMU:enabled
+
+#. Make sure the SR-IOV capable VFs are visible to kernel by running the :command:`lspci –nn | grep Cisco`.
+   The output should contain several lines that look like::
+
+     0a:00.1 Ethernet controller [0200]: Cisco Systems Inc VIC SR-IOV VF [1137:0071] (rev a2)
