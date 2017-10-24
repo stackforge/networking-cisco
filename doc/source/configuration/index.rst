@@ -28,3 +28,4 @@ Sample Configuration Files
 
    samples/ml2-nexus
    samples/ml2-nexus-vxlan-type-driver
+   samples/ml2-ucsm
