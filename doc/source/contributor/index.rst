@@ -8,6 +8,7 @@ Contributor Guides
   howto
   faq
   ml2-nexus
+  ml2-ucsm
 
 
 Python Module Docs
