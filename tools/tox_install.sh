@@ -12,28 +12,36 @@ UPPER_CONSTRAINTS_FILE=${UPPER_CONSTRAINTS_FILE:-unconstrained}
 install_cmd="pip install"
 
 if [ "$UPPER_CONSTRAINTS_FILE" != "unconstrained" ]; then
+    if [ -d "/home/zuul/src/git.openstack.org/openstack/requirements" ]; then
+        (cd /home/zuul/src/git.openstack.org/openstack/requirements && \
+         git checkout $NEUTRON_BRANCH)
+        UPPER_CONSTRAINTS_FILE=/home/zuul/src/git.openstack.org/openstack/requirements/upper-constraints.txt
+    fi
     install_cmd="$install_cmd -c$UPPER_CONSTRAINTS_FILE"
+fi
+
+if [ -d "/home/zuul/src/git.openstack.org/openstack/python-neutronclient" ]; then
+    (cd /home/zuul/src/git.openstack.org/openstack/python-neutronclient && \
+     git checkout $NEUTRONCLIENT_BRANCH && \
+     $install_cmd -e .)
 fi
 
 if $(python -c "import neutronclient" 2> /dev/null); then
     echo "Neutronclient already installed."
-elif [ -x $ZUUL_CLONER ]; then
-    # Use zuul-cloner to clone openstack/neutronclient, this will ensure the Depends-On
-    # references are retrieved from zuul and rebased into the repo, then installed.
-    $ZUUL_CLONER --cache-dir /opt/git --branch $NEUTRONCLIENT_BRANCH --workspace /tmp git://git.openstack.org openstack/python-neutronclient
-    pip install /tmp/openstack/python-neutronclient
 else
     # Install neutron client from git.openstack.org
+    # Dont use upper contraints here because python-neutronclient is in upperconstraints
     pip install -e git+https://git.openstack.org/openstack/python-neutronclient@$NEUTRONCLIENT_BRANCH#egg=python-neutronclient
+fi
+
+if [ -d "/home/zuul/src/git.openstack.org/openstack/neutron" ]; then
+    (cd /home/zuul/src/git.openstack.org/openstack/neutron && \
+     git checkout $NEUTRON_BRANCH && \
+     $install_cmd -e .)
 fi
 
 if $(python -c "import neutron" 2> /dev/null); then
     echo "Neutron already installed."
-elif [ -x $ZUUL_CLONER ]; then
-    # Use zuul-cloner to clone openstack/neutron, this will ensure the Depends-On
-    # references are retrieved from zuul and rebased into the repo, then installed.
-    $ZUUL_CLONER --cache-dir /opt/git --zuul-ref $NEUTRON_BRANCH --workspace /tmp git://git.openstack.org openstack/neutron
-    $install_cmd /tmp/openstack/neutron
 else
     # Install neutron from git.openstack.org
     $install_cmd -e git+https://git.openstack.org/openstack/neutron@$NEUTRON_BRANCH#egg=neutron
