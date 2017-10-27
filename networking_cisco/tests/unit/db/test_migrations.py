@@ -14,12 +14,6 @@
 
 from oslo_config import cfg
 import six
-import unittest2
-
-# We don't need to run these test under Python 3 yet.
-# TODO(HenryG): Figure out why they don't work with Python 3.
-if six.PY3:
-    raise unittest2.SkipTest("Disabled for Python 3.")
 
 from neutron.db.migration.alembic_migrations import external
 from neutron.db.migration import cli as migration
@@ -36,6 +30,13 @@ EXTERNAL_TABLES = set(external.TABLES) - set(external.REPO_CISCO_TABLES)
 
 
 class _TestModelsMigrationsCisco(test_migrations._TestModelsMigrations):
+
+    def setUp(self):
+        # We don't need to run these test under Python 3 yet.
+        # TODO(HenryG): Figure out why they don't work with Python 3.
+        if six.PY3:
+            self.skipTest("Disabled for Python 3.")
+        super(_TestModelsMigrationsCisco, self).setUp()
 
     def db_sync(self, engine):
         cfg.CONF.set_override('connection', engine.url, group='database')
@@ -58,4 +59,9 @@ class _TestModelsMigrationsCisco(test_migrations._TestModelsMigrations):
 
 class TestModelsMigrationsMysql(_TestModelsMigrationsCisco,
                                 tc.MySQLTestCase):
-    pass
+    def setUp(self):
+        # We don't need to run these test under Python 3 yet.
+        # TODO(HenryG): Figure out why they don't work with Python 3.
+        if six.PY3:
+            self.skipTest("Disabled for Python 3.")
+        super(TestModelsMigrationsMysql, self).setUp()
