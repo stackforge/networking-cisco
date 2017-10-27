@@ -1,0 +1,9 @@
+Code-Review+2: Sridar Kandaswamy <skandasw@cisco.com>
+Code-Review+2: Shweta P <shpadubi@cisco.com>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Fri, 27 Oct 2017 15:46:35 +0000
+Reviewed-on: https://review.openstack.org/511229
+Project: openstack/networking-cisco
+Branch: refs/heads/master
