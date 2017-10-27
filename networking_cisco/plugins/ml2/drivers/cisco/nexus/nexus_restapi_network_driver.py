@@ -488,6 +488,13 @@ class CiscoNexusRestapiDriver(basedrvr.CiscoNexusBaseDriver):
                 self.send_enable_vlan_on_trunk_int(
                     nexus_host, "", intf_type, nexus_port, False,
                     not trunk_mode_present)
+            elif not trunk_mode_present:
+                LOG.warning("Found trunk vlans but switchport mode is not "
+                            "trunk on Nexus switch %s interface %s. "
+                            "Recheck Nexus Switch config.",
+                            nexus_host,
+                            nexus_help.format_interface_name(
+                                intf_type, nexus_port))
 
         self.capture_and_print_timeshot(
             starttime, "init_bmif",
@@ -553,6 +560,13 @@ class CiscoNexusRestapiDriver(basedrvr.CiscoNexusBaseDriver):
                 self.send_enable_vlan_on_trunk_int(
                     nexus_host, "", intf_type, nexus_port, False,
                     not trunk_mode_present)
+            elif not trunk_mode_present:
+                LOG.warning("Found trunk vlans but switchport mode is not "
+                            "trunk on Nexus switch %s interface %s. "
+                            "Recheck Nexus Switch config.",
+                            nexus_host,
+                            nexus_help.format_interface_name(
+                                intf_type, nexus_port))
 
         self.capture_and_print_timeshot(
             starttime, "get_allif",
@@ -572,11 +586,12 @@ class CiscoNexusRestapiDriver(basedrvr.CiscoNexusBaseDriver):
             starttime, "gettype",
             switch=nexus_host)
 
+        result = ''
         if response:
             try:
                 result = response['imdata'][0]["eqptCh"]['attributes']['descr']
             except Exception:
-                result = ''
+                pass
             nexus_type = re.findall(
                 "Nexus\s*(\d)\d+\s*[0-9A-Z]+\s*"
                 "[cC]hassis",
@@ -586,7 +601,8 @@ class CiscoNexusRestapiDriver(basedrvr.CiscoNexusBaseDriver):
                     int(nexus_type[0]))
                 return int(nexus_type[0])
 
-        LOG.warning("GET call failed to return Nexus type")
+        LOG.debug("GET call failed to return Nexus type. Received %s.",
+                  result)
         return -1
 
     def start_create_vlan(self):
