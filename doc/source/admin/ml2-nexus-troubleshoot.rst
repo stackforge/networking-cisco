@@ -544,7 +544,7 @@ Message
 
 ::
 
-    switch_info can't be decoded {reason}
+    switch_info cant be decoded {reason}
 
 Corrective action
 ^^^^^^^^^^^^^^^^^
@@ -552,3 +552,38 @@ This error should not occur and suggest looking for earlier errors in
 the log file.  If unable to triage further from log messages, contact
 Tech Support for assistance.
 
+Trunk Configuration Conflict on Nexus Switch
+--------------------------------------------
+Description
+^^^^^^^^^^^
+During interface initialization, the Nexus driver collects trunking information
+for interfaces from the Nexus switch. This occurs at start-up for statically
+configured ports and on receipt of a port event for baremetal ports.  The
+driver looks for trunking vlans configured using
+:command:`switchport trunk allowed vlan <vlanid(s)>` and also checks if the
+mode type in :command:`switchport mode <type>` is ``trunk``.
+
+The Nexus driver logs a warning if there are trunking vlans configured but
+the trunk mode is not ``trunk``.   The driver does not try to resolve the
+conflict since the correction can be done in a number of ways which requires
+attention from the administrator.  The driver does continue to add and
+remove vlans to this interface.  However, since the trunk mode is missing,
+the data traffic does not pass on this interface.
+
+Message
+^^^^^^^
+Found trunk vlans but switchport mode is not trunk on Nexus switch {switch}
+interface {interface}. Recheck config.
+
+Corrective action
+^^^^^^^^^^^^^^^^^
+Look at the interface on the Nexus Switch identified in the message and check
+for the following possible errors.
+
+* For VM deployments, is the OpenStack Nexus driver configured with the
+  correct interface for the intended compute node?
+* Perhaps all that's needed is to configure :command:`switchport mode trunk`.
+* Perhaps the trunk vlans configured are from a previously config and no
+  longer wanted. Manually remove undesired vlans.  Keep in mind that the
+  Nexus driver may have added/removed vlans at this point so those should
+  not be removed.  Also manually add :command:`switchport mode trunk`.
