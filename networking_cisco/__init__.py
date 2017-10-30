@@ -22,6 +22,7 @@ __version__ = pbr.version.VersionInfo(
     'networking_cisco').version_string()
 
 if six.PY2:
+    # TESTTEST4
     gettext.install('neutron', unicode=1)
 else:
     gettext.install('neutron')
