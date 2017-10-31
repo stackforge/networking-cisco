@@ -8,8 +8,8 @@ neutron to best utilise your Cisco products with OpenStack.
 * Source: http://git.openstack.org/cgit/openstack/networking-cisco
 * Bugs: http://bugs.launchpad.net/networking-cisco
 
-Supported Equipment and Products
-================================
+Drivers for Cisco Products
+==========================
 
 * Nexus 9000 Series Switches
 
@@ -20,27 +20,31 @@ Supported Equipment and Products
 
   * ML2 Mechanism driver - cisco_ucsm
 
-* Cisco Nexus 1000v
-
-  * ML2 Mechanism driver - cisco_n1kv
-  * Neutron Service plugins - cisco_n1kv_profile, cisco_n1kv_net_profile
-  * ML2 Extension driver - cisco_n1kv_ext
-
 * ASR 1000 Series
 
   * Neutron Service Plugins - cisco_l3_routing
 
+* Cisco Nexus 1000v
+
+  * Deprecated. To be Removed in release 7.0.0
+  * ML2 Mechanism driver - cisco_n1kv
+  * Neutron Service plugins - cisco_n1kv_profile, cisco_n1kv_net_profile
+  * ML2 Extension driver - cisco_n1kv_ext
+
 * Cisco Network Convergence System (NCS)
 
+  * Deprecated. To be Removed in release 7.0.0
   * ML2 Mechanism driver - cisco_ncs
 
 * Cisco Service Advertisement Framework (SAF)
 
+  * Deprecated. To be Removed in release 7.0.0
   * Firewall drivers - native, phy_asa
   * Applications - fabric-enabler-server, fabric-enabler-agent, fabric-enabler-cli
 
 * Cisco Prime Network Registrar (CPNR)
 
+  * Deprecated. To be Removed in release 7.0.0
   * Applications - cpnr-rootwrap, cpnr-dns-relay-agent, cpnr-dns-relay, cpnr-dhcp-relay-agent, cpnr-dhcp-relay
 
 * Cisco Application Policy Infrastructure Controller (APIC)
