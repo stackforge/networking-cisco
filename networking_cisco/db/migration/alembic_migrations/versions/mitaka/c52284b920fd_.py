@@ -1,4 +1,4 @@
-# Copyright 2014 Cisco Systems, Inc.  All rights reserved.
+# Copyright 2018 Cisco Systems, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,18 +12,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-# Constants for the N1kv plugging drivers.
+"""empty message
 
-# These cidr defines will go away when Nova allows spinning up
-# VMs with vifs on networks without subnet(s).
-T1_SUBNET_CIDR = '172.16.0.0/13'
-T2_SUBNET_CIDR = '172.24.0.0/13'
+Revision ID: c52284b920fd
+Revises: 53f08de0523f
+Create Date: 2018-01-16 16:48:18.526764
 
-# T1 port/network is for VXLAN
-T1_PORT_NAME = 't1_p:'
-# T2 port/network is for VLAN
-T2_PORT_NAME = 't2_p:'
-T1_NETWORK_NAME = 't1_net'
-T2_NETWORK_NAME = 't2_net'
-T1_SUBNET_NAME = 't1_subnet'
-T2_SUBNET_NAME = 't2_subnet'
+"""
+
+# revision identifiers, used by Alembic.
+revision = 'c52284b920fd'
+down_revision = '53f08de0523f'
+
+from alembic import op
+import sqlalchemy as sa
+
+
+
+def upgrade():
+    pass
