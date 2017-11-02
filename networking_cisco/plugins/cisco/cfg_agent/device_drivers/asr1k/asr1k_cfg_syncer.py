@@ -32,6 +32,7 @@ from networking_cisco.plugins.cisco.extensions import routerrole
 LOG = logging.getLogger(__name__)
 
 
+# testing
 ROUTER_ROLE_ATTR = routerrole.ROUTER_ROLE_ATTR
 ROUTER_ROLE_HA_REDUNDANCY = cisco_constants.ROUTER_ROLE_HA_REDUNDANCY
 
