@@ -1,0 +1,9 @@
+Code-Review+2: Rob Cresswell <robert.cresswell@outlook.com>
+Code-Review+2: Bradley Jones <jones.bradley@me.com>
+Workflow+1: Bradley Jones <jones.bradley@me.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Thu, 02 Nov 2017 09:17:31 +0000
+Reviewed-on: https://review.openstack.org/504364
+Project: openstack/networking-cisco
+Branch: refs/heads/master
