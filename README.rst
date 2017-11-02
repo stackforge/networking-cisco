@@ -26,10 +26,7 @@ Drivers for Cisco Products
 
 * Nexus 1000v
 
-  * *Deprecated.* To be removed in release 6.0.0
-  * ML2 Mechanism driver - cisco_n1kv
-  * Neutron Service plugins - cisco_n1kv_profile, cisco_n1kv_net_profile
-  * ML2 Extension driver - cisco_n1kv_ext
+  * *Removed* Removed in release 6.0.0
 
 * Network Convergence System (NCS)
 
