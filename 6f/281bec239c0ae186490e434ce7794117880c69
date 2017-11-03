@@ -1,0 +1,9 @@
+Code-Review+2: Bradley Jones <jones.bradley@me.com>
+Workflow+1: Bradley Jones <jones.bradley@me.com>
+Code-Review+1: yanpeifei <yanpeifei@gohighsec.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Fri, 03 Nov 2017 10:36:12 +0000
+Reviewed-on: https://review.openstack.org/517579
+Project: openstack/networking-cisco
+Branch: refs/heads/master
