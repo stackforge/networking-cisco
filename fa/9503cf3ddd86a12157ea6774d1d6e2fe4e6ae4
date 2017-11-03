@@ -1,0 +1,12 @@
+Code-Review+2: rcurran <rcurran@cisco.com>
+Code-Review+2: Carol Bouchard <caboucha@cisco.com>
+Code-Review+2: Rob Cresswell <robert.cresswell@outlook.com>
+Workflow+1: Rob Cresswell <robert.cresswell@outlook.com>
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Workflow+1: rcurran <rcurran@cisco.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Fri, 03 Nov 2017 00:44:01 +0000
+Reviewed-on: https://review.openstack.org/512309
+Project: openstack/networking-cisco
+Branch: refs/heads/master
