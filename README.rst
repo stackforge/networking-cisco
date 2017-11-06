@@ -33,8 +33,8 @@ Drivers for Cisco Products
 
 * Network Convergence System (NCS)
 
-  * *Deprecated.* To be removed in release 6.0.0
-  * ML2 Mechanism driver - cisco_ncs
+  * *No longer supported.* Removed in release 6.0.0
+  * Code removed by commit Ia17b091813f0df2d3f5c19d05dc1f6cd88a6dc90
 
 * Service Advertisement Framework (SAF)
 
