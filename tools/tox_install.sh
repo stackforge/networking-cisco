@@ -1,52 +1,65 @@
 #!/usr/bin/env bash
 
 # Many of neutron's repos suffer from the problem of depending on neutron,
-# but it not existing on pypi. This ensures its installed into the test environment.
-set -ex
+# but it not existing on pypi.
+
+# This wrapper for tox's package installer will use the existing package
+# if it exists, else use zuul-cloner if that program exists, else grab it
+# from neutron master via a hard-coded URL. That last case should only
+# happen with devs running unit tests locally.
+
+# From the tox.ini config page:
+# install_command=ARGV
+# default:
+# pip install {opts} {packages}
 
 ZUUL_CLONER=/usr/zuul-env/bin/zuul-cloner
-NEUTRONCLIENT_BRANCH=${NEUTRONCLIENT_BRANCH:-${NEUTRON_BRANCH:-master}}
-REQUIREMENTS_BRANCH=${REQUIREMENTS_BRANCH:-${NEUTRON_BRANCH:-master}}
-NEUTRON_BRANCH=${NEUTRON_BRANCH:-master}
+BRANCH_NAME=master
+GIT_BASE=${GIT_BASE:-https://git.openstack.org/}
 
-if [ -d "/home/zuul/src/git.openstack.org/openstack/requirements" ]; then
-    (cd /home/zuul/src/git.openstack.org/openstack/requirements && \
-     git checkout $REQUIREMENTS_BRANCH)
-    UPPER_CONSTRAINTS_FILE=/home/zuul/src/git.openstack.org/openstack/requirements/upper-constraints.txt
-else
-    UPPER_CONSTRAINTS_FILE=https://git.openstack.org/cgit/openstack/requirements/plain/upper-constraints.txt?h=${REQUIREMENTS_BRANCH}
-fi
-install_cmd="pip install -c$UPPER_CONSTRAINTS_FILE"
+install_project() {
+    local project=$1
+    local branch=${2:-$BRANCH_NAME}
+    local module_name=${project//-/_}
 
+    set +e
+    project_installed=$(echo "import $module_name" | python 2>/dev/null ; echo $?)
+    set -e
 
-if $(python -c "import neutronclient" 2> /dev/null); then
-    echo "Neutronclient already installed."
-elif [ -d "/home/zuul/src/git.openstack.org/openstack/python-neutronclient" ]; then
-    # We're in a ZuulV3 environment then we needs to setup the source locations
-    # to the right branch the tox-install-siblings task will handle the rest
-    (cd /home/zuul/src/git.openstack.org/openstack/python-neutronclient && \
-     git checkout $NEUTRONCLIENT_BRANCH )
-    pip install -e /home/zuul/src/git.openstack.org/openstack/python-neutronclient
-else
-    # Install neutron client from git.openstack.org
-    # Dont use upper contraints here because python-neutronclient is in upperconstraints
-    pip install -e git+https://git.openstack.org/openstack/python-neutronclient@$NEUTRONCLIENT_BRANCH#egg=python-neutronclient
-fi
+    if [ $project_installed -eq 0 ]; then
+        echo "ALREADY INSTALLED" > /tmp/tox_install.txt
+        echo "$project already installed; using existing package"
+    elif [ -x "$ZUUL_CLONER" ]; then
+        echo "ZUUL CLONER" > /tmp/tox_install.txt
+        # Make this relative to current working directory so that
+        # git clean can remove it. We cannot remove the directory directly
+        # since it is referenced after $install_cmd -e
+        mkdir -p .tmp
+        PROJECT_DIR=$(/bin/mktemp -d -p $(pwd)/.tmp)
+        pushd $PROJECT_DIR
+        $ZUUL_CLONER --cache-dir \
+            /opt/git \
+            --branch $branch \
+            http://git.openstack.org \
+            openstack/$project
+        cd openstack/$project
+        $install_cmd -e .
+        popd
+    else
+        echo "PIP HARDCODE" > /tmp/tox_install.txt
+        local GIT_REPO="$GIT_BASE/openstack/$project"
+        SRC_DIR="$VIRTUAL_ENV/src/$project"
+        git clone --depth 1 --branch $branch $GIT_REPO $SRC_DIR
+        $install_cmd -U -e $SRC_DIR
+    fi
+}
 
-if $(python -c "import neutron" 2> /dev/null); then
-    echo "Neutron already installed."
-elif [ -d "/home/zuul/src/git.openstack.org/openstack/neutron" ]; then
-    # We're in a ZuulV3 environment then we needs to setup the source locations
-    # to the right branch the tox-install-siblings task will handle the rest
-    (cd /home/zuul/src/git.openstack.org/openstack/neutron && \
-     git checkout $NEUTRON_BRANCH)
-    $install_cmd -e /home/zuul/src/git.openstack.org/openstack/neutron
-else
-    # Install neutron from git.openstack.org
-    $install_cmd -e git+https://git.openstack.org/openstack/neutron@$NEUTRON_BRANCH#egg=neutron
-fi
+set -e
 
-# Install the rest of the requirements as normal
+install_cmd="pip install -c$1"
+shift
+
+install_project neutron
+
 $install_cmd -U $*
-
 exit $?
