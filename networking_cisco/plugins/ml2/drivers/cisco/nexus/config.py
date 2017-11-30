@@ -26,6 +26,25 @@ from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     nexus_helpers as nexus_help)
 
 nexus_sub_opts = [
+    cfg.BoolOpt('https_verify', default=True,
+        help=_('Set https_verify to True when certification '
+               'authority (CA) file is in the Operating Systems '
+               'repository or is a locally defined file whose name is '
+               'provided in https_local_certificate.  Set https_verify '
+               'to False to skip https certification checking thus '
+               'making the connection insecure. The '
+               'default configuration is True. When True, the'
+               'Nexus device must be configured with both '
+               'certificate and key files and enabled.  Refer to the '
+               '"nxapi certificate" commands defined in the "Nexus 9K '
+               'NXAPI Programmability Guide" for details.')),
+    cfg.StrOpt('https_local_certificate',
+        help=_('Configure a local certificate file to present in https '
+               'requests. This is for experimental purposes when an '
+               'official certificate from a Trust Certificate Authority '
+               'is not yet available. The default configuration is None. '
+               'An example configuration would look like '
+               'https_local_certificate=/path/to/cafile.crt.')),
     cfg.StrOpt('intfcfg.portchannel',
         help=_('intfcfg.portchannel is a list of Nexus port-channel config '
                'CLI used when baremetal port-channels are created by the '

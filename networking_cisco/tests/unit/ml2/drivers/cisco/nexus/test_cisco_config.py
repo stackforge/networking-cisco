@@ -36,6 +36,7 @@ nve_src_intf=2
 physnet=physnet1
 vpc_pool=5,10
 intfcfg.portchannel=user cmd1;user cmd2
+https_local_certificate=/path/to/your/local-certificate-file.crt
 compute1=1/1
 compute2=1/2
 compute5=1/3,1/4
@@ -44,6 +45,7 @@ compute5=1/3,1/4
 username=admin
 password=mySecretPassword
 ssh_port=22
+https_verify=False
 compute3=1/1
 compute4=1/2
 compute5=portchannel:20,portchannel:30
@@ -77,6 +79,9 @@ class TestCiscoNexusPluginConfig(testlib_api.SqlTestCase):
             ('1.1.1.1', 'physnet'): 'physnet1',
             ('1.1.1.1', 'vpc_pool'): '5,10',
             ('1.1.1.1', 'intfcfg.portchannel'): 'user cmd1 ;user cmd2',
+            ('1.1.1.1', 'https_verify'): True,
+            ('1.1.1.1', 'https_local_certificate'): (
+                '/path/to/your/local-certificate-file.crt'),
             ('2.2.2.2', 'username'): 'admin',
             ('2.2.2.2', 'password'): 'mySecretPassword',
             ('2.2.2.2', 'ssh_port'): 22,
@@ -124,6 +129,9 @@ class TestCiscoNexusPluginConfig(testlib_api.SqlTestCase):
                 'physnet': 'physnet1',
                 'vpc_pool': '5,10',
                 'intfcfg.portchannel': 'user cmd1;user cmd2',
+                'https_verify': True,
+                'https_local_certificate': (
+                    '/path/to/your/local-certificate-file.crt'),
                 'compute_hosts': {
                     'compute1': '1/1',
                     'compute2': '1/2',
@@ -137,6 +145,8 @@ class TestCiscoNexusPluginConfig(testlib_api.SqlTestCase):
                 'nve_src_intf': None,
                 'vpc_pool': None,
                 'intfcfg.portchannel': None,
+                'https_verify': False,
+                'https_local_certificate': None,
                 'compute_hosts': {
                     'compute3': '1/1',
                     'compute4': '1/2',
