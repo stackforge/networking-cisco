@@ -79,7 +79,8 @@ class CiscoNexusRestapiDriver(basedrvr.CiscoNexusBaseDriver):
         :returns credentials: switch credentials list
         """
 
-        credential_attr = [const.USERNAME, const.PASSWORD]
+        credential_attr = [const.USERNAME, const.PASSWORD,
+                           const.HTTPS_VERIFY, const.HTTPS_CERT]
 
         credentials = {}
         for switch_ip, option in nexus_switches:
@@ -88,14 +89,31 @@ class CiscoNexusRestapiDriver(basedrvr.CiscoNexusBaseDriver):
                 if switch_ip in credentials:
                     credential_tuple = credentials[switch_ip]
                 else:
-                    credential_tuple = (None, None)
+                    credential_tuple = (None, None, None, None, None)
                 if option == const.USERNAME:
-                    credential_tuple = (value,
-                        credential_tuple[1])
-                else:
                     credential_tuple = (
-                        credential_tuple[0],
-                        value)
+                        (value,) +
+                        credential_tuple[1:5])
+                elif option == const.PASSWORD:
+                    credential_tuple = (
+                        credential_tuple[:1] +
+                        (value,) +
+                        credential_tuple[2:5])
+                elif option == const.HTTPS_VERIFY:
+                    credential_tuple = (
+                        credential_tuple[0:2] +
+                        (value,) +
+                        credential_tuple[3:5])
+                    if not value:
+                        LOG.warning("HTTPS Certificate verification is "
+                                    "disabled. Your connection to Nexus "
+                                    "Switch %(ip)s is insecure.",
+                                    {'ip': switch_ip})
+                elif option == const.HTTPS_CERT:
+                    credential_tuple = (
+                        credential_tuple[0:3] +
+                        (value,) +
+                        credential_tuple[4:5])
                 credentials[switch_ip] = credential_tuple
         return credentials
 

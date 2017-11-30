@@ -586,3 +586,30 @@ for the following possible errors.
 * Ensure only vlans required as provider vlans or within your tenant vlan
   range are configured as ``allowed`` on the interface, and any additional
   vlans are removed.
+
+Insecure Communication Path with Nexus Switch
+---------------------------------------------
+Description
+^^^^^^^^^^^
+The configuration option `https_verify` was explicitly set to `False`.
+This setting should not be used in production since the
+communication path is insecure leaving the path vunerable to man-in-the-middle
+attacks.  The warning message below will be seen in the neutron log file
+with the ip address of the switch configuration this setting was found.
+
+Message
+^^^^^^^
+HTTPS Certificate verification is disabled. Your connection to Nexus Switch
+{ip} is insecure.
+
+Corrective Action
+^^^^^^^^^^^^^^^^^
+* If a publically known certificate is not currently available, apply for one from
+  a public Certificate Authority (CA).
+* If the certificate and key files have not been configured on the participating
+  Nexus, configure them using the Nexus Management CLI `nxapi certificate`
+  and `enable` the certificate.  For Nexus details, refer to the section
+  `NX-API Management Commands`  in the
+  `Nexus NXAPI Programmability Guide <https://www.cisco.com/c/en/us/td/docs/switches/datacenter/nexus9000/sw/6-x/programmability/guide/b_Cisco_Nexus_9000_Series_NX-OS_Programmability_Guide/b_Cisco_Nexus_9000_Series_NX-OS_Programmability_Guide_chapter_011.html>`_.
+* Remove 'https_verify=False' from the neutron start-up configuration.  This will
+  cause verification of public certificate to occur.
