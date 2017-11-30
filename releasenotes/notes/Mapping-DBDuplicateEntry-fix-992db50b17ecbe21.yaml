@@ -1,0 +1,28 @@
+---
+fixes:
+  - |
+    Nexus: DBDuplicateEntry error seen with Nexus interface mapping database
+
+    Introduced a fix to resolve the issue when the same port-channel is
+    configured for multiple hosts beneath the same switch, a `DBDuplicateEntry`
+    error is seen.  This type of configuration is seen with static
+    configurations only and not ironic.  An example of such a configuration
+    is as follows:
+
+    ::
+
+        [ml2_mech_cisco_nexus:<snipped-switch-ip-addr>]
+        compute-host-1 = port-channel:300
+        compute-host-2 = port-channel:300
+
+    A more complete snippet of the error message is as follows:
+
+    ::
+
+        DBDuplicateEntry: (pymysql.err.IntegrityError) (1062,
+        u"Duplicate entry '{your-switch-ip}-port-channel:301'
+        for key 'PRIMARY'")
+        [SQL: u'INSERT INTO cisco_ml2_nexus_host_interface_mapping
+
+    The `host_id` is now included in the primary key so this error is no longer
+    encountered.
