@@ -121,6 +121,10 @@ activities performed during VLAN creation and removal, refer to
     #  for use when creating port-channels for baremetal events.
     intfcfg.portchannel=no lacp suspend-individual;spanning-tree port type edge trunk
 
+    #- To disable certificate verification in https requests.
+    #  Not recommended since this results in an insecure connection.
+    https_verify=False
+
 .. end
 
 Sample configuration with vPC interfaces
@@ -330,7 +334,8 @@ variables.  More details on these neutron variable names can be found in
             "ssh_port": 22,
             "username": "admin",
             "vpc_pool": "1001-1025,1030",
-            "intfcfg.portchannel": "no lacp suspend-individual;spanning-tree port type edge trunk"
+            "intfcfg.portchannel": "no lacp suspend-individual;spanning-tree port type edge trunk",
+            "https_verify":=False
         }
       }
       NetworkNexusManagedPhysicalNetwork: datacentre
