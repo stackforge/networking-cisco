@@ -20,6 +20,7 @@ from neutron.plugins.ml2.drivers import type_tunnel
 from neutron import version
 
 
+# --
 # Some constants and verifier functions have been deprecated but are still
 # used by earlier releases of neutron. In order to maintain
 # backwards-compatibility with stable/mitaka this will act as a translator
