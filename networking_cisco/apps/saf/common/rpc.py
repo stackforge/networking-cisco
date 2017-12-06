@@ -37,7 +37,7 @@ class DfaRpcClient(object):
 
     def __init__(self, transport_url, topic, exchange=None, fanout=False):
         super(DfaRpcClient, self).__init__()
-        transport = messaging.get_transport(cfg.CONF, url=transport_url)
+        transport = messaging.get_rpc_transport(cfg.CONF, url=transport_url)
         target = messaging.Target(exchange=exchange,
                                   topic=topic, fanout=fanout)
         self._client = messaging.RPCClient(transport, target)
@@ -67,7 +67,7 @@ class DfaRpcServer(object):
     def __init__(self, topic, server, url, endpoints, exchange=None,
                  fanout=False, executor='eventlet'):
         super(DfaRpcServer, self).__init__()
-        transport = messaging.get_transport(cfg.CONF, url=url)
+        transport = messaging.get_rpc_transport(cfg.CONF, url=url)
         target = messaging.Target(exchange=exchange, topic=topic,
                                   server=server, fanout=fanout)
         endpoints = [endpoints]
@@ -111,7 +111,7 @@ class DfaNotifcationListener(object):
 
     def __init__(self, topic, url, endpoints, exchange=None, fanout=False):
         super(DfaNotifcationListener, self).__init__()
-        transport = messaging.get_transport(cfg.CONF, url=url)
+        transport = messaging.get_notification_transport(cfg.CONF, url=url)
         targets = [messaging.Target(exchange=exchange,
                                     fanout=fanout,
                                     topic=topic)]
