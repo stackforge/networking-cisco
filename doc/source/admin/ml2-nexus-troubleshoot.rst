@@ -312,10 +312,21 @@ There's no specific error message for this other than some shown in
 
 Corrective Action
 ^^^^^^^^^^^^^^^^^
-It's likely due to connection loss or never having a connection with the
-switch.  See the :ref:`connect_loss` for more triage hints
-details like how to check the state of the switch and configuration errors
-that can occur.
+There are a couple possible reasons for this issue:
+
+* It may be due to a connection loss or never having a connection with the
+  switch.  See the :ref:`connect_loss` for more triage hints
+  details like how to check the state of the switch and configuration errors
+  that can occur.
+* It is possible the hostname is not correctly configured in the neutron
+  start-up file beneath the nexus switch section named `ml2_mech_cisco_nexus`.
+  Depending on the configuration of the OpenStack host, the hostname to
+  configure is the long name `hostname.domainname` which can be derived by
+  running `hostname -f` on the host itself. Additionally if you enable
+  debug in neutron start-up config file and search for the log entry
+  `Attempting to bind port {port} on host {hostname}`, the `hostname` in
+  this message is the same name used in Nexus look-ups.  Configure this
+  name in the neutron start-up file and restart neutron.
 
 No Nexus Configuration in the neutron start-up file
 ---------------------------------------------------
@@ -581,7 +592,7 @@ Look at the interface on the Nexus Switch identified in the message and check
 for the following possible errors.
 
 * For VM deployments, ensure the OpenStack Nexus driver is configured with the
-  correct interface for the intended compute node.
+  correct interface for the intended OpenStack host.
 * Ensure :command:`switchport mode trunk` is configured on the interface.
 * Ensure only vlans required as provider vlans or within your tenant vlan
   range are configured as ``allowed`` on the interface, and any additional

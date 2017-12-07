@@ -124,7 +124,7 @@ class TestCiscoNexusPluginConfig(testlib_api.SqlTestCase):
                 'physnet': 'physnet1',
                 'vpc_pool': '5,10',
                 'intfcfg.portchannel': 'user cmd1;user cmd2',
-                'compute_hosts': {
+                'host_port_mapping': {
                     'compute1': '1/1',
                     'compute2': '1/2',
                     'compute5': '1/3,1/4'
@@ -137,7 +137,7 @@ class TestCiscoNexusPluginConfig(testlib_api.SqlTestCase):
                 'nve_src_intf': None,
                 'vpc_pool': None,
                 'intfcfg.portchannel': None,
-                'compute_hosts': {
+                'host_port_mapping': {
                     'compute3': '1/1',
                     'compute4': '1/2',
                     'compute5': 'portchannel:20,portchannel:30'
