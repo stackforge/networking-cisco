@@ -16,7 +16,6 @@
 
 from oslo_log import log as logging
 
-from neutron.plugins.common import constants as p_const
 from neutron.plugins.ml2 import driver_api as api
 
 from networking_cisco import backwards_compatibility as bc
@@ -342,7 +341,7 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
     @staticmethod
     def check_segment(segment):
         network_type = segment[api.NETWORK_TYPE]
-        return network_type == p_const.TYPE_VLAN
+        return network_type == bc.constants.TYPE_VLAN
 
     @staticmethod
     def make_profile_name(vlan_id):

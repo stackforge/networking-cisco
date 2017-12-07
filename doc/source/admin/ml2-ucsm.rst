@@ -89,6 +89,14 @@ UCSM Driver configuration along with neutron parameters
    starting with the UCSM IP specified in this format:
    ``[ml2_cisco_ucsm_ip:<UCSM IP address>]``
 
+#. The UCSM driver connects to all the UCS Managers provided in its
+   configuration, via a HTTPS connection where the SSL certificate on
+   the UCS Manager is chceked to be valid. If there is a need to opt
+   out of this default behavior, the parameter ``ucsm_https_verify``
+   needs to be explicity set to False. This is a global configuration
+   and is applicable to all the UCS Manager configuration provided to
+   the driver.
+
 Enabling SR-IOV support
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -166,7 +174,7 @@ Configuring nova for SR-IOV
 
        [default]
        pci_passthrough_whitelist = { "vendor_id": "<id>", "product_id": "<id>",
-           `"physical_network": "physnet2"}
+           "physical_network": "physnet2"}
 
    .. end
 
