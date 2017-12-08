@@ -62,6 +62,12 @@ ml2_cisco_ucsm_opts = [
                help=_('Name of QoS Policy pre-defined in UCSM, to be '
                       'applied to all VM-FEX Port Profiles. This is '
                       'an optional parameter.')),
+    cfg.StrOpt('ucsm_https_verify',
+               default=True,
+               help=_('When set to False, the UCSM driver will not check '
+                      'the SSL certificate on the UCSM. This is a global '
+                      'config for the plugin which means that it applies to '
+                      'all UCSMs in the system.')),
 ]
 
 cfg.CONF.register_opts(ml2_cisco_ucsm_opts, "ml2_cisco_ucsm")
@@ -119,6 +125,10 @@ def parse_virtio_eth_ports():
         eth_port_list.append(const.ETH_PREFIX + str(eth_port).strip())
 
     return eth_port_list
+
+
+def get_ucsm_https_verify():
+    return cfg.CONF.ml2_cisco_ucsm.ucsm_https_verify
 
 
 class UcsmConfig(object):
