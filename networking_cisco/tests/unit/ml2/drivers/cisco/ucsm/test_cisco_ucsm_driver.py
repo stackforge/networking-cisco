@@ -16,6 +16,8 @@
 import mock
 from oslo_config import cfg
 
+from testfixtures import LogCapture
+
 from neutron.db import api as db_api
 from neutron.plugins.ml2 import driver_api as api
 from neutron.tests.unit import testlib_api
@@ -92,6 +94,8 @@ vnic_template_dict = {
 }
 
 PORT_PROFILE_1 = 'OS-PP-100'
+
+LOGUSR = 'networking_cisco.plugins.ml2.drivers.cisco.ucsm.ucsm_network_driver'
 
 
 class FakeNetworkContext(api.NetworkContext):
@@ -1094,3 +1098,21 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
 
         self.assertEqual(expected_parsed_virtio_eth_ports,
             virtio_port_list)
+
+    def test_ucsm_https_verify_default(self):
+        self.assertTrue(conf.get_ucsm_https_verify())
+
+    def test_ucsm_https_verify_nondefault(self):
+        cfg.CONF.ml2_cisco_ucsm.ucsm_https_verify = False
+        self.assertFalse(conf.get_ucsm_https_verify())
+
+    def test_ucsm_https_verify_log_msg(self):
+        cfg.CONF.ml2_cisco_ucsm.ucsm_https_verify = False
+        with LogCapture() as l:
+            self.ucsm_driver._ssl_cert_check()
+            print(l)
+            l.check(
+                (LOGUSR,
+                 'WARNING',
+                 const.SSL_WARNING),
+                   )

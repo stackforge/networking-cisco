@@ -103,6 +103,23 @@ the following configuration options need to be specified.
 
 .. end
 
+Driver configuration to turn of SSL certificate checking
+--------------------------------------------------------
+
+When the UCSM driver is attempting to connect to UCS Manager(s) that do not have a valid SSL
+certificate, this configuration can be used to disable checking of the SSL certificate on all
+the UCS Manager(s) the driver connects with.  However, this is not recommended in production
+since it leaves the communication path insecure and vulnerable to man-in-the-middle attacks.
+
+.. code-block:: ini
+
+    [[post-config|/$Q_PLUGIN_CONF_FILE]]
+    [ml2_cisco_ucsm]
+
+    ucsm_https_verify = False
+
+.. end
+
 SR-IOV specific configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
