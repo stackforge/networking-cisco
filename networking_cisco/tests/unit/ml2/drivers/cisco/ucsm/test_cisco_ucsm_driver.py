@@ -13,8 +13,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import logging
 import mock
 from oslo_config import cfg
+
+from testfixtures import LogCapture
 
 from neutron.db import api as db_api
 from neutron.plugins.ml2 import driver_api as api
@@ -1094,3 +1097,23 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
 
         self.assertEqual(expected_parsed_virtio_eth_ports,
             virtio_port_list)
+
+    def test_ucsm_https_verify_default(self):
+        self.assertTrue(conf.get_ucsm_https_verify())
+
+    def test_ucsm_https_verify_nondefault(self):
+        cfg.CONF.ml2_cisco_ucsm.ucsm_https_verify = False
+        self.assertFalse(conf.get_ucsm_https_verify())
+
+    def test_ucsm_https_verify_log_msg(self):
+        cfg.CONF.ml2_cisco_ucsm.ucsm_https_verify = False
+        warn_ln1 = 'SSL certificate verification has been disabled for the UCSM driver.'
+        warn_ln2 = 'The connection to UCS Manager(s) is now insecure.'
+        with LogCapture() as l:
+            self.ucsm_driver._ssl_cert_check()
+            print(l)
+            l.check(
+                ('networking_cisco.plugins.ml2.drivers.cisco.ucsm.ucsm_network_driver',
+                 'WARNING',
+                 warn_ln1 + ' ' + warn_ln2),
+                )
