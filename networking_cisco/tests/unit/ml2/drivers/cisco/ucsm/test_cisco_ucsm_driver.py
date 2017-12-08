@@ -93,6 +93,8 @@ vnic_template_dict = {
 
 PORT_PROFILE_1 = 'OS-PP-100'
 
+LOGUSR = 'networking_cisco.plugins.ml2.drivers.cisco.ucsm.ucsm_network_driver'
+
 
 class FakeNetworkContext(api.NetworkContext):
 
@@ -1094,3 +1096,8 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
 
         self.assertEqual(expected_parsed_virtio_eth_ports,
             virtio_port_list)
+
+        self.assertTrue(conf.get_ucsm_https_verify())
+
+        cfg.CONF.ml2_cisco_ucsm.ucsm_https_verify = False
+        self.assertFalse(conf.get_ucsm_https_verify())
