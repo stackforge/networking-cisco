@@ -1516,9 +1516,15 @@ class HAL3RouterApplianceVMTestCase(
             l3_plugin.add_router_interface(
                 admin_ctx,
                 router['router']['id'], {'subnet_id': subnet['subnet']['id']})
-            l3_db._notify_subnetpool_address_scope_update(
-                mock.ANY, mock.ANY, mock.ANY,
-                context=admin_ctx, subnetpool_id=subnetpool_id)
+            if bc.NEUTRON_VERSION >= bc.NEUTRON_PIKE_VERSION:
+                (l3_db.L3RpcNotifierMixin.
+                    _notify_subnetpool_address_scope_update(
+                    mock.ANY, mock.ANY, mock.ANY, context=admin_ctx,
+                    subnetpool_id=subnetpool_id))
+            else:
+                l3_db._notify_subnetpool_address_scope_update(
+                    mock.ANY, mock.ANY, mock.ANY,
+                    context=admin_ctx, subnetpool_id=subnetpool_id)
             args, kwargs = chk_method.call_args
             self.assertEqual(admin_ctx, args[0])
             self.assertIn(router['router']['id'], args[1])
