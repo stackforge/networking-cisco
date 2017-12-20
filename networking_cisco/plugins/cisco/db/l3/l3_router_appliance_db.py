@@ -1600,8 +1600,12 @@ def _notify_cfg_agent_port_update(resource, event, trigger, **kwargs):
 
 def modify_subscribe():
     # unregister the function in l3_db as it does not do what we need
-    registry.unsubscribe(l3_db._notify_routers_callback, resources.PORT,
-                         events.AFTER_DELETE)
+    if bc.NEUTRON_VERSION >= bc.NEUTRON_PIKE_VERSION:
+        registry.unsubscribe(l3_db.L3RpcNotifierMixin._notify_routers_callback,
+                             resources.PORT, events.AFTER_DELETE)
+    else:
+        registry.unsubscribe(l3_db._notify_routers_callback, resources.PORT,
+                             events.AFTER_DELETE)
     # register our own version
     registry.subscribe(
         _notify_routers_callback, resources.PORT, events.AFTER_DELETE)
