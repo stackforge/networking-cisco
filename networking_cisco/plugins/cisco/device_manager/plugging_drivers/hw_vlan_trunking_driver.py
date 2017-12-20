@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.extensions import providernet as pr_net
 from oslo_log import log as logging
 from oslo_utils import excutils
 
@@ -76,9 +75,10 @@ class HwVLANTrunkingPlugDriver(plug.PluginSidePluggingDriver):
                               hosting_device_id):
         # For VLAN core plugin provides VLAN tag
         tags = self._core_plugin.get_networks(
-            context, {'id': [port_db['network_id']]}, [pr_net.SEGMENTATION_ID])
+            context, {'id': [port_db['network_id']]},
+            [bc.provider_net.SEGMENTATION_ID])
         allocated_vlan = (None if tags == []
-                          else tags[0].get(pr_net.SEGMENTATION_ID))
+                          else tags[0].get(bc.provider_net.SEGMENTATION_ID))
         if allocated_vlan is None:
             # Database must have been messed up if this happens ...
             LOG.debug('hw_vlan_trunking_driver: Could not allocate VLAN')

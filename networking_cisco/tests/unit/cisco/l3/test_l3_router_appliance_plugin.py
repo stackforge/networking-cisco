@@ -254,10 +254,11 @@ class L3RouterApplianceRouterTypeDriverTestCase(test_l3.L3NatTestCaseMixin,
         # Remove any dict extend functions that our plugin does not support
         _dict_extend_functions = l3_router_appliance_db.DICT_EXTEND_FUNCTIONS
         _dict_extend_functions.append('_extend_router_dict_extraroute')
-        for func in self.plugin._dict_extend_functions[l3.ROUTERS][:]:
-            if func in l3_router_appliance_db.DICT_EXTEND_FUNCTIONS:
-                continue
-            self.plugin._dict_extend_functions[l3.ROUTERS].remove(func)
+        if bc.NEUTRON_VERSION < bc.NEUTRON_PIKE_VERSION:
+            for func in self.plugin._dict_extend_functions[l3.ROUTERS][:]:
+                if func in l3_router_appliance_db.DICT_EXTEND_FUNCTIONS:
+                    continue
+                self.plugin._dict_extend_functions[l3.ROUTERS].remove(func)
 
     def test_schedule_router_pre_and_post_commit(self):
         hdts = self._list(
@@ -653,9 +654,27 @@ class L3RouterApplianceVMTestCase(L3RouterApplianceNamespaceTestCase):
     def test_create_router_gateway_fails_nested_delete_router_failed(self):
         (super(L3RouterApplianceNamespaceTestCase, self).
          test_create_router_gateway_fails_nested_delete_router_failed())
-        # must disable the UT patches so that our router type cleanup,
-        # which deletes any remaining routers, can proceed
-        mock.patch.stopall()
+        # must disable the UT patch for 'delete_router' so that our router
+        # type cleanup, which deletes any remaining routers, can proceed
+        if bc.NEUTRON_VERSION < bc.NEUTRON_PIKE_VERSION:
+            # be lazy and stop all
+            mock.patch.stopall()
+        else:
+            # In pike, during general cleanup, there is an explicit call to
+            # stop one of the other patches, so cannot do stop all here as
+            # that trigger an exception during that general cleanup.
+            # Need a patch here for the sole purpose of determining the
+            # existing patches, so patching this very function.
+            dummy_patch = mock.patch(
+                'L3RouterApplianceVMTestCase.'
+                'test_create_router_gateway_fails_nested_delete_router_failed')
+            delete_router_patch = None
+            for p in dummy_patch._active_patches:
+                if p.attribute == 'delete_router':
+                    delete_router_patch = p
+                    break
+            if delete_router_patch:
+                delete_router_patch.stop()
 
 
 class L3AgentRouterApplianceTestCase(L3RouterApplianceTestCaseBase,
