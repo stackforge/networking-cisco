@@ -176,10 +176,21 @@ else:
 
 if NEUTRON_VERSION >= NEUTRON_PIKE_VERSION:
     from neutron.conf.agent import common as config
+    from neutron.db._resource_extend import extends
+    from neutron.db._resource_extend import has_resource_extenders
     from neutron_lib.api.definitions import dns
 else:
     from neutron.agent.common import config  # noqa
     from neutron.extensions import dns  # noqa
+
+    def has_resource_extenders(klass):
+        return klass
+
+    def extends(resources):
+        def decorator(method):
+            return method
+
+        return decorator
 
 core_opts = base_config.core_opts
 
