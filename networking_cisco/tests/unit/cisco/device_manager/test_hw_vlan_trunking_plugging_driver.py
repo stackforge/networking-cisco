@@ -17,7 +17,6 @@ import copy
 import mock
 
 from neutron.common import test_lib
-from neutron.extensions import providernet as pr_net
 from neutron.tests.unit.extensions import test_l3
 
 from networking_cisco import backwards_compatibility as bc
@@ -189,8 +188,8 @@ class TestHwVLANTrunkingPlugDriver(
                            for i in self._pv_info[nw_type].values()]) + 1
                 pv_info = {'nw_type': nw_type, 'tag': tag}
                 self._pv_info[nw_type][res['id']] = pv_info
-            res[pr_net.NETWORK_TYPE] = pv_info['nw_type']
-            res[pr_net.SEGMENTATION_ID] = pv_info['tag']
+            res[bc.provider_net.NETWORK_TYPE] = pv_info['nw_type']
+            res[bc.provider_net.SEGMENTATION_ID] = pv_info['tag']
             if fields is not None:
                 for attr in list(res.keys()):
                     if attr not in fields:

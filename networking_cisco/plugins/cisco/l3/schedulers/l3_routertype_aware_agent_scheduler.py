@@ -15,7 +15,6 @@
 from oslo_log import log as logging
 from sqlalchemy import sql
 
-from neutron.db import l3_agentschedulers_db
 from neutron.scheduler import l3_agent_scheduler
 
 from networking_cisco import backwards_compatibility as bc
@@ -42,8 +41,7 @@ class L3RouterTypeAwareScheduler(l3_agent_scheduler.L3Scheduler):
             context, plugin = plugin, context
         # TODO(gongysh) consider the disabled agent's router
         no_agent_binding = ~sql.exists().where(
-            bc.Router.id ==
-            l3_agentschedulers_db.RouterL3AgentBinding.router_id)
+            bc.Router.id == bc.rb_model.RouterL3AgentBinding.router_id)
         # Modified to only include routers of network namespace type
         ns_routertype_id = plugin.get_namespace_router_type_id(context)
         query = context.session.query(bc.Router.id)
