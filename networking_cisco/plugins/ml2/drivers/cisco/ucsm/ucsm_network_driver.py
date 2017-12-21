@@ -47,7 +47,7 @@ class CiscoUcsmDriver(object):
         self.ucsm_db = ucsm_db.UcsmDbModel()
         self.ucsm_host_dict = {}
         self.ucsm_sp_dict = {}
-        self._ssl_cert_check()
+        #self._ssl_cert_check()
         self._create_host_and_sp_dicts_from_config()
 
         Timer(const.DEFAULT_PP_DELETE_TIME,
@@ -123,7 +123,14 @@ class CiscoUcsmDriver(object):
         the installation of UcsSdk.
 
         """
-        return importutils.import_module('UcsSdk')
+        # NOTE(sambetts) Monkey patch the UCS sdk version of urllib2 to disable
+        # https verify if required.
+        from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucs_urllib2
+        ucsmsdkhandle = importutils.import_module('UcsSdk.UcsHandle')
+        ucsmsdkhandle.urllib2 = ucs_urllib2
+
+        ucsmsdk = importutils.import_module('UcsSdk')
+        return ucsmsdk
 
     def _create_host_and_sp_dicts_from_config(self):
         # Check if Service Profile to Hostname mapping config has been provided
