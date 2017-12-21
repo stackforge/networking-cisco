@@ -62,6 +62,22 @@ physnet=physnet1
 compute1=1/1
 """
 
+test_deprecated_option_config_file = """
+[ml2_mech_cisco_nexus:1.1.1.1]
+username=admin
+password=mySecretPassword
+ssh_port=22
+nve_src_intf=2
+physnet=physnet1
+vpc_pool=5,10
+intfcfg.portchannel=user cmd1;user cmd2
+https_verify=True
+https_local_certificate=/path/to/your/local-certificate-file.crt
+compute1=1/1
+compute2=1/2
+compute5=1/3,1/4
+"""
+
 
 class TestCiscoNexusPluginConfig(testlib_api.SqlTestCase):
 
@@ -178,3 +194,36 @@ class TestCiscoNexusPluginConfigError(testlib_api.SqlTestCase):
         self.assertIn("Value for option ssh_port is not valid: "
                       "invalid literal for int() with base 10: "
                       "'abc'", x)
+
+class TestCiscoNexusPluginConfigDeprecatedOption(testlib_api.SqlTestCase):
+
+    def setUp(self):
+        super(TestCiscoNexusPluginConfigDeprecatedOption, self).setUp()
+        nc_base.load_config_file(test_deprecated_option_config_file)
+
+    def test_config_using_subsection_option(self):
+        expected = {
+            '1.1.1.1': {
+                'username': 'admin',
+                'password': 'mySecretPassword',
+                'ssh_port': 22,
+                'nve_src_intf': '2',
+                'physnet': 'physnet1',
+                'vpc_pool': '5,10',
+                'intfcfg_portchannel': 'user cmd1;user cmd2',
+                'https_verify': True,
+                'https_local_certificate': (
+                    '/path/to/your/local-certificate-file.crt'),
+                'host_port_mapping': {
+                    'compute1': '1/1',
+                    'compute2': '1/2',
+                    'compute5': '1/3,1/4'
+                }
+            }
+        }
+
+        for switch_ip, options in expected.items():
+            for opt_name, option in options.items():
+                self.assertEqual(
+                    option, cfg.CONF.ml2_cisco.nexus_switches.get(
+                        switch_ip).get(opt_name))
