@@ -480,7 +480,6 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
         """Sets up mock client, switch, and credentials dictionaries."""
 
         #Clear all configuration parsing
-        nexus_config.ML2MechCiscoConfig.nexus_dict = collections.OrderedDict()
         cfg.CONF.clear()
 
         super(TestCiscoNexusBase, self).setUp()
@@ -593,8 +592,7 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
         self._cisco_mech_driver = mech_cisco_nexus.CiscoNexusMechanismDriver()
         self._cisco_mech_driver.initialize()
         self._cfg_monitor = self._cisco_mech_driver.monitor
-        self._cisco_mech_driver.driver.nexus_switches = (
-            self._cisco_mech_driver._nexus_switches)
+        self._cisco_mech_driver.driver.nexus_switches = cfg.CONF.ml2_cisco.nexus_switches
         self.addCleanup(self._clear_port_dbs)
 
     def _generate_port_context(self, port_config,
@@ -796,7 +794,9 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
         # sending BODY_ADD_PORT_CH_P2.  So
         # BODY_USER_CONF_CMDS will be sent instead.
         for sw_ip in nexus_ips:
-            self._cisco_mech_driver._nexus_switches[sw_ip, const.IF_PC] = cmds
+            cfg.CONF.set_override(
+                const.IF_PC, cmds,
+                cfg.CONF.ml2_cisco.nexus_switches.get(sw_ip)._group)
 
     def _verify_nxapi_results(self, driver_result):
         """Verifies correct NXAPI entries sent to Nexus."""
