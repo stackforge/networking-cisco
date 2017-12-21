@@ -34,8 +34,8 @@ import six
 import testtools
 
 from networking_cisco import backwards_compatibility as bc
-from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
-    config as nexus_config)
+from networking_cisco.plugins.ml2.drivers.cisco.nexus import (  # noqa
+    config as nexus_config)  # noqa
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     constants as const)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
@@ -56,6 +56,10 @@ from neutron.plugins.ml2 import driver_api as api
 from neutron.tests.unit import testlib_api
 
 from networking_cisco.tests import base as nc_base
+
+
+CONF = cfg.CONF
+
 
 # Static variables used in testing
 NEXUS_IP_ADDRESS_1 = '1.1.1.1'
@@ -480,19 +484,18 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
         """Sets up mock client, switch, and credentials dictionaries."""
 
         #Clear all configuration parsing
-        nexus_config.ML2MechCiscoConfig.nexus_dict = collections.OrderedDict()
-        cfg.CONF.clear()
+        CONF.clear()
 
         super(TestCiscoNexusBase, self).setUp()
 
-        cfg.CONF.import_opt('api_workers', 'neutron.service')
-        cfg.CONF.set_default('api_workers', 0)
-        cfg.CONF.import_opt('rpc_workers', 'neutron.service')
-        cfg.CONF.set_default('rpc_workers', 0)
+        CONF.import_opt('api_workers', 'neutron.service')
+        CONF.set_default('api_workers', 0)
+        CONF.import_opt('rpc_workers', 'neutron.service')
+        CONF.set_default('rpc_workers', 0)
 
         # Use a mock netconf or REST API client
         self.mock_ncclient = mock.Mock()
-        if cfg.CONF.ml2_cisco.nexus_driver == 'restapi':
+        if CONF.ml2_cisco.nexus_driver == 'restapi':
             mock.patch.object(
                 nexus_restapi_network_driver.CiscoNexusRestapiDriver,
                 '_import_client',
@@ -586,7 +589,7 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
             trunk.NexusMDTrunkHandler, 'is_trunk_subport_baremetal',
             return_value=False).start()
 
-        if cfg.CONF.ml2_cisco.nexus_driver == 'restapi':
+        if CONF.ml2_cisco.nexus_driver == 'restapi':
             self.restapi_mock_init()
         else:
             self.mock_init()
@@ -594,7 +597,7 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
         self._cisco_mech_driver.initialize()
         self._cfg_monitor = self._cisco_mech_driver.monitor
         self._cisco_mech_driver.driver.nexus_switches = (
-            self._cisco_mech_driver._nexus_switches)
+            CONF.ml2_cisco.nexus_switches)
         self.addCleanup(self._clear_port_dbs)
 
     def _generate_port_context(self, port_config,
@@ -791,12 +794,13 @@ class TestCiscoNexusBase(testlib_api.SqlTestCase):
                     "Expected result data not found")
 
     def _cfg_vPC_user_commands(self, nexus_ips, cmds):
-
         # Use commands provided by user instead of
         # sending BODY_ADD_PORT_CH_P2.  So
         # BODY_USER_CONF_CMDS will be sent instead.
         for sw_ip in nexus_ips:
-            self._cisco_mech_driver._nexus_switches[sw_ip, const.IF_PC] = cmds
+            CONF.set_override(
+                const.IF_PC, cmds,
+                CONF.ml2_cisco.nexus_switches.get(sw_ip)._group)
 
     def _verify_nxapi_results(self, driver_result):
         """Verifies correct NXAPI entries sent to Nexus."""
