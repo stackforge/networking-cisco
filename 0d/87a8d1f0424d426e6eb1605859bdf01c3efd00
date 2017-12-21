@@ -1,0 +1,11 @@
+Code-Review+1: Nam Nguyen Hoai <namnh@vn.fujitsu.com>
+Code-Review+1: Guoqiang Ding <dingguoqiang@cloudin.cn>
+Code-Review+2: Sandhya Dasu <sadasu@cisco.com>
+Code-Review+2: Bradley Jones <jones.bradley@me.com>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Thu, 21 Dec 2017 18:27:14 +0000
+Reviewed-on: https://review.openstack.org/528146
+Project: openstack/networking-cisco
+Branch: refs/heads/master
