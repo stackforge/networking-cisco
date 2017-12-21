@@ -29,6 +29,7 @@ redundant.
 """
 
 import mock
+from oslo_config import cfg
 
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     constants as const)
@@ -1081,8 +1082,9 @@ class TestCiscoNexusRestBaremetalReplay(
         switch_list = ['1.1.1.1', '2.2.2.2']
 
         for switch_ip in switch_list:
-            self._cisco_mech_driver._nexus_switches[
-                switch_ip, const.VPCPOOL] = ('1001-1025')
+            cfg.CONF.set_override(
+                const.VPCPOOL, ('1001-1025'),
+                cfg.CONF.ml2_cisco.nexus_switches.get(switch_ip)._group)
         self._cisco_mech_driver._initialize_vpc_alloc_pools()
 
         self._cfg_vPC_user_commands(
@@ -1135,8 +1137,9 @@ class TestCiscoNexusRestBaremetalReplay(
         switch_list = ['1.1.1.1', '2.2.2.2']
 
         for switch_ip in switch_list:
-            self._cisco_mech_driver._nexus_switches[
-                switch_ip, const.VPCPOOL] = ('1001-1025')
+            cfg.CONF.set_override(
+                const.VPCPOOL, ('1001-1025'),
+                cfg.CONF.ml2_cisco.nexus_switches.get(switch_ip)._group)
         self._cisco_mech_driver._initialize_vpc_alloc_pools()
 
         # _init_port_channel is not called so the vpc nbr is created

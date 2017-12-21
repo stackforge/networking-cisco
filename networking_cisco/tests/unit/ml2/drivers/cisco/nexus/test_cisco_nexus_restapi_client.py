@@ -131,19 +131,22 @@ class TestCiscoNexusRestapiClient(testlib_api.SqlTestCase):
 
     def _build_nexus_switch_db(self):
         nexus_dict = {}
-        nexus_dict['1.1.1.1', const.USERNAME] = 'admin'
-        nexus_dict['1.1.1.1', const.PASSWORD] = 'Shhhh1'
-        nexus_dict['1.1.1.1', const.HTTPS_VERIFY] = True
-        nexus_dict['1.1.1.1', const.HTTPS_CERT] = (
+        nexus_dict['1.1.1.1'] = {}
+        nexus_dict['1.1.1.1'][const.USERNAME] = 'admin'
+        nexus_dict['1.1.1.1'][const.PASSWORD] = 'Shhhh1'
+        nexus_dict['1.1.1.1'][const.HTTPS_VERIFY] = True
+        nexus_dict['1.1.1.1'][const.HTTPS_CERT] = (
             '/home/caboucha/test_src/openstack-outfiles/nexus.crt')
-        nexus_dict['2.2.2.2', const.USERNAME] = 'admin'
-        nexus_dict['2.2.2.2', const.PASSWORD] = 'Shhhh2'
-        nexus_dict['2.2.2.2', const.HTTPS_VERIFY] = True
-        nexus_dict['2.2.2.2', const.HTTPS_CERT] = None
-        nexus_dict['3.3.3.3', const.USERNAME] = 'admin'
-        nexus_dict['3.3.3.3', const.PASSWORD] = 'Shhhh3'
-        nexus_dict['3.3.3.3', const.HTTPS_VERIFY] = False
-        nexus_dict['3.3.3.3', const.HTTPS_CERT] = None
+        nexus_dict['2.2.2.2'] = {}
+        nexus_dict['2.2.2.2'][const.USERNAME] = 'admin'
+        nexus_dict['2.2.2.2'][const.PASSWORD] = 'Shhhh2'
+        nexus_dict['2.2.2.2'][const.HTTPS_VERIFY] = True
+        nexus_dict['2.2.2.2'][const.HTTPS_CERT] = None
+        nexus_dict['3.3.3.3'] = {}
+        nexus_dict['3.3.3.3'][const.USERNAME] = 'admin'
+        nexus_dict['3.3.3.3'][const.PASSWORD] = 'Shhhh3'
+        nexus_dict['3.3.3.3'][const.HTTPS_VERIFY] = False
+        nexus_dict['3.3.3.3'][const.HTTPS_CERT] = None
 
         return nexus_dict
 
@@ -180,22 +183,22 @@ class TestCiscoNexusRestapiClient(testlib_api.SqlTestCase):
 
         ipaddr = '1.1.1.1'
         self._check_verify(ipaddr,
-                           self.nexus_dict[ipaddr, const.USERNAME],
-                           self.nexus_dict[ipaddr, const.PASSWORD],
-                           self.nexus_dict[ipaddr, const.HTTPS_CERT])
+                           self.nexus_dict[ipaddr][const.USERNAME],
+                           self.nexus_dict[ipaddr][const.PASSWORD],
+                           self.nexus_dict[ipaddr][const.HTTPS_CERT])
 
     def test_verify_with_nonlocal_certificate(self):
 
         ipaddr = '2.2.2.2'
         self._check_verify(ipaddr,
-                           self.nexus_dict[ipaddr, const.USERNAME],
-                           self.nexus_dict[ipaddr, const.PASSWORD],
-                           self.nexus_dict[ipaddr, const.HTTPS_VERIFY])
+                           self.nexus_dict[ipaddr][const.USERNAME],
+                           self.nexus_dict[ipaddr][const.PASSWORD],
+                           self.nexus_dict[ipaddr][const.HTTPS_VERIFY])
 
     def test_verify_no_certificate(self):
 
         ipaddr = '3.3.3.3'
         self._check_verify(ipaddr,
-                           self.nexus_dict[ipaddr, const.USERNAME],
-                           self.nexus_dict[ipaddr, const.PASSWORD],
-                           self.nexus_dict[ipaddr, const.HTTPS_VERIFY])
+                           self.nexus_dict[ipaddr][const.USERNAME],
+                           self.nexus_dict[ipaddr][const.PASSWORD],
+                           self.nexus_dict[ipaddr][const.HTTPS_VERIFY])
