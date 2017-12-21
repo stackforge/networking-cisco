@@ -63,7 +63,8 @@ nexus_sub_opts = [
                'trunk;no lacp suspend-individual" beneath the port-channel. '
                'An example of this configuration is "intfcfg_portchannel=no '
                'lacp suspend-individual;spanning-tree port type edge '
-               'trunk".')),
+               'trunk".'),
+                deprecated_name="intfcfg.portchannel"),
     cfg.StrOpt('nve_src_intf',
         help=_('Only valid if VXLAN overlay is configured and '
                'vxlan_global_config is set to True. The NVE source interface '
@@ -278,8 +279,7 @@ class ML2MechCiscoConfig(object):
                             nxos_db.add_host_mapping(
                                 host, switch_ip, interface, 0, True)
                 elif value:
-                    if (opt_name == const.IF_PC_DEPRECATE or
-                        opt_name == const.IF_PC):
+                    if opt_name == const.IF_PC:
                         self.nexus_dict[switch_ip, const.IF_PC] = (
                             re.sub("\w;", insert_space, value))
                     else:
