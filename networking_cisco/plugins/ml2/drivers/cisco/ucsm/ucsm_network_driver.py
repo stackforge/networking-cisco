@@ -27,7 +27,9 @@ from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import config
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import exceptions as cexc
+from networking_cisco.plugins.ml2.drivers.cisco.ucsm import exceptions as cexc
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_db
+from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucs_urllib2
 
 
 LOG = logging.getLogger(__name__)
@@ -47,7 +49,7 @@ class CiscoUcsmDriver(object):
         self.ucsm_db = ucsm_db.UcsmDbModel()
         self.ucsm_host_dict = {}
         self.ucsm_sp_dict = {}
-        self._ssl_cert_check()
+        #self._ssl_cert_check()
         self._create_host_and_sp_dicts_from_config()
 
         Timer(const.DEFAULT_PP_DELETE_TIME,
@@ -123,7 +125,11 @@ class CiscoUcsmDriver(object):
         the installation of UcsSdk.
 
         """
-        return importutils.import_module('UcsSdk')
+        ucsmsdk = importutils.import_module('UcsSdk')
+        # NOTE(sambetts) Monkey patch the UCS sdk version of urllib2 to disable
+        # https verify if required.
+        ucsmsdk.urllib2 = ucs_urllib2
+        return ucsmsdk
 
     def _create_host_and_sp_dicts_from_config(self):
         # Check if Service Profile to Hostname mapping config has been provided
