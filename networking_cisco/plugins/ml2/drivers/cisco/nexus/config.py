@@ -140,7 +140,17 @@ nexus_sub_opts = [
                'they must each be configured on a different line in the '
                'config file.  This configuration applies to VM deployments '
                'only.'
-               ))]
+               ), deprecated_for_removal=True),
+    cfg.DictOpt('port_host_mapping', default={},
+            help=_('A list of key:value pairs describing the what host is '
+                   'connected to which physical port or portchannel on the '
+                   'Nexus switch. The format should look like: '
+                   'port_host_mapping=<intf_type><port>:<your-hostname>,'
+                   '<intf_type><port>:<your-second-host> '
+                   'For example: ethernet1/1:host-1,ethernet1/2:host-1,'
+                   'ethernet3:host-2,portchannel20:host-3 '
+                   'Lines can be broken using a \\ to ensure config files '
+                   'remain readable'))]
 
 ml2_cisco_opts = [
     cfg.BoolOpt('host_key_checks', default=False, deprecated_for_removal=True,

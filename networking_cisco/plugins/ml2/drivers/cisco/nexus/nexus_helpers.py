@@ -62,6 +62,9 @@ def split_interface_name(interface, ch_grp=0):
     elif interface.startswith('ethernet'):
         interface = interface.replace(" ", "")
         _, intf_type, port = interface.partition('ethernet')
+    elif interface.startswith('portchannel'):
+        interface = interface.replace(" ", "")
+        _, intf_type, port = interface.partition('portchannel')
     else:
         intf_type, port = 'ethernet', interface
 
