@@ -648,6 +648,10 @@ only and not ironic.  An example of such a configuration is as follows:
     compute-host-1 = port-channel:300
     compute-host-2 = port-channel:300
 
+.. note::
+    The above host mapping config is now deprecated by:
+    `port_host_mapping=port-channel300:compute-host-1,port-channel300:compute-host-2`
+
 This anomaly can also occur when there are multiple controllers which
 are attempting to initialize the cisco_ml2_nexus_host_interface_mapping
 db table at the same time.
