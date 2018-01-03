@@ -404,6 +404,18 @@ compute4=1/2
 compute5=portchannel:20,portchannel:30
 """
 
+DICT_MAPPING_CONFIG_FILE = """
+[ml2_mech_cisco_nexus:1.1.1.1]
+username=admin
+password=mySecretPassword
+nve_src_intf=2
+physnet=physnet1
+port_host_mapping=1/1:compute1, \
+  1/2:compute1, \
+  1/3:compute2, \
+  portchannel30:compute3 \
+"""
+
 
 class TestCiscoNexusPluginHostMapping(testlib_api.SqlTestCase):
 
@@ -453,6 +465,42 @@ class TestCiscoNexusPluginHostMapping(testlib_api.SqlTestCase):
         # Assert we've seen and removed all the expected host mappings
         self.assertEqual({'1.1.1.1': {}, '2.2.2.2': {}},
                          expected_host_map_data)
+
+    def test__initialize_host_port_mappings_with_dict(self):
+        """Verify port-mapping table is configured correctly."""
+
+        nc_base.load_config_file(DICT_MAPPING_CONFIG_FILE)
+        expected_host_map_data = {
+            '1.1.1.1': {
+                'ethernet:1/1': 'compute1',
+                'ethernet:1/2': 'compute1',
+                'ethernet:1/3': 'compute2',
+                'portchannel:30': 'compute3',
+            },
+        }
+
+        cisco_mech_driver = mech_cisco_nexus.CiscoNexusMechanismDriver()
+
+        # Assert there are currently no mappings
+        self.assertRaises(exceptions.NexusHostMappingNotFound,
+                          nexus_db_v2.get_all_host_mappings)
+
+        # Call initialize host mapping function
+        cisco_mech_driver._initialize_host_port_mappings()
+
+        # Assert all expected mappings now exist and there aren't any
+        # unexpected mappings
+        mappings = nexus_db_v2.get_all_host_mappings()
+        for hostmap in mappings:
+            self.assertEqual(
+                expected_host_map_data[hostmap.switch_ip][hostmap.if_id],
+                hostmap.host_id)
+            self.assertEqual(0, hostmap.ch_grp)
+            self.assertTrue(hostmap.is_static)
+            # Remove this mapping from the expected_host_map_data
+            del expected_host_map_data[hostmap.switch_ip][hostmap.if_id]
+        # Assert we've seen and removed all the expected host mappings
+        self.assertEqual({'1.1.1.1': {}}, expected_host_map_data)
 
     @mock.patch.object(mech_cisco_nexus.CiscoNexusMechanismDriver,
                        '_initialize_host_port_mappings', autospec=True)
