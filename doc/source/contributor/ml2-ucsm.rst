@@ -72,10 +72,16 @@ format, the following configuration options need to be specified.
 
     # Service Profile Template config per UCSM. This is a mapping of Service Profile
     # Template to the list of UCS Servers controlled by this template.
-    sp_template_list = SP_Template1_path:SP_Template1:S1,S2 SP_Template2_path:SP_Template2:S3,S4
+    sp_template_list = SP_Template1_path:SP_Template1:S1-S2 SP_Template2_path:SP_Template2:S3-S4
 
     # Ethernet port names to be used for virtio ports
     ucsm_virtio_eth_ports = neutron-eth0, neutron-eth1
+
+    # vNIC Template config per UCSM. This configuration can be used to specify which vNICs are
+    # physically connected to a Neutron provider network. The configuration comprises of a
+    # mapping between the Neutron provider network, the path for vNIC Template and the vNIC
+    # Template.
+    vnic_template_list = physnet1:vnic_template_path1:vt11 physnet2:vnic_template_path2:vt21
 
 .. end
 
@@ -98,8 +104,8 @@ the following configuration options need to be specified.
     ucsm_password = password
     ucsm_virtio_eth_ports = eth0, eth1
     ucsm_host_list=Hostname1:Serviceprofile1, Hostname2:Serviceprofile2
-    sp_template_list = SP_Template1_path:SP_Template1:S1,S2 SP_Template2_path:SP_Template2:S3,S4
-    vnic_template_list = physnet1:vnic_template_path1:vt11,vt12 physnet2:vnic_template_path2:vt21,vt22
+    sp_template_list = SP_Template1_path:SP_Template1:S1-S2 SP_Template2_path:SP_Template2:S3-S4
+    vnic_template_list = physnet1:vnic_template_path1:vt11 physnet2:vnic_template_path2:vt21
 
 .. end
 
