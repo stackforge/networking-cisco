@@ -386,6 +386,10 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
                     interface = nexus_help.format_interface_name(if_type, port)
                     nxos_db.add_host_mapping(host, switch_ip,
                                              interface, 0, True)
+            for if_id, host in attrs.port_host_mapping.items():
+                if_type, port = nexus_help.split_interface_name(if_id)
+                interface = nexus_help.format_interface_name(if_type, port)
+                nxos_db.add_host_mapping(host, switch_ip, interface, 0, True)
 
     def initialize(self):
         # Load host port mappings from the config file
