@@ -79,7 +79,9 @@ ML2 UCSM MD Installation
        ucsm_host_list=controller-1:Controller-SP, compute-1:Compute-SP
        ucsm_virtio_eth_ports=ucs-eth-0, ucs-eth-1
 
-   .. end
+       sp_template_list = SP_Template1_path:SP_Template1:S1-S2 SP_Template2_path:SP_Template2:S3-S4
+       vnic_template_list = physnet1:vnic_template_path1:vt1 physnet2:vnic_template_path2:vt2
+       .. end
 
 #. If the installation consists of multiple Fabric Interconnects with
    multiple UCS Managers running on them, the UCSM driver will talk
@@ -106,10 +108,13 @@ ML2 UCSM MD Installation
        # with only Service Profiles and not Service Profile Templates.
        ucsm_host_list = Hostname1:Serviceprofile1, Hostname2:Serviceprofile2
 
-       # Service Profile Template config per UCSM. This is a mapping of Service Profile
+       # Service Profile Template config for UCSM. This is a mapping of Service Profile
        # Template to the list of UCS Servers controlled by this template.
-       sp_template_list = SP_Template1_path:SP_Template1:S1,S2 SP_Template2_path:SP_Template2:S3,S4
+       sp_template_list = SP_Template1_path:SP_Template1:S1-S2 SP_Template2_path:SP_Template2:S3-S4
 
+       # vNIC Template config for UCSM. This is a mapping of vNIC Templates on the UCS
+       # Manager that control vNICs that are connected to Neutron provider networks.`
+       vnic_template_list = physnet1:vnic_template_path1:vt1 physnet2:vnic_template_path2:vt2
    .. end
 
 #. Though not recommended, the UCSM SSL certificate checking can be disabled if
