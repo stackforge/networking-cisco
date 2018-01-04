@@ -18,6 +18,8 @@ from oslo_log import log as logging
 
 from networking_cisco._i18n import _
 
+from networking_cisco.config import base
+
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const
 
 LOG = logging.getLogger(__name__)
@@ -30,6 +32,8 @@ required options in single UCS Manager mode. A repetitive block starting
 with ml2_cisco_ucsm_ip signals multi-UCSM configuration. When both are
 present, the multi-UCSM config will only take effect.
 """
+
+CONF = cfg.CONF
 
 ml2_cisco_ucsm_opts = [
     cfg.StrOpt('ucsm_ip',
@@ -71,12 +75,51 @@ ml2_cisco_ucsm_opts = [
                       'that it applies to all UCSMs in the system.')),
 ]
 
-cfg.CONF.register_opts(ml2_cisco_ucsm_opts, "ml2_cisco_ucsm")
+ml2_cisco_ucsm_subopts = [
+    cfg.StrOpt('ucsm_username',
+               help=_('Username for UCS Manager. This is a required field '
+                      'to communicate with a Cisco UCS Manager.')),
+    cfg.StrOpt('ucsm_password',
+               secret=True,  # do not expose value in the logs
+               help=_('Password for UCS Manager. This is a required field '
+                      'to communicate with a Cisco UCS Manager.')),
+    cfg.ListOpt('ucsm_virtio_eth_ports',
+                default=[const.ETH0, const.ETH1],
+                help=_('List of comma separated names of ports that could '
+                       'be used to configure VLANs for Neutron virtio '
+                       'ports. The names should match the names on the '
+                       'UCS Manager.')),
+    cfg.DictOpt('ucsm_host_list',
+                help=_('List of comma separated Host:Service Profile tuples '
+                       'providing the Service Profile associated with each '
+                       'Host to be supported by this MD.')),
+    cfg.StrOpt('sriov_qos_policy',
+               help=_('Name of QoS Policy pre-defined in UCSM, to be '
+                      'applied to all VM-FEX Port Profiles. This is '
+                      'an optional parameter.')),
+    cfg.StrOpt('vnic_template_list'),
+    cfg.StrOpt('sp_template_list')
+]
+
+sriov_opts = [
+    base.RemainderOpt('network_vlans')
+]
+
+ucsms = base.SubsectionOpt(
+    'ml2_cisco_ucsm_ip',
+    dest='ucsms',
+    help=_("Subgroups that allow you to specify the UCSMs to be "
+           "managed by the UCSM ML2 driver."),
+    subopts=ml2_cisco_ucsm_subopts)
+
+CONF.register_opts(ml2_cisco_ucsm_opts, "ml2_cisco_ucsm")
+CONF.register_opt(ucsms, "ml2_cisco_ucsm")
+CONF.register_opts(sriov_opts, "sriov_multivlan_trunk")
 
 
 def parse_pci_vendor_config():
     vendor_list = []
-    vendor_config_list = cfg.CONF.ml2_cisco_ucsm.supported_pci_devs
+    vendor_config_list = CONF.ml2_cisco_ucsm.supported_pci_devs
     for vendor in vendor_config_list:
         vendor_product = vendor.split(':')
         if len(vendor_product) != 2:
@@ -85,201 +128,118 @@ def parse_pci_vendor_config():
         vendor_list.append(vendor)
     return vendor_list
 
-
-def parse_ucsm_host_config(ucsm_ip, ucsm_host_list):
-    sp_dict = {}
-    host_dict = {}
-    for host in ucsm_host_list:
-        host = host.strip()
-        hostname, sep, service_profile = host.partition(':')
-        if not sep or not service_profile:
-            raise cfg.Error(_("UCS Mech Driver: Invalid Host Service "
-                              "Profile config: %s") % host)
-        key = (ucsm_ip, hostname)
-        if '/' not in service_profile:
-            # Assuming the service profile is at the root level
-            # and the path is not specified. This option
-            # allows backward compatability with earlier config
-            # format
-            sp_dict[key] = (const.SERVICE_PROFILE_PATH_PREFIX +
-                service_profile.strip())
-        else:
-            # Assuming the complete path to Service Profile has
-            # been provided in the config. The Service Profile
-            # could be in an sub-org.
-            sp_dict[key] = service_profile.strip()
-
-        LOG.debug('Service Profile for %s is %s',
-            hostname, sp_dict.get(key))
-        host_dict[hostname] = ucsm_ip
-    return sp_dict, host_dict
-
-
-def parse_virtio_eth_ports():
-    eth_port_list = []
-    if not cfg.CONF.ml2_cisco_ucsm.ucsm_virtio_eth_ports:
-        raise cfg.Error(_("UCS Mech Driver: Ethernet Port List "
-                          "not provided. Cannot properly support "
-                          "Neutron virtual ports on this setup."))
-
-    for eth_port in cfg.CONF.ml2_cisco_ucsm.ucsm_virtio_eth_ports:
-        eth_port_list.append(const.ETH_PREFIX + str(eth_port).strip())
-
-    return eth_port_list
-
-
 def get_ucsm_https_verify():
     return cfg.CONF.ml2_cisco_ucsm.ucsm_https_verify
 
-
 class UcsmConfig(object):
     """ML2 Cisco UCSM Mechanism Driver Configuration class."""
-    ucsm_dict = {}
-    ucsm_sp_dict = {}
-    ucsm_host_dict = {}
-    ucsm_port_dict = {}
-    sp_template_dict = {}
-    vnic_template_dict = {}
-    multivlan_trunk_dict = {}
-    sriov_qos_policy = {}
-    multi_ucsm_mode = False
-    sp_template_mode = False
-    vnic_template_mode = False
+    @property
+    def multi_ucsm_mode(self):
+        if CONF.ml2_cisco_ucsm.ucsms:
+            return True
+        return False
 
-    def __init__(self):
-        """Create a single UCSM or Multi-UCSM dict."""
-        self._create_multi_ucsm_dicts()
-        if cfg.CONF.ml2_cisco_ucsm.ucsm_ip and not self.ucsm_dict:
-            self._create_single_ucsm_dicts()
+    @property
+    def ucsm_host_dict(self):
+        host_dict = {}
+        if CONF.ml2_cisco_ucsm.ucsm_ip:
+            for host, sp in (CONF.ml2_cisco_ucsm.ucsm_host_list or {}).items():
+                host_dict[host] = CONF.ml2_cisco_ucsm.ucsm_ip
+        elif CONF.ml2_cisco_ucsm.ucsms:
+            for ip, ucsm in CONF.ml2_cisco_ucsm.ucsms.items():
+                for host, sp in (ucsm.ucsm_host_list or {}).items():
+                    host_dict[host] = ip
+        return host_dict
 
-        if not self.ucsm_dict:
-            raise cfg.Error(_('Insufficient UCS Manager configuration has '
-                              'been provided to the plugin'))
-
-    def _create_single_ucsm_dicts(self):
-        """Creates a dictionary of UCSM data for 1 UCS Manager."""
-        ucsm_info = []
-        eth_port_list = []
-        ucsm_info.append(cfg.CONF.ml2_cisco_ucsm.ucsm_username)
-        ucsm_info.append(cfg.CONF.ml2_cisco_ucsm.ucsm_password)
-        self.ucsm_dict[cfg.CONF.ml2_cisco_ucsm.ucsm_ip] = ucsm_info
-        eth_port_list = parse_virtio_eth_ports()
-        if eth_port_list:
-            self.ucsm_port_dict[cfg.CONF.ml2_cisco_ucsm.ucsm_ip] = (
-                eth_port_list)
-
-    def _create_multi_ucsm_dicts(self):
-        """Creates a dictionary of all UCS Manager data from config."""
-        username = None
-        password = None
-        local_sp_dict = {}
-        local_host_dict = {}
-        multi_parser = cfg.MultiConfigParser()
-        read_ok = multi_parser.read(cfg.CONF.config_file)
-
-        if len(read_ok) != len(cfg.CONF.config_file):
-            raise cfg.Error(_('Some config files were not parsed properly'))
-
-        for parsed_file in multi_parser.parsed:
-            for parsed_item in parsed_file.keys():
-                dev_id, sep, dev_ip = parsed_item.partition(':')
-                dev_ip = dev_ip.strip()
-                if dev_id.lower() == 'ml2_cisco_ucsm_ip':
-                    ucsm_info = []
-                    eth_port_list = []
-                    for dev_key, value in parsed_file[parsed_item].items():
-                        config_item = dev_key.lower()
-                        if config_item == 'ucsm_host_list':
-                            local_sp_dict, local_host_dict = (
-                                parse_ucsm_host_config(dev_ip,
-                                                       value[0].split(',')))
-                            self.ucsm_sp_dict.update(local_sp_dict)
-                            self.ucsm_host_dict.update(local_host_dict)
-                        elif config_item == 'ucsm_virtio_eth_ports':
-                            for eth_port in value[0].split(','):
-                                eth_port_list.append(
-                                    const.ETH_PREFIX + str(eth_port).strip())
-                            self.ucsm_port_dict[dev_ip] = eth_port_list
-                        elif config_item == 'sp_template_list':
-                            self._parse_sp_template_list(dev_ip, value)
-                            self.sp_template_mode = True
-                        elif config_item == 'vnic_template_list':
-                            self._parse_vnic_template_list(dev_ip, value)
-                            self.vnic_template_mode = True
-                        elif config_item == 'sriov_qos_policy':
-                            LOG.debug('QoS Policy: %s', value[0].strip())
-                            self.sriov_qos_policy[dev_ip] = value[0].strip()
-                        elif dev_key.lower() == 'ucsm_username':
-                            username = value[0].strip()
-                        elif dev_key.lower() == 'ucsm_password':
-                            password = value[0].strip()
-                        ucsm_info = (username, password)
-                        self.ucsm_dict[dev_ip] = ucsm_info
-                        self.multi_ucsm_mode = True
-                if dev_id.lower() == 'sriov_multivlan_trunk':
-                    for dev_key, value in parsed_file[parsed_item].items():
-                        self._parse_sriov_multivlan_trunk_config(dev_key,
-                                                                 value)
+    @property
+    def ucsm_sp_dict(self):
+        sp_dict = {}
+        if CONF.ml2_cisco_ucsm.ucsm_ip:
+            for host, sp in (CONF.ml2_cisco_ucsm.ucsm_host_list or {}).items():
+                if '/' not in sp:
+                    sp_dict[(CONF.ml2_cisco_ucsm.ucsm_ip, host)] = (
+                        const.SERVICE_PROFILE_PATH_PREFIX + sp.strip())
+                else:
+                    sp_dict[(CONF.ml2_cisco_ucsm.ucsm_ip, host)] = sp.strip()
+        elif CONF.ml2_cisco_ucsm.ucsms:
+            for ip, ucsm in CONF.ml2_cisco_ucsm.ucsms.items():
+                for host, sp in (ucsm.ucsm_host_list or {}).items():
+                    if '/' not in sp:
+                        sp_dict[(ip, host)] = (
+                            const.SERVICE_PROFILE_PATH_PREFIX + sp.strip())
+                    else:
+                        sp_dict[(ip, host)] = sp.strip()
+        return sp_dict
 
     def get_credentials_for_ucsm_ip(self, ucsm_ip):
-        if ucsm_ip in self.ucsm_dict:
-            return self.ucsm_dict.get(ucsm_ip)
+        if ucsm_ip == CONF.ml2_cisco_ucsm.ucsm_ip:
+            username = CONF.ml2_cisco_ucsm.ucsm_username
+            password = CONF.ml2_cisco_ucsm.ucsm_password
+        elif ucsm_ip in CONF.ml2_cisco_ucsm.ucsms:
+            username = CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].ucsm_username
+            password = CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].ucsm_password
+        if username and password:
+            return (username, password)
 
     def get_all_ucsm_ips(self):
-        return self.ucsm_dict.keys()
+        if CONF.ml2_cisco_ucsm.ucsm_ip:
+            return [CONF.ml2_cisco_ucsm.ucsm_ip]
+        elif CONF.ml2_cisco_ucsm.ucsms:
+            return list(CONF.ml2_cisco_ucsm.ucsms)
 
     def get_ucsm_eth_port_list(self, ucsm_ip):
-        if ucsm_ip in self.ucsm_port_dict:
-            return self.ucsm_port_dict[ucsm_ip]
+        conf = CONF.ml2_cisco_ucsm
+        if ucsm_ip == CONF.ml2_cisco_ucsm.ucsm_ip:
+            return list(map(lambda x: const.ETH_PREFIX + x,
+                        conf.ucsm_virtio_eth_ports))
+        elif ucsm_ip in CONF.ml2_cisco_ucsm.ucsms:
+            return list(map(lambda x: const.ETH_PREFIX + x,
+                        conf.ucsms[ucsm_ip].ucsm_virtio_eth_ports))
 
-    def _parse_sp_template_list(self, ucsm_ip, sp_template_config):
-        sp_template_list = []
-        for sp_template_temp in sp_template_config:
-            sp_template_list = sp_template_temp.split()
-            for sp_template in sp_template_list:
-                sp_template_path, sep, template_hosts = (
-                    sp_template.partition(':'))
-                if not sp_template_path or not sep or not template_hosts:
+    def _all_sp_templates(self):
+        sp_templates = {}
+        for ip, ucsm in CONF.ml2_cisco_ucsm.ucsms.items():
+            sp_template_mappings = (ucsm.sp_template_list or "").split()
+
+            for mapping in sp_template_mappings:
+                data = mapping.split(":")
+                if len(data) != 3:
                     raise cfg.Error(_('UCS Mech Driver: Invalid Service '
-                                      'Profile Template config %s')
-                                    % sp_template_config)
-                sp_temp, sep, hosts = template_hosts.partition(':')
-                LOG.debug('SP Template Path: %s, SP Template: %s, '
-                    'Hosts: %s', sp_template_path, sp_temp, hosts)
-                host_list = hosts.split(',')
+                                      'Profile Template config %s') % mapping)
+                host_list = data[2].split(',')
                 for host in host_list:
-                    value = (ucsm_ip, sp_template_path, sp_temp)
-                    self.sp_template_dict[host] = value
-                    LOG.debug('SP Template Dict key: %s, value: %s',
-                              host, value)
+                    sp_templates[host] = (ip, data[0], data[1])
+        return sp_templates
 
     def is_service_profile_template_configured(self):
-        return self.sp_template_mode
+        if self._all_sp_templates():
+            return True
+        return False
 
     def get_sp_template_path_for_host(self, host):
-        template_info = self.sp_template_dict.get(host)
+        template_info = self._all_sp_templates().get(host)
         # template_info should be a tuple containing
         # (ucsm_ip, sp_template_path, sp_template)
         return template_info[1] if template_info else None
 
     def get_sp_template_for_host(self, host):
-        template_info = self.sp_template_dict.get(host)
+        template_info = self._all_sp_templates().get(host)
         # template_info should be a tuple containing
         # (ucsm_ip, sp_template_path, sp_template)
         return template_info[2] if template_info else None
 
     def get_ucsm_ip_for_sp_template_host(self, host):
-        template_info = self.sp_template_dict.get(host)
+        template_info = self._all_sp_templates().get(host)
         # template_info should be a tuple containing
         # (ucsm_ip, sp_template_path, sp_template)
         return template_info[0] if template_info else None
 
     def get_sp_template_list_for_ucsm(self, ucsm_ip):
         sp_template_info_list = []
-        hosts = self.sp_template_dict.keys()
-        for host in hosts:
+        template_info = self._all_sp_templates()
+        for host, template in template_info:
             value = self.sp_template_dict.get(host)
-            if ucsm_ip in value:
+            if ucsm_ip == template[0]:
                 LOG.debug('SP Template: %s in UCSM : %s',
                           value[2], value[0])
                 sp_template_info_list.append(value)
@@ -288,9 +248,22 @@ class UcsmConfig(object):
     def add_sp_template_config_for_host(self, host, ucsm_ip,
                                         sp_template_path,
                                         sp_template):
-        value = (ucsm_ip, sp_template_path, sp_template)
-        self.sp_template_dict[host] = value
-        self.sp_template_mode = True
+        templates = self._all_sp_templates()
+        templates[host] = (ucsm_ip, sp_template_path, sp_template)
+
+        ucsm_template_map = {}
+
+        for host, info in templates.items():
+            ucsm = ucsm_template_map.setdefault(info[0], {})
+            sp = ucsm.setdefault((sp_template_path, sp_template), [])
+            sp.append(host)
+
+        ucsms = CONF.ml2_cisco_ucsm.ucsms
+        for ucsm, sps in ucsm_template_map.items():
+            entries = []
+            for sp, hosts in sps.items():
+                entries.append("%s:%s:%s" % (sp[0], sp[1], ",".join(hosts)))
+            ucsms[ucsm].sp_template_list = " ".join(entries)
 
     def update_sp_template_config(self, host_id, ucsm_ip,
                                   sp_template_with_path):
@@ -300,74 +273,62 @@ class UcsmConfig(object):
         self.add_sp_template_config_for_host(
             host_id, ucsm_ip, sp_template_info[0], sp_template_info[1])
 
-    def _parse_vnic_template_list(self, ucsm_ip, vnic_template_config):
-        vnic_template_mapping = []
-        for vnic_template_temp in vnic_template_config:
-            vnic_template_mapping = vnic_template_temp.split()
-            for mapping in vnic_template_mapping:
-                physnet, sep, vnic_template = mapping.partition(':')
-                if not sep or not vnic_template:
-                    raise cfg.Error(_("UCS Mech Driver: Invalid VNIC Template "
-                                      "config: %s") % physnet)
-
-                vnic_template_path, sep, vnic_template_name = (
-                    vnic_template.partition(':'))
-                if not vnic_template_path:
-                    vnic_template_path = const.VNIC_TEMPLATE_PARENT_DN
-                if not vnic_template_name:
-                    raise cfg.Error(_("UCS Mech Driver: Invalid VNIC Template "
-                                      "name for physnet: %s") % physnet)
-
-                key = (ucsm_ip, physnet)
-                value = (vnic_template_path, vnic_template_name)
-                self.vnic_template_dict[key] = value
-                LOG.debug('VNIC Template key: %s, value: %s',
-                    key, value)
+    def _vnic_template_data_for_ucsm_ip(self, ucsm_ip):
+        if ucsm_ip not in CONF.ml2_cisco_ucsm.ucsms:
+            return []
+        template_list = CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].vnic_template_list
+        mappings = []
+        vnic_template_mappings = template_list.split()
+        for mapping in vnic_template_mappings:
+            data = mapping.split(":")
+            if len(data) != 3:
+                raise cfg.Error(_("UCS Mech Driver: Invalid VNIC Template "
+                                  "config: %s") % mapping)
+            data[1] = data[1] or const.VNIC_TEMPLATE_PARENT_DN
+            mappings.append(data)
+        return mappings
 
     def is_vnic_template_configured(self):
-        return self.vnic_template_mode
+        for ip, ucsm in CONF.ml2_cisco_ucsm.ucsms.items():
+            if ucsm.vnic_template_list:
+                return True
+        return False
 
     def get_vnic_template_for_physnet(self, ucsm_ip, physnet):
-        key = (ucsm_ip, physnet)
-        if key in self.vnic_template_dict:
-            return self.vnic_template_dict.get(key)
-        else:
-            return (None, None)
+        vnic_template_mappings = self._vnic_template_data_for_ucsm_ip(ucsm_ip)
+        for mapping in vnic_template_mappings:
+            if mapping[0] == physnet:
+                return (mapping[1], mapping[2])
+        return (None, None)
 
     def get_vnic_template_for_ucsm_ip(self, ucsm_ip):
         vnic_template_info_list = []
-        keys = self.vnic_template_dict.keys()
-        for key in keys:
-            LOG.debug('VNIC template dict key : %s', key)
-            if ucsm_ip in key:
-                value = self.vnic_template_dict.get(key)
-                LOG.debug('Appending VNIC Template %s to the list.',
-                    value[1])
-                vnic_template_info_list.append(
-                    self.vnic_template_dict.get(key))
+        vnic_template_mappings = self._vnic_template_data_for_ucsm_ip(ucsm_ip)
+        for mapping in vnic_template_mappings:
+            vnic_template_info_list.append((mapping[1], mapping[2]))
         return vnic_template_info_list
 
-    def _parse_sriov_multivlan_trunk_config(self, net_name, vlan_list):
-        vlan_range_indicator = '-'
-        vlans = []
-        key = net_name
-        for vlan_entry in vlan_list[0].split(','):
-            if vlan_range_indicator in vlan_entry:
-                start_vlan, sep, end_vlan = (
-                    vlan_entry.partition(vlan_range_indicator))
-                vlans = vlans + list(range(int(start_vlan.strip()),
-                    int(end_vlan.strip()) + 1, 1))
-            else:
-                vlans.append(int(vlan_entry.strip()))
-        self.multivlan_trunk_dict[key] = vlans
-
     def get_sriov_multivlan_trunk_config(self, network):
-        return self.multivlan_trunk_dict.get(network, [])
+        vlans = []
+        config = cfg.CONF.sriov_multivlan_trunk.network_vlans.get(network)
+        if not config:
+            return vlans
+
+        vlanlist = config.split(',')
+        for vlan in vlanlist:
+            if '-' in vlan:
+                start_vlan, sep, end_vlan = (vlan.partition('-'))
+                vlans.extend(list(range(int(start_vlan.strip()),
+                                        int(end_vlan.strip()) + 1, 1)))
+            else:
+                vlans.append(int(vlan))
+        return vlans
 
     def get_sriov_qos_policy(self, ucsm_ip):
-        if cfg.CONF.ml2_cisco_ucsm.sriov_qos_policy:
-            return cfg.CONF.ml2_cisco_ucsm.sriov_qos_policy
+        if ucsm_ip in CONF.ml2_cisco_ucsm.ucsms:
+            # NOTE(sambetts) Try to get UCSM specific SRIOV policy first else
+            # return global policy
+            return (CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].sriov_qos_policy or
+                    CONF.ml2_cisco_ucsm.sriov_qos_policy)
         else:
-            LOG.debug('Predefined QoS Policy on UCSM %s : %s', ucsm_ip,
-                self.sriov_qos_policy.get(ucsm_ip))
-            return self.sriov_qos_policy.get(ucsm_ip)
+            return CONF.ml2_cisco_ucsm.sriov_qos_policy
