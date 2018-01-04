@@ -30,6 +30,7 @@ from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_db
 
 
 LOG = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
 class CiscoUcsmDriver(object):
