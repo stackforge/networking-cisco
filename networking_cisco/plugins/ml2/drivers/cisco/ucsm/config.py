@@ -46,9 +46,9 @@ ml2_cisco_ucsm_opts = [
                secret=True,  # do not expose value in the logs
                help=_('Password for UCS Manager. This is a required field '
                       'to communicate with a Cisco UCS Manager.')),
-    cfg.ListOpt('supported_pci_devs',
-                default=[const.PCI_INFO_CISCO_VIC_1240,
-                         const.PCI_INFO_INTEL_82599],
+    cfg.DictOpt('supported_pci_devs',
+                default={"1137": "0071",
+                         "8086": "10c9"},
                 help=_('List of comma separated vendor_id:product_id of '
                        'SR_IOV capable devices supported by this MD. This MD '
                        'supports both VM-FEX and SR-IOV devices.')),
@@ -115,18 +115,6 @@ ucsms = base.SubsectionOpt(
 CONF.register_opts(ml2_cisco_ucsm_opts, "ml2_cisco_ucsm")
 CONF.register_opt(ucsms, "ml2_cisco_ucsm")
 CONF.register_opts(sriov_opts, "sriov_multivlan_trunk")
-
-
-def parse_pci_vendor_config():
-    vendor_list = []
-    vendor_config_list = CONF.ml2_cisco_ucsm.supported_pci_devs
-    for vendor in vendor_config_list:
-        vendor_product = vendor.split(':')
-        if len(vendor_product) != 2:
-            raise cfg.Error(_("UCS Mech Driver: Invalid PCI device "
-                              "config: %s") % vendor)
-        vendor_list.append(vendor)
-    return vendor_list
 
 
 def load_single_ucsm_config():
