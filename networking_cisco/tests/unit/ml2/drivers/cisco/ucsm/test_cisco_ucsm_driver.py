@@ -839,9 +839,9 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         """Verifies parsing of Hostname:Service Profile config."""
         ucsm_sp_dict = {}
         ucsm_host_dict = {}
-        cfg.CONF.ml2_cisco_ucsm.ucsm_host_list = {'Host1': 'SP1',
-                                                  'Host2': 'SP2'}
-        cfg.CONF.ml2_cisco_ucsm.ucsm_ip = '1.1.1.1'
+        cfg.CONF.ml2_cisco_ucsm.ucsms['1.1.1.1'].ucsm_host_list = {
+            'Host1': 'SP1',
+            'Host2': 'SP2'}
         expected_ip = '1.1.1.1'
         expected_sp1 = "org-root/ls-SP1"
         expected_sp2 = "org-root/ls-SP2"
@@ -849,18 +849,18 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         ucsm_sp_dict = self.ucsm_config.ucsm_sp_dict
         ucsm_host_dict = self.ucsm_config.ucsm_host_dict
 
-        key = (cfg.CONF.ml2_cisco_ucsm.ucsm_ip, 'Host1')
+        key = (expected_ip, 'Host1')
         self.assertIn(key, ucsm_sp_dict)
         self.assertEqual(expected_sp1, ucsm_sp_dict[key])
         self.assertIn('Host1', ucsm_host_dict)
         self.assertEqual(expected_ip, ucsm_host_dict['Host1'])
 
-        key = (cfg.CONF.ml2_cisco_ucsm.ucsm_ip, 'Host2')
+        key = (expected_ip, 'Host2')
         self.assertIn(key, ucsm_sp_dict)
         self.assertEqual(expected_sp2, ucsm_sp_dict.get(key))
         self.assertEqual(expected_ip, ucsm_host_dict.get('Host2'))
 
-        key = (cfg.CONF.ml2_cisco_ucsm.ucsm_ip, 'Host3')
+        key = (expected_ip, 'Host3')
         self.assertNotIn(key, ucsm_sp_dict)
         self.assertIsNone(ucsm_host_dict.get('Host3'))
 
@@ -879,9 +879,9 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         pass
 
     def test_parse_virtio_eth_ports(self):
-        cfg.CONF.ml2_cisco_ucsm.ucsm_ip = '1.1.1.1'
-        cfg.CONF.ml2_cisco_ucsm.ucsm_virtio_eth_ports = ['test-eth1',
-                                                         'test-eth2']
+        cfg.CONF.ml2_cisco_ucsm.ucsms['1.1.1.1'].ucsm_virtio_eth_ports = [
+            'test-eth1',
+            'test-eth2']
         eth_port_list = self.ucsm_config.get_ucsm_eth_port_list("1.1.1.1")
         self.assertNotIn('test-eth1', eth_port_list)
         self.assertIn(const.ETH_PREFIX + 'test-eth1', eth_port_list)
@@ -890,8 +890,8 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         """Verifies that ucsm_host_list can contain SP paths."""
         expected_service_profile1 = 'org-root/ls-SP1'
         expected_service_profile2 = 'org-root/sub-org1/ls-SP2'
-        cfg.CONF.ml2_cisco_ucsm.ucsm_ip = '1.1.1.1'
-        cfg.CONF.ml2_cisco_ucsm.ucsm_host_list = {'Host1': 'SP1',
+        cfg.CONF.ml2_cisco_ucsm.ucsms['1.1.1.1'].ucsm_host_list = {
+            'Host1': 'SP1',
             'Host2': 'org-root/sub-org1/ls-SP2'}
 
         ucsm_sp_dict = self.ucsm_config.ucsm_sp_dict
@@ -1081,7 +1081,7 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         self.ucsm_driver.ucsm_host_dict[HOST1] = '1.1.1.1'
 
     def test_parsing_of_single_ucsm_config(self):
-        cfg.CONF.ml2_cisco_ucsm.ucsm_ip = "1.1.1.1"
+        cfg.CONF.ml2_cisco_ucsm.ucsm_ip = "3.3.3.3"
         cfg.CONF.ml2_cisco_ucsm.ucsm_username = "user1"
         cfg.CONF.ml2_cisco_ucsm.ucsm_password = "password1"
         cfg.CONF.ml2_cisco_ucsm.ucsm_virtio_eth_ports = ["eth0", "eth1"]

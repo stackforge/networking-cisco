@@ -52,7 +52,7 @@ ml2_cisco_ucsm_opts = [
                 help=_('List of comma separated vendor_id:product_id of '
                        'SR_IOV capable devices supported by this MD. This MD '
                        'supports both VM-FEX and SR-IOV devices.')),
-    cfg.ListOpt('ucsm_host_list',
+    cfg.DictOpt('ucsm_host_list',
                 help=_('List of comma separated Host:Service Profile tuples '
                        'providing the Service Profile associated with each '
                        'Host to be supported by this MD.')),
@@ -129,8 +129,41 @@ def parse_pci_vendor_config():
     return vendor_list
 
 
+def load_single_ucsm_config():
+    # If no valid single configuration, skip this
+    if not CONF.ml2_cisco_ucsm.ucsm_ip:
+        return
+
+    # Clear any previously loaded single ucsm config
+    CONF.clear_override("ucsms", group="ml2_cisco_ucsm")
+
+    if CONF.ml2_cisco_ucsm.ucsm_ip in CONF.ml2_cisco_ucsm.ucsms:
+        raise Exception(_("UCSM %s defined in main UCSM config group and as a "
+                        "UCSM config group."))
+
+    # Create a group to represent the single ucsms config
+    CONF.register_opts(ml2_cisco_ucsm_subopts, "single_ucsm_config")
+
+    # Inject config values from main ml2_cisco_ucsm group into the single ucsm
+    # group
+    for opt in ml2_cisco_ucsm_subopts:
+        if opt.dest not in CONF.ml2_cisco_ucsm:
+            continue
+        CONF.set_override(opt.dest, CONF.ml2_cisco_ucsm[opt.dest],
+                          group="single_ucsm_config")
+
+    # Inject the single UCSM into the ucsms dictionary as an override so we can
+    # clear it again later
+    ucsms = dict(CONF.ml2_cisco_ucsm.ucsms)
+    ucsms[CONF.ml2_cisco_ucsm.ucsm_ip] = CONF.single_ucsm_config
+    CONF.set_override("ucsms", ucsms, group="ml2_cisco_ucsm")
+
+
 class UcsmConfig(object):
     """ML2 Cisco UCSM Mechanism Driver Configuration class."""
+    def __init__(self):
+        load_single_ucsm_config()
+
     @property
     def multi_ucsm_mode(self):
         if CONF.ml2_cisco_ucsm.ucsms:
@@ -140,10 +173,7 @@ class UcsmConfig(object):
     @property
     def ucsm_host_dict(self):
         host_dict = {}
-        if CONF.ml2_cisco_ucsm.ucsm_ip:
-            for host, sp in (CONF.ml2_cisco_ucsm.ucsm_host_list or {}).items():
-                host_dict[host] = CONF.ml2_cisco_ucsm.ucsm_ip
-        elif CONF.ml2_cisco_ucsm.ucsms:
+        if CONF.ml2_cisco_ucsm.ucsms:
             for ip, ucsm in CONF.ml2_cisco_ucsm.ucsms.items():
                 for host, sp in (ucsm.ucsm_host_list or {}).items():
                     host_dict[host] = ip
@@ -152,14 +182,7 @@ class UcsmConfig(object):
     @property
     def ucsm_sp_dict(self):
         sp_dict = {}
-        if CONF.ml2_cisco_ucsm.ucsm_ip:
-            for host, sp in (CONF.ml2_cisco_ucsm.ucsm_host_list or {}).items():
-                if '/' not in sp:
-                    sp_dict[(CONF.ml2_cisco_ucsm.ucsm_ip, host)] = (
-                        const.SERVICE_PROFILE_PATH_PREFIX + sp.strip())
-                else:
-                    sp_dict[(CONF.ml2_cisco_ucsm.ucsm_ip, host)] = sp.strip()
-        elif CONF.ml2_cisco_ucsm.ucsms:
+        if CONF.ml2_cisco_ucsm.ucsms:
             for ip, ucsm in CONF.ml2_cisco_ucsm.ucsms.items():
                 for host, sp in (ucsm.ucsm_host_list or {}).items():
                     if '/' not in sp:
@@ -170,27 +193,17 @@ class UcsmConfig(object):
         return sp_dict
 
     def get_credentials_for_ucsm_ip(self, ucsm_ip):
-        if ucsm_ip == CONF.ml2_cisco_ucsm.ucsm_ip:
-            username = CONF.ml2_cisco_ucsm.ucsm_username
-            password = CONF.ml2_cisco_ucsm.ucsm_password
-        elif ucsm_ip in CONF.ml2_cisco_ucsm.ucsms:
-            username = CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].ucsm_username
-            password = CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].ucsm_password
-        if username and password:
-            return (username, password)
+        if ucsm_ip in CONF.ml2_cisco_ucsm.ucsms:
+            ucsm = CONF.ml2_cisco_ucsm.ucsms[ucsm_ip]
+            return ucsm.ucsm_username, ucsm.ucsm_password
 
     def get_all_ucsm_ips(self):
-        if CONF.ml2_cisco_ucsm.ucsm_ip:
-            return [CONF.ml2_cisco_ucsm.ucsm_ip]
-        elif CONF.ml2_cisco_ucsm.ucsms:
+        if CONF.ml2_cisco_ucsm.ucsms:
             return list(CONF.ml2_cisco_ucsm.ucsms)
 
     def get_ucsm_eth_port_list(self, ucsm_ip):
         conf = CONF.ml2_cisco_ucsm
-        if ucsm_ip == CONF.ml2_cisco_ucsm.ucsm_ip:
-            return list(map(lambda x: const.ETH_PREFIX + x,
-                        conf.ucsm_virtio_eth_ports))
-        elif ucsm_ip in CONF.ml2_cisco_ucsm.ucsms:
+        if ucsm_ip in CONF.ml2_cisco_ucsm.ucsms:
             return list(map(lambda x: const.ETH_PREFIX + x,
                         conf.ucsms[ucsm_ip].ucsm_virtio_eth_ports))
 
@@ -323,10 +336,5 @@ class UcsmConfig(object):
         return vlans
 
     def get_sriov_qos_policy(self, ucsm_ip):
-        if ucsm_ip in CONF.ml2_cisco_ucsm.ucsms:
-            # NOTE(sambetts) Try to get UCSM specific SRIOV policy first else
-            # return global policy
-            return (CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].sriov_qos_policy or
-                    CONF.ml2_cisco_ucsm.sriov_qos_policy)
-        else:
-            return CONF.ml2_cisco_ucsm.sriov_qos_policy
+        return (CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].sriov_qos_policy or
+                CONF.ml2_cisco_ucsm.sriov_qos_policy)
