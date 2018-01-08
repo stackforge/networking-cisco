@@ -128,9 +128,6 @@ def parse_pci_vendor_config():
         vendor_list.append(vendor)
     return vendor_list
 
-def get_ucsm_https_verify():
-    return cfg.CONF.ml2_cisco_ucsm.ucsm_https_verify
-
 
 def load_single_ucsm_config():
     # If no valid single configuration, skip this
