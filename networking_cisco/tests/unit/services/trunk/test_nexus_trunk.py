@@ -19,7 +19,7 @@ import testtools
 from oslo_config import cfg
 
 from networking_cisco import backwards_compatibility as bc
-from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
+from networking_cisco.ml2_drivers.nexus import (
     constants as const)
 from networking_cisco.services.trunk import nexus_trunk
 
