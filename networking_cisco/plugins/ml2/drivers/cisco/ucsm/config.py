@@ -14,6 +14,7 @@
 #    under the License.
 
 from oslo_config import cfg
+from oslo_config import types
 from oslo_log import log as logging
 
 from networking_cisco._i18n import _
@@ -34,6 +35,36 @@ present, the multi-UCSM config will only take effect.
 """
 
 CONF = cfg.CONF
+
+
+class EthPortType(types.String):
+
+    def __call__(self, value):
+        value = super(EthPortType, self).__call__(value)
+        return const.ETH_PREFIX + value
+
+class SPTemplateListType(types.ConfigType):
+
+    def __init__(self, type_name="SPTemplateList"):
+        super(SPTemplateListType, self).__init__(type_name=type_name)
+
+    def __call__(self, value):
+        if isinstance(value, dict):
+            return value
+
+        sp_templates = {}
+        sp_template_mappings = (value or "").split()
+
+        for mapping in sp_template_mappings:
+            data = mapping.split(":")
+            if len(data) != 3:
+                raise cfg.Error(_('UCS Mech Driver: Invalid Service '
+                                  'Profile Template config %s') % mapping)
+            host_list = data[2].split(',')
+            for host in host_list:
+                sp_templates[host] = (ip, data[0], data[1])
+        return sp_templates
+
 
 ml2_cisco_ucsm_opts = [
     cfg.StrOpt('ucsm_ip',
@@ -57,7 +88,9 @@ ml2_cisco_ucsm_opts = [
                        'providing the Service Profile associated with each '
                        'Host to be supported by this MD.')),
     cfg.ListOpt('ucsm_virtio_eth_ports',
-                default=[const.ETH0, const.ETH1],
+                default=[const.ETH_PREFIX + const.ETH0,
+                         const.ETH_PREFIX + const.ETH1],
+                item_type=EthPortType(),
                 help=_('List of comma separated names of ports that could '
                        'be used to configure VLANs for Neutron virtio '
                        'ports. The names should match the names on the '
@@ -84,7 +117,9 @@ ml2_cisco_ucsm_subopts = [
                help=_('Password for UCS Manager. This is a required field '
                       'to communicate with a Cisco UCS Manager.')),
     cfg.ListOpt('ucsm_virtio_eth_ports',
-                default=[const.ETH0, const.ETH1],
+                default=[const.ETH_PREFIX + const.ETH0,
+                         const.ETH_PREFIX + const.ETH1],
+                item_type=EthPortType(),
                 help=_('List of comma separated names of ports that could '
                        'be used to configure VLANs for Neutron virtio '
                        'ports. The names should match the names on the '
@@ -98,7 +133,8 @@ ml2_cisco_ucsm_subopts = [
                       'applied to all VM-FEX Port Profiles. This is '
                       'an optional parameter.')),
     cfg.StrOpt('vnic_template_list'),
-    cfg.StrOpt('sp_template_list')
+    cfg.Opt('sp_template_list', type=SPTemplateListType(),
+            default={})
 ]
 
 sriov_opts = [
@@ -186,25 +222,10 @@ class UcsmConfig(object):
                         sp_dict[(ip, host)] = sp.strip()
         return sp_dict
 
-    def get_ucsm_eth_port_list(self, ucsm_ip):
-        conf = CONF.ml2_cisco_ucsm
-        if ucsm_ip in CONF.ml2_cisco_ucsm.ucsms:
-            return list(map(lambda x: const.ETH_PREFIX + x,
-                        conf.ucsms[ucsm_ip].ucsm_virtio_eth_ports))
-
     def _all_sp_templates(self):
         sp_templates = {}
         for ip, ucsm in CONF.ml2_cisco_ucsm.ucsms.items():
-            sp_template_mappings = (ucsm.sp_template_list or "").split()
-
-            for mapping in sp_template_mappings:
-                data = mapping.split(":")
-                if len(data) != 3:
-                    raise cfg.Error(_('UCS Mech Driver: Invalid Service '
-                                      'Profile Template config %s') % mapping)
-                host_list = data[2].split(',')
-                for host in host_list:
-                    sp_templates[host] = (ip, data[0], data[1])
+            sp_templates.update(ucsm.sp_template_list)
         return sp_templates
 
     def is_service_profile_template_configured(self):
@@ -248,18 +269,13 @@ class UcsmConfig(object):
         templates[host] = (ucsm_ip, sp_template_path, sp_template)
 
         ucsm_template_map = {}
-
         for host, info in templates.items():
             ucsm = ucsm_template_map.setdefault(info[0], {})
-            sp = ucsm.setdefault((sp_template_path, sp_template), [])
-            sp.append(host)
+            ucsm[host] = info
 
         ucsms = CONF.ml2_cisco_ucsm.ucsms
         for ucsm, sps in ucsm_template_map.items():
-            entries = []
-            for sp, hosts in sps.items():
-                entries.append("%s:%s:%s" % (sp[0], sp[1], ",".join(hosts)))
-            ucsms[ucsm].sp_template_list = " ".join(entries)
+            CONF.set_override("sp_template_list", sps, ucsms[ucsm]._group)
 
     def update_sp_template_config(self, host_id, ucsm_ip,
                                   sp_template_with_path):

@@ -469,7 +469,9 @@ class CiscoUcsmDriver(object):
         the UCS Server, is updated with the VLAN profile corresponding
         to the vlan_id passed in.
         """
-        virtio_port_list = self.ucsm_conf.get_ucsm_eth_port_list(ucsm_ip)
+        virtio_port_list = (
+            CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].ucsm_virtio_eth_ports)
+
         eth_port_paths = ["%s%s" % (service_profile, ep)
             for ep in virtio_port_list]
 
@@ -537,7 +539,8 @@ class CiscoUcsmDriver(object):
                           'Vlan Profile for vlan %s', str(vlan_id))
                 return False
 
-            virtio_port_list = self.ucsm_conf.get_ucsm_eth_port_list(ucsm_ip)
+            virtio_port_list = (
+                CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].ucsm_virtio_eth_ports)
             eth_port_paths = ["%s%s" % (sp_template_path, ep)
                 for ep in virtio_port_list]
 
@@ -788,8 +791,8 @@ class CiscoUcsmDriver(object):
         try:
             handle.StartTransaction()
             for service_profile in service_profile_list:
-                virtio_port_list = self.ucsm_conf.get_ucsm_eth_port_list(
-                    ucsm_ip)
+                virtio_port_list = (
+                    CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].ucsm_virtio_eth_ports)
                 eth_port_paths = ["%s%s" % (service_profile, ep)
                     for ep in virtio_port_list]
 
@@ -834,7 +837,8 @@ class CiscoUcsmDriver(object):
             self.ucsm_conf.get_sp_template_list_for_ucsm(ucsm_ip))
 
         vlan_name = self.make_vlan_name(vlan_id)
-        virtio_port_list = self.ucsm_conf.get_ucsm_eth_port_list(ucsm_ip)
+        virtio_port_list = (
+            CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].ucsm_virtio_eth_ports)
 
         try:
             handle.StartTransaction()

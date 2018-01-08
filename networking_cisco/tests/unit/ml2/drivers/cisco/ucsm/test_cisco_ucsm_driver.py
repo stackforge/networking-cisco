@@ -32,6 +32,8 @@ from networking_cisco.tests.unit.ml2.drivers.cisco.ucsm import (
     test_cisco_ucsm_common as mocked)
 
 
+CONF = cfg.CONF
+
 UCSM_IP_ADDRESS_1 = '1.1.1.1'
 UCSM_IP_ADDRESS_2 = '2.2.2.2'
 
@@ -879,12 +881,10 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         pass
 
     def test_parse_virtio_eth_ports(self):
-        cfg.CONF.ml2_cisco_ucsm.ucsms['1.1.1.1'].ucsm_virtio_eth_ports = [
-            'test-eth1',
-            'test-eth2']
-        eth_port_list = self.ucsm_config.get_ucsm_eth_port_list("1.1.1.1")
-        self.assertNotIn('test-eth1', eth_port_list)
-        self.assertIn(const.ETH_PREFIX + 'test-eth1', eth_port_list)
+        eth_port_list = (
+            CONF.ml2_cisco_ucsm.ucsms['1.1.1.1'].ucsm_virtio_eth_ports)
+        self.assertNotIn('eth4', eth_port_list)
+        self.assertIn(const.ETH_PREFIX + 'eth4', eth_port_list)
 
     def test_ucsm_host_config_with_path(self):
         """Verifies that ucsm_host_list can contain SP paths."""
@@ -1086,7 +1086,8 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         cfg.CONF.set_override("ucsm_username", "user1", group="ml2_cisco_ucsm")
         cfg.CONF.set_override("ucsm_password", "password1",
                               group="ml2_cisco_ucsm")
-        cfg.CONF.set_override("ucsm_virtio_eth_ports", ["eth0", "eth2"],
+        cfg.CONF.set_override("ucsm_virtio_eth_ports",
+                              ["/ether-eth0", "/ether-eth2"],
                               group="ml2_cisco_ucsm")
 
         expected_parsed_virtio_eth_ports = ["/ether-eth0", "/ether-eth2"]
@@ -1100,8 +1101,9 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         self.assertEqual(cfg.CONF.ml2_cisco_ucsm.ucsms['3.3.3.3'].ucsm_password,
                          "password1")
 
-        virtio_port_list = ucsm_config.get_ucsm_eth_port_list(
-            cfg.CONF.ml2_cisco_ucsm.ucsm_ip)
+        virtio_port_list = (
+            CONF.ml2_cisco_ucsm.ucsms[
+                cfg.CONF.ml2_cisco_ucsm.ucsm_ip].ucsm_virtio_eth_ports)
 
         self.assertEqual(expected_parsed_virtio_eth_ports,
             virtio_port_list)
