@@ -1081,19 +1081,23 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         self.ucsm_driver.ucsm_host_dict[HOST1] = '1.1.1.1'
 
     def test_parsing_of_single_ucsm_config(self):
-        cfg.CONF.ml2_cisco_ucsm.ucsm_ip = "3.3.3.3"
-        cfg.CONF.ml2_cisco_ucsm.ucsm_username = "user1"
-        cfg.CONF.ml2_cisco_ucsm.ucsm_password = "password1"
-        cfg.CONF.ml2_cisco_ucsm.ucsm_virtio_eth_ports = ["eth0", "eth1"]
-        expected_parsed_virtio_eth_ports = ["/ether-eth0", "/ether-eth1"]
+
+        cfg.CONF.set_override("ucsm_ip", "3.3.3.3", group="ml2_cisco_ucsm")
+        cfg.CONF.set_override("ucsm_username", "user1", group="ml2_cisco_ucsm")
+        cfg.CONF.set_override("ucsm_password", "password1",
+                              group="ml2_cisco_ucsm")
+        cfg.CONF.set_override("ucsm_virtio_eth_ports", ["eth0", "eth2"],
+                              group="ml2_cisco_ucsm")
+
+        expected_parsed_virtio_eth_ports = ["/ether-eth0", "/ether-eth2"]
+
+        self.assertTrue("3.3.3.3" not in cfg.CONF.ml2_cisco_ucsm.ucsms)
 
         ucsm_config = conf.UcsmConfig()
 
-        username, password = ucsm_config.get_credentials_for_ucsm_ip(
-            cfg.CONF.ml2_cisco_ucsm.ucsm_ip)
-
-        self.assertEqual(username, cfg.CONF.ml2_cisco_ucsm.ucsm_username)
-        self.assertEqual(password, cfg.CONF.ml2_cisco_ucsm.ucsm_password)
+        ucsm = cfg.CONF.ml2_cisco_ucsm.ucsms['3.3.3.3']
+        self.assertEqual(ucsm.ucsm_username, "user1")
+        self.assertEqual(ucsm.ucsm_password, "password1")
 
         virtio_port_list = ucsm_config.get_ucsm_eth_port_list(
             cfg.CONF.ml2_cisco_ucsm.ucsm_ip)
