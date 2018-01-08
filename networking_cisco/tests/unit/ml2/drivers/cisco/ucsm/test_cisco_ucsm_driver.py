@@ -1096,9 +1096,4 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
             virtio_port_list)
 
         # Check to see that SSL certificate checking is set to True by default
-        self.assertTrue(conf.get_ucsm_https_verify())
-
-        # When overridden, check to see that SSL certificate checking is
-        # reflecting new value.
-        cfg.CONF.ml2_cisco_ucsm.ucsm_https_verify = False
-        self.assertFalse(conf.get_ucsm_https_verify())
+        self.assertTrue(cfg.CONF.ml2_cisco_ucsm.ucsm_https_verify)
