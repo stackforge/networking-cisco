@@ -39,9 +39,9 @@ ml2_cisco_ucsm_opts = [
     cfg.StrOpt('ucsm_ip',
                help=_('Cisco UCS Manager IP address. This is a required field '
                       'to communicate with a Cisco UCS Manager.')),
-    cfg.ListOpt('supported_pci_devs',
-                default=[const.PCI_INFO_CISCO_VIC_1240,
-                         const.PCI_INFO_INTEL_82599],
+    cfg.DictOpt('supported_pci_devs',
+                default={"1137": "0071",
+                         "8086": "10c9"},
                 help=_('List of comma separated vendor_id:product_id of '
                        'SR_IOV capable devices supported by this MD. This MD '
                        'supports both VM-FEX and SR-IOV devices.')),
