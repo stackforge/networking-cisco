@@ -13,7 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from oslo_config import cfg
+from oslo_config import types
 from oslo_log import log as logging
 
 from networking_cisco._i18n import _
@@ -34,6 +37,65 @@ present, the multi-UCSM config will only take effect.
 """
 
 CONF = cfg.CONF
+
+
+class EthPortType(types.String):
+
+    def __call__(self, value):
+        value = super(EthPortType, self).__call__(value)
+        if not value.startswith(const.ETH_PREFIX):
+            value = const.ETH_PREFIX + value
+        return value
+
+
+class UCSTemplate(object):
+
+    def __init__(self, path, name):
+        self.path = path
+        self.name = name
+
+    def __eq__(self, other):
+        return (isinstance(other, UCSTemplate) and self.path == other.path and
+                self.name == other.name)
+
+
+class SPTemplateListType(types.ConfigType):
+
+    def __init__(self, type_name="SPTemplateList"):
+        super(SPTemplateListType, self).__init__(type_name=type_name)
+
+    def __call__(self, value):
+        if isinstance(value, dict):
+            return value
+
+        templates = {}
+        template_mappings = (value or "").split()
+
+        for mapping in template_mappings:
+            data = mapping.split(":")
+            if len(data) != 3:
+                raise cfg.Error(_('UCS Mech Driver: Invalid Service '
+                                  'Profile Template config %s') % mapping)
+            host_list = data[2].split(',')
+            for host in host_list:
+                templates[host] = UCSTemplate(data[0], data[1])
+        return templates
+
+    def _formatter(self, value):
+        if isinstance(value, six.string_types):
+            return value
+        if isinstance(value, dict):
+            template_to_hosts = {}
+            for host, sptemplate in value.items():
+                hosts = template_to_hosts.setdefault(
+                    (sptemplate.path, sptemplate.name), [])
+                hosts.append(host)
+            template_configs = []
+            for template, hosts in template_to_hosts.items():
+                template_configs.append(
+                    "%s:%s:%s" % (template[0], template[1], ','.join(hosts)))
+            return ' '.join(template_configs)
+
 
 ml2_cisco_ucsm_opts = [
     cfg.StrOpt('ucsm_ip',
@@ -63,7 +125,9 @@ ml2_cisco_ucsm_common = [
                help=_('Password for UCS Manager. This is a required field '
                       'to communicate with a Cisco UCS Manager.')),
     cfg.ListOpt('ucsm_virtio_eth_ports',
-                default=[const.ETH0, const.ETH1],
+                default=[const.ETH_PREFIX + const.ETH0,
+                         const.ETH_PREFIX + const.ETH1],
+                item_type=EthPortType(),
                 help=_('List of comma separated names of ports that could '
                        'be used to configure VLANs for Neutron virtio '
                        'ports. The names should match the names on the '
@@ -76,11 +140,13 @@ ml2_cisco_ucsm_common = [
                help=_('Name of QoS Policy pre-defined in UCSM, to be '
                       'applied to all VM-FEX Port Profiles. This is '
                       'an optional parameter.')),
-    cfg.StrOpt('sp_template_list',
-               help=_('This is an optional configuration to be provided to '
-                      'the UCSM driver when the OpenStack controller and '
-                      'compute hosts are controlled by UCSM Service Profile '
-                      'Templates.')),
+    cfg.Opt('sp_template_list',
+            type=SPTemplateListType(),
+            default={},
+            help=_('This is an optional configuration to be provided to '
+                   'the UCSM driver when the OpenStack controller and '
+                   'compute hosts are controlled by UCSM Service Profile '
+                   'Templates.')),
     cfg.StrOpt('vnic_template_list',
                help=_('This is an optional configuration to be provided to '
                       'the UCSM driver when vNICs connected to external '
@@ -163,83 +229,20 @@ class UcsmConfig(object):
                         sp_dict[(ip, host)] = sp.strip()
         return sp_dict
 
-    def get_ucsm_eth_port_list(self, ucsm_ip):
-        conf = CONF.ml2_cisco_ucsm
-        if ucsm_ip in conf.ucsms:
-            return list(map(lambda x: const.ETH_PREFIX + x,
-                        conf.ucsms[ucsm_ip].ucsm_virtio_eth_ports))
-
-    def _all_sp_templates(self):
-        sp_templates = {}
-        for ip, ucsm in CONF.ml2_cisco_ucsm.ucsms.items():
-            sp_template_mappings = (ucsm.get('sp_template_list') or "").split()
-            for mapping in sp_template_mappings:
-                data = mapping.split(":")
-                if len(data) != 3:
-                    raise cfg.Error(_('UCS Mech Driver: Invalid Service '
-                                      'Profile Template config %s') % mapping)
-                host_list = data[2].split(',')
-                for host in host_list:
-                    sp_templates[host] = (ip, data[0], data[1])
-        return sp_templates
-
-    def is_service_profile_template_configured(self):
-        if self._all_sp_templates():
-            return True
-        return False
-
-    def get_sp_template_path_for_host(self, host):
-        template_info = self._all_sp_templates().get(host)
-        # template_info should be a tuple containing
-        # (ucsm_ip, sp_template_path, sp_template)
-        return template_info[1] if template_info else None
-
-    def get_sp_template_for_host(self, host):
-        template_info = self._all_sp_templates().get(host)
-        # template_info should be a tuple containing
-        # (ucsm_ip, sp_template_path, sp_template)
-        return template_info[2] if template_info else None
-
-    def get_ucsm_ip_for_sp_template_host(self, host):
-        template_info = self._all_sp_templates().get(host)
-        # template_info should be a tuple containing
-        # (ucsm_ip, sp_template_path, sp_template)
-        return template_info[0] if template_info else None
-
-    def get_sp_template_list_for_ucsm(self, ucsm_ip):
-        sp_template_info_list = []
-        template_info = self._all_sp_templates()
-        for host, template in template_info.items():
-            if ucsm_ip == template[0]:
-                LOG.debug('SP Template: %s in UCSM : %s',
-                          template[2], template[0])
-                sp_template_info_list.append(template)
-        return sp_template_info_list
-
     def add_sp_template_config_for_host(self, host, ucsm_ip,
                                         sp_template_path,
                                         sp_template):
-        templates = self._all_sp_templates()
-        templates[host] = (ucsm_ip, sp_template_path, sp_template)
-
-        ucsm_template_map = {}
-
-        for host, info in templates.items():
-            ucsm = ucsm_template_map.setdefault(info[0], {})
-            sp = ucsm.setdefault((sp_template_path, sp_template), [])
-            sp.append(host)
-
         ucsms = CONF.ml2_cisco_ucsm.ucsms
-        for ucsm, sps in ucsm_template_map.items():
-            entries = []
-            for sp, hosts in sps.items():
-                entries.append("%s:%s:%s" % (sp[0], sp[1], ",".join(hosts)))
-            if ucsm in ucsms:
-                group = ucsms[ucsm]._group
-            elif ucsm == CONF.ml2_cisco_ucsm.ucsm_ip:
-                group = "ml2_cisco_ucsm"
-            CONF.set_override("sp_template_list", " ".join(entries),
-                              group=group)
+        for ip, ucsm in ucsms.items():
+            if ip == ucsm_ip:
+                tp_list = dict(ucsm.sp_template_list)
+                tp_list[host] = UCSTemplate(sp_template_path, sp_template)
+                CONF.set_override("sp_template_list", tp_list, ucsm._group)
+            else:
+                if host in ucsm.sp_template_list:
+                    tp_list = dict(ucsm.sp_template_list)
+                    del tp_list[host]
+                    CONF.set_override("sp_template_list", tp_list, ucsm._group)
 
     def update_sp_template_config(self, host_id, ucsm_ip,
                                   sp_template_with_path):
