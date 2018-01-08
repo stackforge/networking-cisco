@@ -24,6 +24,7 @@ from sqlalchemy.sql import expression as expr
 
 from networking_cisco._i18n import _
 from networking_cisco import backwards_compatibility as bc
+from networking_cisco.ml2_drivers.n1kv import constants
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.db.device_manager import hd_models
 import networking_cisco.plugins.cisco.device_manager.plugging_drivers as plug
@@ -31,7 +32,6 @@ from networking_cisco.plugins.cisco.device_manager.plugging_drivers import (
     n1kv_plugging_constants as n1kv_const)
 from networking_cisco.plugins.cisco.device_manager.plugging_drivers import (
     utils)
-from networking_cisco.plugins.ml2.drivers.cisco.n1kv import constants
 
 LOG = logging.getLogger(__name__)
 

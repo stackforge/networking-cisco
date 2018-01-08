@@ -25,18 +25,18 @@ from networking_cisco.plugins.cisco.device_manager.plugging_drivers.\
     n1kv_ml2_trunking_driver import N1kvML2TrunkingPlugDriver
 from networking_cisco.plugins.cisco.device_manager.plugging_drivers.\
     n1kv_ml2_trunking_driver import MIN_LL_VLAN_TAG
-from networking_cisco.plugins.ml2.drivers.cisco.n1kv import (
+from networking_cisco.ml2_drivers.n1kv import (
     config as ml2_n1kv_config)
-from networking_cisco.plugins.ml2.drivers.cisco.n1kv import constants
+from networking_cisco.ml2_drivers.n1kv import constants
 from networking_cisco.tests.unit.cisco.l3 import (
     test_l3_router_appliance_plugin)
 
 L3_PLUGIN_KLASS = (
     'networking_cisco.tests.unit.cisco.l3.test_l3_router_appliance_plugin.'
     'TestApplianceL3RouterServicePlugin')
-POLICY_PROFILE_PLUGIN = ('networking_cisco.plugins.ml2.drivers.cisco.n1kv.'
+POLICY_PROFILE_PLUGIN = ('networking_cisco.ml2_drivers.n1kv.'
                   'policy_profile_service.PolicyProfilePlugin')
-NETWORK_PROFILE_PLUGIN = ('networking_cisco.plugins.ml2.drivers.cisco.n1kv.'
+NETWORK_PROFILE_PLUGIN = ('networking_cisco.ml2_drivers.n1kv.'
                   'network_profile_service.NetworkProfilePlugin')
 DEFAULT_PP = 'm1'
 
