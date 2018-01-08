@@ -41,6 +41,9 @@ UCSM_PHY_NETS = ['test_physnet']
 
 
 ucsm_test_config_file = """
+[ml2_cisco_ucsm]
+supported_pci_devs=thing1:thing2, thing1:thing3
+
 [ml2_cisco_ucsm_ip:1.1.1.1]
 ucsm_username=username1
 ucsm_password=password1
@@ -136,3 +139,10 @@ class ConfigMixin(object):
         self.assertEqual(
             config.get_sriov_multivlan_trunk_config("test_network2"),
             [500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 700])
+
+        self.assertEqual(CONF.ml2_cisco_ucsm.supported_pci_devs,
+                         ["thing1:thing2", "thing1:thing3"])
+
+        self.assertRaises(ValueError, CONF.set_default, "supported_pci_devs",
+                          "thing:thing, thing2, thing3:thing4",
+                          group="ml2_cisco_ucsm")
