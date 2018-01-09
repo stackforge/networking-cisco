@@ -1078,33 +1078,3 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
 
         # Resetting the ucsm_host_dict value to what the other tests expect.
         self.ucsm_driver.ucsm_host_dict[HOST1] = '1.1.1.1'
-
-    def test_parsing_of_single_ucsm_config(self):
-
-        cfg.CONF.set_override("ucsm_ip", "3.3.3.3", group="ml2_cisco_ucsm")
-        cfg.CONF.set_override("ucsm_username", "user1", group="ml2_cisco_ucsm")
-        cfg.CONF.set_override("ucsm_password", "password1",
-                              group="ml2_cisco_ucsm")
-        cfg.CONF.set_override("ucsm_virtio_eth_ports",
-                              ["/ether-eth0", "/ether-eth2"],
-                              group="ml2_cisco_ucsm")
-
-        expected_parsed_virtio_eth_ports = ["/ether-eth0", "/ether-eth2"]
-
-        self.assertTrue("3.3.3.3" not in cfg.CONF.ml2_cisco_ucsm.ucsms)
-
-        conf.UcsmConfig()
-
-        ucsm = cfg.CONF.ml2_cisco_ucsm.ucsms['3.3.3.3']
-        self.assertEqual(ucsm.ucsm_username, "user1")
-        self.assertEqual(ucsm.ucsm_password, "password1")
-
-        virtio_port_list = (
-            CONF.ml2_cisco_ucsm.ucsms[
-                cfg.CONF.ml2_cisco_ucsm.ucsm_ip].ucsm_virtio_eth_ports)
-
-        self.assertEqual(expected_parsed_virtio_eth_ports,
-            virtio_port_list)
-
-        # Check to see that SSL certificate checking is set to True by default
-        self.assertTrue(cfg.CONF.ml2_cisco_ucsm.ucsm_https_verify)
