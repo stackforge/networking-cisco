@@ -49,6 +49,8 @@ ucsm_username=username3
 ucsm_password=password3
 ucsm_host_list=UCS-3:UCS-3-SP
 
+sriov_qos_policy=Global
+
 [ml2_cisco_ucsm_ip:1.1.1.1]
 ucsm_username=username1
 ucsm_password=password1
@@ -64,6 +66,11 @@ ucsm_virtio_eth_ports=eth2, eth3
 vnic_template_list=physnet2:org-root/org-Test-Sub:Test
 sp_template_list=SP_Template1_path:SP_Template1:S1,S2 \
                  SP_Template2_path:SP_Template2:S3,S4
+sriov_qos_policy=
+
+[ml2_cisco_ucsm_ip:4.4.4.4]
+ucsm_username=username4
+ucsm_password=password4
 
 [sriov_multivlan_trunk]
 test_network1=5, 7-9
@@ -91,7 +98,7 @@ class UCSMConfigTestCase(nc_base.TestCase):
             "ucsm_host_list": {"UCS-3": "UCS-3-SP"},
             "ucsm_virtio_eth_ports": [const.ETH_PREFIX + const.ETH0,
                                       const.ETH_PREFIX + const.ETH1],
-            "sriov_qos_policy": None,
+            "sriov_qos_policy": 'Global',
             "vnic_template_list": {},
             "sp_template_list": {},
             "ucsms": {
@@ -113,7 +120,7 @@ class UCSMConfigTestCase(nc_base.TestCase):
                     "ucsm_virtio_eth_ports": [const.ETH_PREFIX + "eth2",
                                               const.ETH_PREFIX + "eth3"],
                     "ucsm_host_list": None,
-                    "sriov_qos_policy": None,
+                    "sriov_qos_policy": '',
                     "vnic_template_list": {
                         "physnet2": ("org-root/org-Test-Sub", "Test")},
                     "sp_template_list": {
@@ -133,7 +140,19 @@ class UCSMConfigTestCase(nc_base.TestCase):
                     "ucsm_virtio_eth_ports": [const.ETH_PREFIX + "eth0",
                                               const.ETH_PREFIX + "eth1"],
                     "ucsm_host_list": {"UCS-3": "UCS-3-SP"},
-                    "sriov_qos_policy": None,
+                    "sriov_qos_policy": 'Global',
+                    "vnic_template_list": {},
+                    "sp_template_list": {},
+                },
+                # 4.4.4.4 Test's if we've inherited sriov_qos_policy from the
+                # main group
+                "4.4.4.4": {
+                    "ucsm_username": "username4",
+                    "ucsm_password": "password4",
+                    "ucsm_virtio_eth_ports": [const.ETH_PREFIX + "eth0",
+                                              const.ETH_PREFIX + "eth1"],
+                    "ucsm_host_list": None,
+                    "sriov_qos_policy": 'Global',
                     "vnic_template_list": {},
                     "sp_template_list": {},
                 }
@@ -167,10 +186,6 @@ class UCSMConfigTestCase(nc_base.TestCase):
 
     def test_is_vnic_template_configured(self):
         self.assertTrue(self.config.is_vnic_template_configured())
-
-    def test_get_sriov_qos_policy(self):
-        self.assertEqual(self.config.get_sriov_qos_policy('1.1.1.1'),
-                         'Test')
 
     def test_get_sriov_multivlan_trunk_config(self):
         self.assertEqual(
