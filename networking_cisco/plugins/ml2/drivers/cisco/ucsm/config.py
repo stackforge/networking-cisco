@@ -68,18 +68,40 @@ class SPTemplateListType(types.ConfigType):
         if isinstance(value, dict):
             return value
 
-        sp_templates = {}
-        sp_template_mappings = (value or "").split()
+        templates = {}
+        template_mappings = (value or "").split()
 
-        for mapping in sp_template_mappings:
+        for mapping in template_mappings:
             data = mapping.split(":")
             if len(data) != 3:
                 raise cfg.Error(_('UCS Mech Driver: Invalid Service '
                                   'Profile Template config %s') % mapping)
             host_list = data[2].split(',')
             for host in host_list:
-                sp_templates[host] = SPTemplate(data[0], data[1])
-        return sp_templates
+                templates[host] = SPTemplate(data[0], data[1])
+        return templates
+
+
+class VNICTemplateListType(types.ConfigType):
+
+    def __init__(self, type_name="VNICTemplateList"):
+        super(VNICTemplateListType, self).__init__(type_name=type_name)
+
+    def __call__(self, value):
+        if isinstance(value, dict):
+            return value
+
+        templates = {}
+        template_mappings = (value or "").split()
+
+        for mapping in template_mappings:
+            data = mapping.split(":")
+            if len(data) != 3:
+                raise cfg.Error(_("UCS Mech Driver: Invalid VNIC Template "
+                                  "config: %s") % mapping)
+            data[1] = data[1] or const.VNIC_TEMPLATE_PARENT_DN
+            templates[data[0]] = (data[1], data[2])
+        return templates
 
 
 ml2_cisco_ucsm_opts = [
@@ -145,10 +167,12 @@ ml2_cisco_ucsm_subopts = [
                        'providing the Service Profile associated with each '
                        'Host to be supported by this MD.')),
     cfg.StrOpt('sriov_qos_policy',
+               default='${ml2_cisco_ucsm.sriov_qos_policy}'
                help=_('Name of QoS Policy pre-defined in UCSM, to be '
                       'applied to all VM-FEX Port Profiles. This is '
                       'an optional parameter.')),
-    cfg.StrOpt('vnic_template_list'),
+    cfg.Opt('vnic_template_list', type=VNICTemplateListType(),
+            default={}),
     cfg.Opt('sp_template_list', type=SPTemplateListType(),
             default={})
 ]
@@ -249,40 +273,11 @@ class UcsmConfig(object):
         self.add_sp_template_config_for_host(
             host_id, ucsm_ip, sp_template_info[0], sp_template_info[1])
 
-    def _vnic_template_data_for_ucsm_ip(self, ucsm_ip):
-        if ucsm_ip not in CONF.ml2_cisco_ucsm.ucsms:
-            return []
-        template_list = CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].vnic_template_list
-        mappings = []
-        vnic_template_mappings = template_list.split()
-        for mapping in vnic_template_mappings:
-            data = mapping.split(":")
-            if len(data) != 3:
-                raise cfg.Error(_("UCS Mech Driver: Invalid VNIC Template "
-                                  "config: %s") % mapping)
-            data[1] = data[1] or const.VNIC_TEMPLATE_PARENT_DN
-            mappings.append(data)
-        return mappings
-
     def is_vnic_template_configured(self):
         for ip, ucsm in CONF.ml2_cisco_ucsm.ucsms.items():
             if ucsm.vnic_template_list:
                 return True
         return False
-
-    def get_vnic_template_for_physnet(self, ucsm_ip, physnet):
-        vnic_template_mappings = self._vnic_template_data_for_ucsm_ip(ucsm_ip)
-        for mapping in vnic_template_mappings:
-            if mapping[0] == physnet:
-                return (mapping[1], mapping[2])
-        return (None, None)
-
-    def get_vnic_template_for_ucsm_ip(self, ucsm_ip):
-        vnic_template_info_list = []
-        vnic_template_mappings = self._vnic_template_data_for_ucsm_ip(ucsm_ip)
-        for mapping in vnic_template_mappings:
-            vnic_template_info_list.append((mapping[1], mapping[2]))
-        return vnic_template_info_list
 
     def get_sriov_multivlan_trunk_config(self, network):
         vlans = []
