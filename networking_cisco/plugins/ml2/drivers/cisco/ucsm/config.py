@@ -169,6 +169,7 @@ ml2_cisco_ucsm_common = [
                        'providing the Service Profile associated with each '
                        'Host to be supported by this MD.')),
     cfg.StrOpt('sriov_qos_policy',
+               default='${ml2_cisco_ucsm.sriov_qos_policy}',
                help=_('Name of QoS Policy pre-defined in UCSM, to be '
                       'applied to all VM-FEX Port Profiles. This is '
                       'an optional parameter.')),
@@ -201,6 +202,7 @@ ucsms = base.SubsectionOpt(
 
 CONF.register_opts(ml2_cisco_ucsm_opts, "ml2_cisco_ucsm")
 CONF.register_opts(ml2_cisco_ucsm_common, "ml2_cisco_ucsm")
+CONF.set_default("sriov_qos_policy", "", "ml2_cisco_ucsm")
 CONF.register_opt(ucsms, "ml2_cisco_ucsm")
 CONF.register_opts(sriov_opts, "sriov_multivlan_trunk")
 
@@ -307,7 +309,3 @@ class UcsmConfig(object):
             else:
                 vlans.append(int(vlan))
         return vlans
-
-    def get_sriov_qos_policy(self, ucsm_ip):
-        return (CONF.ml2_cisco_ucsm.ucsms[ucsm_ip].sriov_qos_policy or
-                CONF.ml2_cisco_ucsm.sriov_qos_policy)
