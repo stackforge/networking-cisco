@@ -898,8 +898,9 @@ class CiscoUcsmDriver(object):
 
     def _remove_vlan_from_vnic_templates(self, handle, vlan_id, ucsm_ip):
         """Removes VLAN from all VNIC templates that have it enabled."""
-        vnic_template_info = self.ucsm_conf.get_vnic_template_for_ucsm_ip(
-            ucsm_ip)
+        ucsm = CONF.ml2_cisco_ucsm.ucsms[ucsm_ip]
+        vnic_template_info = ucsm.vnic_template_list.values()
+
         vlan_name = self.make_vlan_name(vlan_id)
 
         if not vnic_template_info:

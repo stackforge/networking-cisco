@@ -105,9 +105,9 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
                           'Template config')
             if self.ucsm_conf.is_vnic_template_configured() and physnet:
                 # Check if VNIC template is configured for this physnet
+                ucsm = CONF.ml2_cisco_ucsm.ucsms[ucsm_ip]
                 vnic_template_path, vnic_template = (
-                    self.ucsm_conf.get_vnic_template_for_physnet(ucsm_ip,
-                    physnet))
+                    ucsm.vnic_template_list.get(physnet, (None, None)))
 
                 if vnic_template:
                     LOG.debug('vnic_template %s', vnic_template)
@@ -226,9 +226,9 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
             physnet = self._get_physnet(context)
             if self.ucsm_conf.is_vnic_template_configured() and physnet:
                 LOG.debug('Update VNIC Template for physnet: %s', physnet)
+                ucsm = CONF.ml2_cisco_ucsm.ucsms[ucsm_ip]
                 vnic_template_path, vnic_template = (
-                    self.ucsm_conf.get_vnic_template_for_physnet(ucsm_ip,
-                    physnet))
+                    ucsm.vnic_template_list.get(physnet, (None, None)))
 
                 if vnic_template:
                     LOG.debug('vnic_template %s', vnic_template)
