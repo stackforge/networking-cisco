@@ -40,7 +40,7 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         self.vif_details = {bc.portbindings.CAP_PORT_FILTER: False}
         self.ucsm_db = ucsm_db.UcsmDbModel()
         self.driver = ucsm_network_driver.CiscoUcsmDriver()
-        self.ucsm_conf = config.UcsmConfig()
+        config.load_single_ucsm_config()
 
     def _get_vlanid(self, context):
         """Returns vlan_id associated with a bound VLAN segment."""
