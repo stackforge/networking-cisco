@@ -122,10 +122,21 @@ class CiscoUcsmDriver(object):
         return ucsmsdk
 
     def _create_host_and_sp_dicts_from_config(self):
-        self.ucsm_sp_dict.update(self.ucsm_conf.ucsm_sp_dict)
-        self.ucsm_host_dict.update(self.ucsm_conf.ucsm_host_dict)
+        # Pull Service Profile to Hostname mapping from config if it has been
+        # provided
+        for ip, ucsm in CONF.ml2_cisco_ucsm.ucsms.items():
+            for host, sp in (ucsm.ucsm_host_list or {}).items():
+                self.ucsm_host_dict[host] = ip
 
-        if not self.ucsm_sp_dict and not self.ucsm_host_dict:
+                if '/' not in sp:
+                    self.ucsm_sp_dict[(ip, host)] = (
+                        const.SERVICE_PROFILE_PATH_PREFIX + sp.strip())
+                else:
+                    self.ucsm_sp_dict[(ip, host)] = sp.strip()
+
+        # If no hosts/sps in the config, then learn the hosts and sps from the
+        # UCSMs
+        if not (self.ucsm_sp_dict and self.ucsm_host_dict):
             self._create_ucsm_host_to_service_profile_mapping()
 
         if not self.ucsm_sp_dict:
