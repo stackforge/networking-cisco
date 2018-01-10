@@ -817,72 +817,11 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         self.assertTrue(self.ucsm_driver.update_serviceprofile(
                         HOST1, VLAN_ID_1))
 
-    def test_parse_ucsm_host_config(self):
-        """Verifies parsing of Hostname:Service Profile config."""
-        ucsm_sp_dict = {}
-        ucsm_host_dict = {}
-        cfg.CONF.ml2_cisco_ucsm.ucsms['1.1.1.1'].ucsm_host_list = {
-            'Host1': 'SP1',
-            'Host2': 'SP2'}
-        expected_ip = '1.1.1.1'
-        expected_sp1 = "org-root/ls-SP1"
-        expected_sp2 = "org-root/ls-SP2"
-
-        ucsm_sp_dict = self.ucsm_config.ucsm_sp_dict
-        ucsm_host_dict = self.ucsm_config.ucsm_host_dict
-
-        key = (expected_ip, 'Host1')
-        self.assertIn(key, ucsm_sp_dict)
-        self.assertEqual(expected_sp1, ucsm_sp_dict[key])
-        self.assertIn('Host1', ucsm_host_dict)
-        self.assertEqual(expected_ip, ucsm_host_dict['Host1'])
-
-        key = (expected_ip, 'Host2')
-        self.assertIn(key, ucsm_sp_dict)
-        self.assertEqual(expected_sp2, ucsm_sp_dict.get(key))
-        self.assertEqual(expected_ip, ucsm_host_dict.get('Host2'))
-
-        key = (expected_ip, 'Host3')
-        self.assertNotIn(key, ucsm_sp_dict)
-        self.assertIsNone(ucsm_host_dict.get('Host3'))
-
-    def test_bad_ucsm_host_config(self):
-        # FIXME(sambetts) This test need to be rewritten now malformed error
-        # will come from oslo.config earlier on.
-
-        # """Verifies malformed ucsm_host_list raises an error."""
-        # cfg.CONF.ml2_cisco_ucsm.ucsm_host_list = {'Host1':, 'Host2':'SP2'}
-        # self.assertRaisesRegex(cfg.Error, "Host1:", getattr,
-        #                        self.ucsm_config, "ucsm_host_dict")
-
-        # cfg.CONF.ml2_cisco_ucsm.ucsm_host_list = {'Host1':'SP1', 'Host2':""}
-        # self.assertRaisesRegex(cfg.Error, "Host2", getattr,
-        #                        self.ucsm_config, "ucsm_host_dict")
-        pass
-
     def test_parse_virtio_eth_ports(self):
         eth_port_list = (
             CONF.ml2_cisco_ucsm.ucsms['1.1.1.1'].ucsm_virtio_eth_ports)
         self.assertNotIn('eth4', eth_port_list)
         self.assertIn(const.ETH_PREFIX + 'eth4', eth_port_list)
-
-    def test_ucsm_host_config_with_path(self):
-        """Verifies that ucsm_host_list can contain SP paths."""
-        expected_service_profile1 = 'org-root/ls-SP1'
-        expected_service_profile2 = 'org-root/sub-org1/ls-SP2'
-        cfg.CONF.ml2_cisco_ucsm.ucsms['1.1.1.1'].ucsm_host_list = {
-            'Host1': 'SP1',
-            'Host2': 'org-root/sub-org1/ls-SP2'}
-
-        ucsm_sp_dict = self.ucsm_config.ucsm_sp_dict
-
-        key = ('1.1.1.1', 'Host1')
-        actual_service_profile1 = ucsm_sp_dict.get(key)
-        self.assertEqual(expected_service_profile1, actual_service_profile1)
-
-        key = ('1.1.1.1', 'Host2')
-        actual_service_profile2 = ucsm_sp_dict.get(key)
-        self.assertEqual(expected_service_profile2, actual_service_profile2)
 
     def test_host_id_to_hostname(self):
         host_id_with_domain1 = 'compute1.cisco.com'
