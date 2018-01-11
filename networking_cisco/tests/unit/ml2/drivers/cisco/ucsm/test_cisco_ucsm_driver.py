@@ -492,7 +492,7 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
 
         # Override the vnic template list for this test
         ucsm = CONF.ml2_cisco_ucsm.ucsms[UCSM_IP_ADDRESS_1]
-        templates = {TEST_PHYSNET: ('org-root', 'Test-VNIC')}
+        templates = {TEST_PHYSNET: {'org-root': set(['Test-VNIC'])}}
         CONF.set_override("vnic_template_list", templates, group=ucsm._group)
 
         vnic_template_path, vnic_template = (
@@ -699,7 +699,7 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
 
         # Override the vnic template list for this test
         ucsm = CONF.ml2_cisco_ucsm.ucsms[UCSM_IP_ADDRESS_1]
-        templates = {TEST_PHYSNET: ('org-root', 'Test-VNIC')}
+        templates = {TEST_PHYSNET: {'org-root': set(['Test-VNIC'])}}
         CONF.set_override("vnic_template_list", templates, group=ucsm._group)
 
         self.mech_driver.bind_port(port_context)

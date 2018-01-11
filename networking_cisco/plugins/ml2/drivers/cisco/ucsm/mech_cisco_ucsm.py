@@ -106,16 +106,19 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
 
             # Check if VNIC template is configured for this physnet
             ucsm = CONF.ml2_cisco_ucsm.ucsms[ucsm_ip]
-            vnic_template_path, vnic_template = (
-                ucsm.vnic_template_list.get(physnet, (None, None)))
-            if vnic_template:
-                LOG.debug('vnic_template %s', vnic_template)
-                self.ucsm_db.add_vnic_template(vlan_id, ucsm_ip,
-                    vnic_template, physnet)
+            physnet_templates = ucsm.vnic_template_list.get(physnet, {})
+            added_template = False
+            for template_path, templates in physnet_templates.items():
+                for template in templates:
+                    LOG.debug('vnic_template %s', template)
+                    self.ucsm_db.add_vnic_template(vlan_id, ucsm_ip,
+                        template, physnet)
+                    added_template = True
+            if added_template:
                 return
-            else:
-                LOG.debug('VNIC Template not configured for '
-                          'physnet %s', physnet)
+
+            LOG.debug('VNIC Template not configured for '
+                      'physnet %s', physnet)
 
             # In the absence of VNIC Templates, VLAN is directly added
             # to vNIC(s) on the SP Template.

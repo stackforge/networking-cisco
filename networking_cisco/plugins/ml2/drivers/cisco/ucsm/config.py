@@ -132,7 +132,9 @@ class VNICTemplateListType(types.ConfigType):
                 raise cfg.Error(_("UCS Mech Driver: Invalid VNIC Template "
                                   "config: %s") % mapping)
             data[1] = data[1] or const.VNIC_TEMPLATE_PARENT_DN
-            templates[data[0]] = (data[1], data[2])
+            physnet = templates.setdefault(data[0], {})
+            phytemps = physnet.setdefault(data[1], set())
+            phytemps.update(data[2].split(','))
         return templates
 
     def _formatter(self, value):
@@ -141,8 +143,9 @@ class VNICTemplateListType(types.ConfigType):
         if isinstance(value, dict):
             templates = []
             for physnet, template in value.items():
-                templates.append(
-                    "%s:%s:%s" % (physnet, template[0], template[1]))
+                for template_path, temps in template.items():
+                    templates.append(
+                        "%s:%s:%s" % (physnet, template_path, ','.join(temps)))
             return ' '.join(templates)
 
 

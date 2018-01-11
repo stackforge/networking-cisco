@@ -63,7 +63,8 @@ sriov_qos_policy=Test
 ucsm_username=username2
 ucsm_password=password2
 ucsm_virtio_eth_ports=eth2, eth3
-vnic_template_list=physnet2:org-root/org-Test-Sub:Test
+vnic_template_list=physnet2:org-root/org-Test-Sub:Test \
+                   physnet3::Test2
 sp_template_list=SP_Template1_path:SP_Template1:S1,S2 \
                  SP_Template2_path:SP_Template2:S3,S4
 sriov_qos_policy=
@@ -111,7 +112,8 @@ class UCSMConfigTestCase(nc_base.TestCase):
                                        "UCS-2": "org-root/test/ls-UCS-2-SP"},
                     "sriov_qos_policy": "Test",
                     "vnic_template_list": {
-                        "test-physnet": ("org-root", "Test-VNIC,vnic2")},
+                        "test-physnet": {
+                            "org-root": set(["Test-VNIC", "vnic2"])}},
                     "sp_template_list": {},
                 },
                 "2.2.2.2": {
@@ -122,7 +124,11 @@ class UCSMConfigTestCase(nc_base.TestCase):
                     "ucsm_host_list": None,
                     "sriov_qos_policy": '',
                     "vnic_template_list": {
-                        "physnet2": ("org-root/org-Test-Sub", "Test")},
+                        "physnet2": {
+                            "org-root/org-Test-Sub": set(["Test"])},
+                        "physnet3": {
+                            "org-root/lan-conn-templ-": set(["Test2"])}
+                    },
                     "sp_template_list": {
                         "S1": ucsm_config.SPTemplate("SP_Template1_path",
                                                      "SP_Template1"),
