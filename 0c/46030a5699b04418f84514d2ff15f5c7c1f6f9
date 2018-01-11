@@ -1,0 +1,9 @@
+Code-Review+2: Carol Bouchard <caboucha@cisco.com>
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Thu, 11 Jan 2018 10:51:44 +0000
+Reviewed-on: https://review.openstack.org/531856
+Project: openstack/networking-cisco
+Branch: refs/heads/master
