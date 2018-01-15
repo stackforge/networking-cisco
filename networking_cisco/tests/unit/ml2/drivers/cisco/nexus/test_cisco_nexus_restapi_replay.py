@@ -30,8 +30,7 @@ redundant.
 
 import mock
 
-from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
-    constants as const)
+from networking_cisco.constants import nexus as const
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     nexus_db_v2 as nxos_db)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (

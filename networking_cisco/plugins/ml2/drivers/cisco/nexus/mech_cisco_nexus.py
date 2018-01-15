@@ -35,10 +35,9 @@ from neutron.plugins.common import constants as p_const
 
 from neutron.plugins.ml2 import driver_api as api
 
+from networking_cisco.constants import nexus as const
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     config as conf)
-from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
-    constants as const)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     exceptions as excep)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (

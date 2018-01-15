@@ -19,8 +19,7 @@ import mock
 from oslo_config import cfg
 import six
 
-from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
-    constants as const)
+from networking_cisco.constants import nexus as const
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     nexus_network_driver)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import exceptions

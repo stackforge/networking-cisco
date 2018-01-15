@@ -22,8 +22,7 @@ import time
 
 from oslo_log import log as logging
 
-from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
-    constants as const)
+from networking_cisco.constants import nexus as const
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     exceptions as cexc)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (

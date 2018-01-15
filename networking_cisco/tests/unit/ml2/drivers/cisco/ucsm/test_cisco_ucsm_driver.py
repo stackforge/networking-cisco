@@ -21,10 +21,10 @@ from neutron.plugins.ml2 import driver_api as api
 from neutron.tests.unit import testlib_api
 
 from networking_cisco import backwards_compatibility as bc
+from networking_cisco.constants import ucsm as const
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import (
     mech_cisco_ucsm as md)
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import config as conf
-from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import exceptions
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_db
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_network_driver
