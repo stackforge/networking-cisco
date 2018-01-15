@@ -21,8 +21,7 @@ from oslo_config import cfg
 from networking_cisco.backwards_compatibility import constants as p_const
 from networking_cisco.backwards_compatibility import ml2_api as api
 
-from networking_cisco.ml2_drivers.nexus import (
-    constants as const)
+from networking_cisco.constants import nexus as const
 from networking_cisco.ml2_drivers.nexus import exceptions
 from networking_cisco.ml2_drivers.nexus import nexus_db_v2
 

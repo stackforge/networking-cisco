@@ -20,8 +20,7 @@ from oslo_config import cfg
 import six
 
 from networking_cisco.backwards_compatibility import cb_constants
-from networking_cisco.ml2_drivers.nexus import (
-    constants as const)
+from networking_cisco.constants import nexus as const
 from networking_cisco.ml2_drivers.nexus import (
     nexus_network_driver)
 from networking_cisco.ml2_drivers.nexus import exceptions

@@ -17,8 +17,7 @@ from networking_cisco import backwards_compatibility as bc
 from networking_cisco.backwards_compatibility import constants as p_const
 from networking_cisco.backwards_compatibility import ml2_api as api
 
-from networking_cisco.ml2_drivers.nexus import (
-    constants as const)
+from networking_cisco.constants import nexus as const
 from networking_cisco.ml2_drivers.nexus import type_nexus_vxlan
 
 from neutron.tests.unit import testlib_api

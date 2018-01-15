@@ -24,8 +24,7 @@ import sqlalchemy.orm.exc as sa_exc
 from sqlalchemy.sql import func
 
 from networking_cisco import backwards_compatibility as bc
-from networking_cisco.ml2_drivers.nexus import (
-    constants as const)
+from networking_cisco.constants import nexus as const
 from networking_cisco.ml2_drivers.nexus import (
     exceptions as c_exc)
 from networking_cisco.ml2_drivers.nexus import (

@@ -20,8 +20,7 @@ Basic Test Class to verify REST API Client code "nexus_restapi_client.py"
 import mock
 import requests
 
-from networking_cisco.ml2_drivers.nexus import (
-    constants as const)
+from networking_cisco.constants import nexus as const
 from networking_cisco.ml2_drivers.nexus import (
     nexus_restapi_network_driver as rest)
 
