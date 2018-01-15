@@ -14,9 +14,9 @@
 # under the License.
 
 from networking_cisco.backwards_compatibility import ml2_config  # noqa
+from networking_cisco.constants import ucsm as const
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import (config as
     ucsm_config)
-from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const
 from networking_cisco.tests import base as nc_base
 
 from neutron.common import config as neutron_config

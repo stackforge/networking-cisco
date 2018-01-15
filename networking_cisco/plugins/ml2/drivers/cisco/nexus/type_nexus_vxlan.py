@@ -22,8 +22,7 @@ from oslo_log import log
 from oslo_utils import excutils
 import sqlalchemy as sa
 
-from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
-    constants as const)
+from networking_cisco.constants import nexus as const
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     nexus_models_v2)
 

@@ -34,10 +34,9 @@ from networking_cisco.backwards_compatibility import ml2_api as api
 
 from neutron.common import utils as neutron_utils
 
+from networking_cisco.constants import nexus as const
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     config as conf)
-from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
-    constants as const)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     exceptions as excep)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (

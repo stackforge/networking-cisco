@@ -18,8 +18,7 @@ import collections
 
 from oslo_config import cfg
 
-from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
-    constants as const)
+from networking_cisco.constants import nexus as const
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import exceptions
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import nexus_db_v2
 from networking_cisco.tests.unit.ml2.drivers.cisco.nexus import (
