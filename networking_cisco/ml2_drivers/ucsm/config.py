@@ -24,7 +24,7 @@ from networking_cisco._i18n import _
 
 from networking_cisco.config import base
 
-from networking_cisco.ml2_drivers.ucsm import constants as const
+from networking_cisco.constants import ucsm as const
 
 LOG = logging.getLogger(__name__)
 
