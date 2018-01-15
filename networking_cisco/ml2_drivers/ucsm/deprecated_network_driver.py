@@ -23,8 +23,9 @@ from oslo_log import log as logging
 from oslo_utils import importutils
 
 from networking_cisco import backwards_compatibility as bc
+from networking_cisco.constants import ucsm as const
+
 from networking_cisco.ml2_drivers.ucsm import config
-from networking_cisco.ml2_drivers.ucsm import constants as const
 from networking_cisco.ml2_drivers.ucsm import exceptions as cexc
 from networking_cisco.ml2_drivers.ucsm import ucsm_db
 

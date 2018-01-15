@@ -33,10 +33,9 @@ from networking_cisco.backwards_compatibility import constants as p_const
 from networking_cisco.backwards_compatibility import ml2_api as api
 from networking_cisco.backwards_compatibility import runtime_utils
 
+from networking_cisco.constants import nexus as const
 from networking_cisco.ml2_drivers.nexus import (
     config as conf)
-from networking_cisco.ml2_drivers.nexus import (
-    constants as const)
 from networking_cisco.ml2_drivers.nexus import (
     exceptions as excep)
 from networking_cisco.ml2_drivers.nexus import (

@@ -20,8 +20,7 @@ Implements REST API Client For Nexus
 import netaddr
 import requests
 
-from networking_cisco.ml2_drivers.nexus import (
-    constants as const)
+from networking_cisco.constants import nexus as const
 from networking_cisco.ml2_drivers.nexus import (
     exceptions as cexc)
 from oslo_log import log as logging
