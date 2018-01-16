@@ -51,8 +51,8 @@ CORE_PLUGIN_KLASS = device_manager_test_support.CORE_PLUGIN_KLASS
 L3_PLUGIN_KLASS = l3_router_test_support.L3_PLUGIN_KLASS
 
 NS_ROUTERTYPE_NAME = c_constants.NAMESPACE_ROUTER_TYPE
-VM_ROUTERTYPE_NAME = c_constants.CSR1KV_ROUTER_TYPE
-HW_ROUTERTYPE_NAME = "HW_router"
+VM_ROUTERTYPE_NAME = "VM_router"
+HW_ROUTERTYPE_NAME = c_constants.ASR1K_ROUTER_TYPE
 
 NOOP_SCHEDULER = ('networking_cisco.plugins.cisco.l3.schedulers.'
                   'noop_l3_router_hosting_device_scheduler.'
