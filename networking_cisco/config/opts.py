@@ -10,12 +10,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from networking_cisco.ml2_drivers.nexus import (
-    config as nexus_config)
+from networking_cisco.config import nexus as nexus_config
+from networking_cisco.config import ucsm as ucsm_config
 from networking_cisco.ml2_drivers.nexus import (
     type_nexus_vxlan as nexus_vxlan_config)
-from networking_cisco.ml2_drivers.ucsm import (
-    config as ucsm_config)
 
 
 def list_nexus_conf_opts():
