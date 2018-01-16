@@ -34,8 +34,7 @@ import six
 import testtools
 
 from networking_cisco import backwards_compatibility as bc
-from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
-    config as nexus_config)
+from networking_cisco.config import nexus as nexus_config
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     constants as const)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (

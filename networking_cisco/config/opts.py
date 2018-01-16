@@ -10,8 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
-    config as nexus_config)
+from networking_cisco.config import nexus as nexus_config
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     type_nexus_vxlan as nexus_vxlan_config)
 

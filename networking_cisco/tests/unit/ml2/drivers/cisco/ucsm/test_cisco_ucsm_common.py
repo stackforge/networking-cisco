@@ -16,8 +16,7 @@
 import mock
 from oslo_config import cfg
 
-from networking_cisco.plugins.ml2.drivers.cisco.ucsm import (config as
-    ucsm_config)
+from networking_cisco.config import ucsm as ucsm_config
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const
 
 from neutron.common import config as neutron_config

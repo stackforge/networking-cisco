@@ -17,8 +17,7 @@
 from oslo_config import cfg
 import six
 
-from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
-    config as cisco_config)
+from networking_cisco.config import nexus as cisco_config
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import (
     nexus_helpers as nexus_help)
 from networking_cisco.plugins.ml2.drivers.cisco.nexus import nexus_db_v2
