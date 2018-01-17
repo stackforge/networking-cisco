@@ -16,12 +16,12 @@
 import mock
 from oslo_config import cfg
 
+from networking_cisco.backwards_compatibility import ml2_config
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import (config as
     ucsm_config)
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const
 
 from neutron.common import config as neutron_config
-from neutron.plugins.ml2 import config as ml2_config
 
 from neutron.tests import base
 
@@ -57,7 +57,7 @@ class ConfigMixin(object):
             'tenant_network_types': ['vlan'],
         }
         for opt, val in ml2_opts.items():
-            ml2_config.cfg.CONF.set_override(opt, val, 'ml2')
+            cfg.CONF.set_override(opt, val, 'ml2')
 
         # Configure the Cisco UCS Manager mechanism driver
         ucsm_test_config = {
