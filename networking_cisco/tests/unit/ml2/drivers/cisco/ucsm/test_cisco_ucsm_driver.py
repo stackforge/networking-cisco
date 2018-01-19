@@ -948,11 +948,11 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         """Verifies that the PP delete retry logic."""
         handle = FakeUcsmHandle(PORT_PROFILE_1)
 
-        self.ucsm_driver.ucsmsdk = mock.Mock()
+        # self.ucsm_driver.ucsmsdk = mock.Mock()
 
-        self.ucsm_driver.ucsmsdk.VnicProfile.ClassId.return_value = "PP"
-        self.ucsm_driver.ucsmsdk.VnicProfile.NAME = PORT_PROFILE_1
-        self.ucsm_driver.ucsmsdk.VnicProfile.DN = "/org-root"
+        # self.ucsm_driver.ucsmsdk.VnicProfile.ClassId.return_value = "PP"
+        # self.ucsm_driver.ucsmsdk.VnicProfile.NAME = PORT_PROFILE_1
+        # self.ucsm_driver.ucsmsdk.VnicProfile.DN = "/org-root"
 
         # 1st call to delete_port_profile is designed to not find
         # the PP on the UCSM
