@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import warnings
 
 from oslo_log import log as logging
 
@@ -23,6 +24,8 @@ from networking_cisco.backwards_compatibility import ml2_api as api
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import config
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const
+from networking_cisco.plugins.ml2.drivers.cisco.ucsm import (
+        deprecated_network_driver)
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_db
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_network_driver
 
@@ -37,7 +40,18 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         self.vif_type = const.VIF_TYPE_802_QBH
         self.vif_details = {bc.portbindings.CAP_PORT_FILTER: False}
         self.ucsm_db = ucsm_db.UcsmDbModel()
-        self.driver = ucsm_network_driver.CiscoUcsmDriver()
+
+        if importutils.try_import('ucsmsdk'):
+            self.driver = ucsm_network_driver.CiscoUcsmDriver()
+        elif importutils.try_import('UcsSdk'):
+            warnings.warn("Cannot find ucsmsdk package, falling back to "
+                    "using UcsSdk which is now deprecated. For new "
+                    "features please run with ucsmsdk installed.",
+                    DeprecationWarning)
+            self.driver = deprecated_network_driver.CiscoUcsmDriver()
+        else:
+            LOG.error('Could not import ucsm sdk.')
+
         self.ucsm_conf = config.UcsmConfig()
 
     def _get_vlanid(self, context):
