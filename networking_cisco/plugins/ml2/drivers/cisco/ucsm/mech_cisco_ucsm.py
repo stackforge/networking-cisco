@@ -22,6 +22,8 @@ from neutron.plugins.ml2 import driver_api as api
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import config
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import constants as const
+from networking_cisco.plugins.ml2.drivers.cisco.ucsm import \
+        deprecated_network_driver
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_db
 from networking_cisco.plugins.ml2.drivers.cisco.ucsm import ucsm_network_driver
 
@@ -36,7 +38,17 @@ class CiscoUcsmMechanismDriver(api.MechanismDriver):
         self.vif_type = const.VIF_TYPE_802_QBH
         self.vif_details = {bc.portbindings.CAP_PORT_FILTER: False}
         self.ucsm_db = ucsm_db.UcsmDbModel()
-        self.driver = ucsm_network_driver.CiscoUcsmDriver()
+        try:
+            import ucsmsdk
+            self.driver = ucsm_network_driver.CiscoUcsmDriver()
+        except:
+            LOG.warning('Could not find ucsmsdk installed . '
+                'Trying to use UcsSdk')
+            try:
+                import UcsSdk
+                self.driver = deprecated_network_driver.CiscoUcsmDriver()
+            except:
+                LOG.error('Could not import ucsm sdk.')
         self.ucsm_conf = config.UcsmConfig()
 
     def _get_vlanid(self, context):
