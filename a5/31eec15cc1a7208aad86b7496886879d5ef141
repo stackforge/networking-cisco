@@ -1,0 +1,11 @@
+Code-Review+2: Carol Bouchard <caboucha@cisco.com>
+Code-Review+1: Tuan Luong-Anh <tuanla@vn.fujitsu.com>
+Code-Review+1: lijing <lijing@awcloud.com>
+Code-Review+2: Sandhya Dasu <sadasu@cisco.com>
+Workflow+1: Sandhya Dasu <sadasu@cisco.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Mon, 22 Jan 2018 17:42:22 +0000
+Reviewed-on: https://review.openstack.org/534858
+Project: openstack/networking-cisco
+Branch: refs/heads/master
