@@ -34,6 +34,7 @@ ncclient = importutils.try_import('ncclient')
 manager = importutils.try_import('ncclient.manager')
 
 LOG = logging.getLogger(__name__)
+logging.getLogger('ncclient.transport.session').setLevel(logging.INFO)
 
 
 class IosXeRoutingDriver(devicedriver_api.RoutingDriverBase):
@@ -368,6 +369,7 @@ class IosXeRoutingDriver(devicedriver_api.RoutingDriverBase):
         :return: Current IOS running config as multiline string
         """
         conn = self._get_connection()
+        LOG = logging.getLogger()
         config = conn.get_config(source="running")
         if config:
             root = ET.fromstring(config._raw)
