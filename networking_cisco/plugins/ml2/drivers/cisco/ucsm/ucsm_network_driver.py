@@ -171,6 +171,8 @@ class CiscoUcsmDriver(object):
         try:
             resolved_dest = handle.ConfigResolveDn(service_profile_mo.PnDn)
             server_list = resolved_dest.OutConfig.GetChild()
+            print "GET SERVER NAME"
+            print server_list
             if not server_list:
                 return ""
             return server_list[0].Name
@@ -187,8 +189,11 @@ class CiscoUcsmDriver(object):
                 try:
                     sp_list_temp = handle.ConfigResolveClass('lsServer', None,
                         inHierarchical=False)
+                    print "SP LIST"
+                    print sp_list_temp
                     if sp_list_temp and sp_list_temp.OutConfigs is not None:
                         sp_list = sp_list_temp.OutConfigs.GetChild() or []
+                        print sp_list
                         for sp in sp_list:
                             if sp.PnDn:
                                 server_name = self._get_server_name(handle, sp,
