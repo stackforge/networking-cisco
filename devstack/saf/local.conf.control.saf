@@ -254,8 +254,7 @@ enable_service cisco-saf
 VERBOSE=True
 DEBUG=True
 USE_SCREEN=True
-SCREEN_LOGDIR=/opt/stack/logs
-LOGFILE=${SCREEN_LOGDIR}/stack.sh.log
+LOGFILE=/opt/stack/logs/stack.sh.log
 
 # VNC
 VNCSERVER_PROXYCLIENT_ADDRESS=$HOST_IP

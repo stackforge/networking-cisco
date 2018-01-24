@@ -65,7 +65,6 @@ Q_CISCO_DEFAULT_ROUTER_TYPE=ASR1k_router
 # There is no need to specify it unless you want the code in
 # some particular location (like in a directory shared by all VMs).
 DEST=/opt/stack
-SCREEN_LOGDIR=$DEST/logs
 LOGFILE=~/devstack/stack.sh.log
 
 # Settings to get NoVNC to work.
