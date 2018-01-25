@@ -1,0 +1,11 @@
+Code-Review+1: Timothy Swanson <tiswanso@cisco.com>
+Code-Review+1: rcurran <rcurran@cisco.com>
+Code-Review+2: Bradley Jones <jones.bradley@me.com>
+Code-Review+2: Sridar Kandaswamy <skandasw@cisco.com>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Thu, 25 Jan 2018 16:12:28 +0000
+Reviewed-on: https://review.openstack.org/529307
+Project: openstack/networking-cisco
+Branch: refs/heads/master
