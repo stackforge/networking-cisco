@@ -1,0 +1,9 @@
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Code-Review+2: Sandhya Dasu <sadasu@cisco.com>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Wed, 31 Jan 2018 15:06:08 +0000
+Reviewed-on: https://review.openstack.org/535909
+Project: openstack/networking-cisco
+Branch: refs/heads/master
