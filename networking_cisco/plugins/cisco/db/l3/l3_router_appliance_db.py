@@ -58,7 +58,7 @@ from networking_cisco.plugins.cisco.l3.drivers import driver_context
 
 LOG = logging.getLogger(__name__)
 
-EXTERNAL_GW_INFO = l3.EXTERNAL_GW_INFO
+EXTERNAL_GW_INFO = bc.constants.EXTERNAL_GW_INFO
 FLOATINGIP_STATUS_ACTIVE = bc.constants.FLOATINGIP_STATUS_ACTIVE
 AGENT_TYPE_L3 = bc.constants.AGENT_TYPE_L3
 AGENT_TYPE_L3_CFG = cisco_constants.AGENT_TYPE_L3_CFG
@@ -432,7 +432,7 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
             try:
                 super(L3RouterApplianceDBMixin, self).delete_router(context,
                                                                     router_id)
-            except l3.RouterNotFound as e:
+            except bc.l3_exceptions.RouterNotFound as e:
                 LOG.debug('Ignorable error: %(err)s as it only indicates that '
                           'router was already concurrently deleted just '
                           'before this deletion attempt', {'err': e})
@@ -1029,7 +1029,7 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
 
         try:
             self.get_router(context, router_id)
-        except l3.RouterNotFound:
+        except bc.l3_exceptions.RouterNotFound:
             return
         r_hd_binding_db = self._get_router_binding_info(context.elevated(),
                                                         router_id)

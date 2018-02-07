@@ -51,7 +51,7 @@ MAX_GLBP_GROUPS = 1023
 
 is_attr_set = bc.is_attr_set
 ATTR_NOT_SPECIFIED = bc.constants.ATTR_NOT_SPECIFIED
-EXTERNAL_GW_INFO = l3.EXTERNAL_GW_INFO
+EXTERNAL_GW_INFO = bc.constants.EXTERNAL_GW_INFO
 DEVICE_OWNER_ROUTER_GW = bc.constants.DEVICE_OWNER_ROUTER_GW
 DEVICE_OWNER_ROUTER_INTF = bc.constants.DEVICE_OWNER_ROUTER_INTF
 DEVICE_OWNER_ROUTER_HA_INTF = bc.constants.DEVICE_OWNER_ROUTER_HA_INTF
@@ -1054,7 +1054,7 @@ class HA_db_mixin(object):
         if first_router_id:
             return first_router_id
 
-        raise l3.ExternalGatewayForFloatingIPNotFound(
+        raise bc.l3_exceptions.ExternalGatewayForFloatingIPNotFound(
             subnet_id=internal_subnet['id'],
             external_network_id=external_network_id,
             port_id=internal_port['id'])
