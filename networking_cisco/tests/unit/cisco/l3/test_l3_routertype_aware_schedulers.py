@@ -18,7 +18,6 @@ import unittest
 
 from neutron.api.rpc.agentnotifiers import l3_rpc_agent_api
 from neutron.common import test_lib
-from neutron.extensions import agent
 from neutron.extensions import l3
 from neutron.tests import fake_notifier
 from neutron.tests.unit.db import test_agentschedulers_db
@@ -1037,7 +1036,7 @@ class L3RoutertypeAwareHostingDeviceSchedulerTestCase(
     def test_list_active_sync_routers_on_hosting_devices_no_cfg_agent_on_host(
             self):
         self.assertRaises(
-            agent.AgentNotFoundByTypeHost,
+            bc.agent_exceptions.AgentNotFoundByTypeHost,
             self.l3_plugin.list_active_sync_routers_on_hosting_devices,
             self.adminContext, 'bogus_host')
 
