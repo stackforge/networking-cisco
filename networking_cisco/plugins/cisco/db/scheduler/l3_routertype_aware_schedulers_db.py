@@ -24,7 +24,6 @@ from neutron.db import agents_db
 from neutron.db import l3_agentschedulers_db
 from neutron.db import models_v2
 from neutron.db import portbindings_db as p_binding
-from neutron.extensions import l3
 
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.plugins.cisco.common import cisco_constants
@@ -208,7 +207,7 @@ class L3RouterTypeAwareSchedulerDbMixin(
         return auto_schedule, share_host
 
     @staticmethod
-    @bc.extends([l3.ROUTERS])
+    @bc.extends([bc.constants.ROUTERS])
     def _extend_router_dict_scheduling_info(router_res, router_db):
         router_res[routertypeawarescheduler.AUTO_SCHEDULE_ATTR] = (
             (router_db.hosting_info or {}).get('auto_schedule'))
