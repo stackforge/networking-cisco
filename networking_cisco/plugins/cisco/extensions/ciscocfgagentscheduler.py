@@ -21,7 +21,6 @@ from neutron.api import extensions
 from neutron.api.v2 import base
 from neutron.api.v2 import resource
 from neutron.common import rpc as n_rpc
-from neutron.extensions import agent
 from neutron import policy
 from neutron import wsgi
 from neutron_lib import exceptions
@@ -36,7 +35,7 @@ PATH_PREFIX = "/dev_mgr"
 LOG = logging.getLogger(__name__)
 
 
-class InvalidCfgAgent(agent.AgentNotFound):
+class InvalidCfgAgent(bc.agent_exceptions.AgentNotFound):
     message = _("Agent %(agent_id)s is not a Cisco cfg agent or has been "
                 "disabled")
 
