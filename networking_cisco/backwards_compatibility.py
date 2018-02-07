@@ -212,6 +212,7 @@ if NEUTRON_VERSION >= NEUTRON_QUEENS_VERSION:
     from neutron_lib.plugins.ml2 import api as ml2_api
     setattr(constants, 'EXTERNAL_GW_INFO', getattr(l3_const,
             'EXTERNAL_GW_INFO'))
+    setattr(constants, 'ROUTERS', getattr(l3_const, 'ROUTERS'))
 else:
     # Pre-queens
     from neutron.callbacks import events as cb_events  # noqa
@@ -222,6 +223,7 @@ else:
     from neutron.plugins.ml2 import driver_api as ml2_api  # noqa
     setattr(constants, 'EXTERNAL_GW_INFO', getattr(l3_exceptions,
             'EXTERNAL_GW_INFO'))
+    setattr(constants, 'ROUTERS', getattr(l3_exceptions, 'ROUTERS'))
 
 core_opts = base_config.core_opts
 

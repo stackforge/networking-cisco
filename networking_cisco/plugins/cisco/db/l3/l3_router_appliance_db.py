@@ -36,7 +36,6 @@ from neutron.common import utils
 from neutron.db import common_db_mixin
 from neutron.db import extraroute_db
 from neutron.db import l3_db
-from neutron.extensions import l3
 from neutron_lib import exceptions as n_exc
 
 from networking_cisco._i18n import _
@@ -177,7 +176,7 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
 
     if bc.NEUTRON_VERSION < bc.NEUTRON_PIKE_VERSION:
         common_db_mixin.CommonDbMixin.register_dict_extend_funcs(
-            l3.ROUTERS, DICT_EXTEND_FUNCTIONS)
+            bc.constants.ROUTERS, DICT_EXTEND_FUNCTIONS)
 
     def __new__(cls):
         if bc.NEUTRON_VERSION < bc.NEUTRON_PIKE_VERSION:
@@ -432,7 +431,7 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
             try:
                 super(L3RouterApplianceDBMixin, self).delete_router(context,
                                                                     router_id)
-            except l3.RouterNotFound as e:
+            except bc.l3_exceptions.RouterNotFound as e:
                 LOG.debug('Ignorable error: %(err)s as it only indicates that '
                           'router was already concurrently deleted just '
                           'before this deletion attempt', {'err': e})
@@ -1029,7 +1028,7 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
 
         try:
             self.get_router(context, router_id)
-        except l3.RouterNotFound:
+        except bc.l3_exceptions.RouterNotFound:
             return
         r_hd_binding_db = self._get_router_binding_info(context.elevated(),
                                                         router_id)
@@ -1314,7 +1313,7 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
         # put in backlog for rescheduling
 
     @staticmethod
-    @bc.extends([l3.ROUTERS])
+    @bc.extends([bc.constants.ROUTERS])
     def _extend_router_dict_routertype(router_res, router_db):
         self = bc.get_plugin(bc.constants.L3)
         adm_context = bc.context.get_admin_context()
@@ -1330,13 +1329,13 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
         router_res[routertype.TYPE_ATTR] = router_type
 
     @staticmethod
-    @bc.extends([l3.ROUTERS])
+    @bc.extends([bc.constants.ROUTERS])
     def _extend_router_dict_routerhostingdevice(router_res, router_db):
         router_res[routerhostingdevice.HOSTING_DEVICE_ATTR] = (
             (router_db.hosting_info or {}).get('hosting_device_id'))
 
     @staticmethod
-    @bc.extends([l3.ROUTERS])
+    @bc.extends([bc.constants.ROUTERS])
     def _extend_router_dict_routerrole(router_res, router_db):
         router_res[routerrole.ROUTER_ROLE_ATTR] = (
             (router_db.hosting_info or {}).get('role'))
