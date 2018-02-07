@@ -14,7 +14,6 @@
 
 import re
 
-from neutron.extensions import l3
 from neutron_lib import exceptions as n_exc
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -31,7 +30,7 @@ LOG = logging.getLogger(__name__)
 APIC_OWNED = 'apic_owned_'
 APIC_SNAT_SUBNET = 'host-snat-pool-for-internal-use'
 APIC_SNAT_NET = 'host-snat-network-for-internal-use'
-EXTERNAL_GW_INFO = l3.EXTERNAL_GW_INFO
+EXTERNAL_GW_INFO = bc.constants.EXTERNAL_GW_INFO
 UUID_REGEX = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
 DEVICE_OWNER_ROUTER_GW = bc.constants.DEVICE_OWNER_ROUTER_GW
 DEVICE_OWNER_ROUTER_INTF = bc.constants.DEVICE_OWNER_ROUTER_INTF

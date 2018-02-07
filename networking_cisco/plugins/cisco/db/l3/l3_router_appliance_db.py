@@ -58,7 +58,7 @@ from networking_cisco.plugins.cisco.l3.drivers import driver_context
 
 LOG = logging.getLogger(__name__)
 
-EXTERNAL_GW_INFO = l3.EXTERNAL_GW_INFO
+EXTERNAL_GW_INFO = bc.constants.EXTERNAL_GW_INFO
 FLOATINGIP_STATUS_ACTIVE = bc.constants.FLOATINGIP_STATUS_ACTIVE
 AGENT_TYPE_L3 = bc.constants.AGENT_TYPE_L3
 AGENT_TYPE_L3_CFG = cisco_constants.AGENT_TYPE_L3_CFG
