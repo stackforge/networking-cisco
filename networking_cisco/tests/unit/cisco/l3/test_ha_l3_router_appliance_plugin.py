@@ -42,7 +42,7 @@ from networking_cisco.tests.unit.cisco.l3 import (
 
 _uuid = uuidutils.generate_uuid
 
-EXTERNAL_GW_INFO = l3.EXTERNAL_GW_INFO
+EXTERNAL_GW_INFO = bc.constants.EXTERNAL_GW_INFO
 
 CORE_PLUGIN_KLASS = device_manager_test_support.CORE_PLUGIN_KLASS
 DEFAULT_PRIORITY = ha_db.DEFAULT_MASTER_PRIORITY
@@ -301,7 +301,7 @@ class HAL3RouterApplianceVMTestCase(
                 probing_enabled=True,
                 probe_interval=3, probe_target='10.5.5.2')
             kwargs = {ha.DETAILS: ha_settings[ha.DETAILS],
-                      l3.EXTERNAL_GW_INFO: {'network_id':
+                      bc.constants.EXTERNAL_GW_INFO: {'network_id':
                                             s['subnet']['network_id']}}
             with self.router(arg_list=(ha.DETAILS,), **kwargs) as r:
                 self._test_create_ha_router(r['router'], s['subnet'],
@@ -324,12 +324,12 @@ class HAL3RouterApplianceVMTestCase(
                 probe_interval=3, probe_target='10.5.5.2')
             kwargs = {ha.ENABLED: True,
                       ha.DETAILS: ha_settings[ha.DETAILS],
-                      l3.EXTERNAL_GW_INFO: {'network_id':
+                      bc.constants.EXTERNAL_GW_INFO: {'network_id':
                                             s['subnet']['network_id']}}
             res = self._create_router(self.fmt, _uuid(), 'ha_router1',
                                       arg_list=(ha.ENABLED,
                                                 ha.DETAILS,
-                                                l3.EXTERNAL_GW_INFO),
+                                                bc.constants.EXTERNAL_GW_INFO),
                                       **kwargs)
             self.assertEqual(res.status_int, webob.exc.HTTPBadRequest.code)
 
@@ -352,12 +352,12 @@ class HAL3RouterApplianceVMTestCase(
                 probe_interval=3, probe_target='10.5.5.2')
             kwargs = {ha.ENABLED: True,
                       ha.DETAILS: ha_settings[ha.DETAILS],
-                      l3.EXTERNAL_GW_INFO: {'network_id':
+                      bc.constants.EXTERNAL_GW_INFO: {'network_id':
                                             s['subnet']['network_id']}}
             res = self._create_router(self.fmt, _uuid(), 'ha_router1',
                                       arg_list=(ha.ENABLED,
                                                 ha.DETAILS,
-                                                l3.EXTERNAL_GW_INFO),
+                                                bc.constants.EXTERNAL_GW_INFO),
                                       **kwargs)
             self.assertEqual(res.status_int, webob.exc.HTTPBadRequest.code)
 
@@ -376,10 +376,12 @@ class HAL3RouterApplianceVMTestCase(
             kwargs = {
                 ha.ENABLED: True,
                 ha.DETAILS: {ha.TYPE: ha.HA_VRRP},
-                l3.EXTERNAL_GW_INFO: {'network_id': s['subnet']['network_id']}}
+                bc.constants.EXTERNAL_GW_INFO: {'network_id': s['subnet'][
+                    'network_id']}}
             res = self._create_router(
                 self.fmt, _uuid(), 'ha_router1', set_context=True,
-                arg_list=(ha.ENABLED, ha.DETAILS, l3.EXTERNAL_GW_INFO),
+                arg_list=(ha.ENABLED, ha.DETAILS,
+                          bc.constants.EXTERNAL_GW_INFO),
                 **kwargs)
             self.assertEqual(res.status_int, webob.exc.HTTPForbidden.code)
 
@@ -398,10 +400,12 @@ class HAL3RouterApplianceVMTestCase(
             kwargs = {
                 ha.ENABLED: True,
                 ha.DETAILS: {ha.TYPE: ha.HA_VRRP},
-                l3.EXTERNAL_GW_INFO: {'network_id': s['subnet']['network_id']}}
+                bc.constants.EXTERNAL_GW_INFO:
+                    {'network_id': s['subnet']['network_id']}}
             res = self._create_router(
                 self.fmt, _uuid(), 'ha_router1',
-                arg_list=(ha.ENABLED, ha.DETAILS, l3.EXTERNAL_GW_INFO),
+                arg_list=(ha.ENABLED, ha.DETAILS,
+                          bc.constants.EXTERNAL_GW_INFO),
                 **kwargs)
             self.assertEqual(res.status_int, webob.exc.HTTPConflict.code)
 
@@ -420,7 +424,8 @@ class HAL3RouterApplianceVMTestCase(
             self._set_net_external(s['subnet']['network_id'])
             kwargs = {
                 ha.ENABLED: True,
-                l3.EXTERNAL_GW_INFO: {'network_id': s['subnet']['network_id']}}
+                bc.constants.EXTERNAL_GW_INFO:
+                    {'network_id': s['subnet']['network_id']}}
             res = self._create_router(
                 self.fmt, _uuid(), 'ha_router1',
                 arg_list=(ha.ENABLED,), **kwargs)
@@ -758,7 +763,7 @@ class HAL3RouterApplianceVMTestCase(
         with self.subnet(cidr='10.0.1.0/24') as s:
             self._set_net_external(s['subnet']['network_id'])
             kwargs = {ha.ENABLED: False,
-                      l3.EXTERNAL_GW_INFO: {'network_id':
+                      bc.constants.EXTERNAL_GW_INFO: {'network_id':
                                             s['subnet']['network_id']}}
             with self.router(arg_list=(ha.ENABLED,), **kwargs) as r,\
                     self.port() as p:
@@ -775,7 +780,7 @@ class HAL3RouterApplianceVMTestCase(
         with self.subnet(cidr='10.0.1.0/24') as s:
             self._set_net_external(s['subnet']['network_id'])
             kwargs = {ha.ENABLED: False,
-                      l3.EXTERNAL_GW_INFO: {'network_id':
+                      bc.constants.EXTERNAL_GW_INFO: {'network_id':
                                             s['subnet']['network_id']}}
             with self.router(arg_list=(ha.ENABLED,), **kwargs) as r:
                 no_port = {'id': None, 'network_id': None,
@@ -794,7 +799,7 @@ class HAL3RouterApplianceVMTestCase(
         with self.subnet(cidr='10.0.1.0/24') as s:
             self._set_net_external(s['subnet']['network_id'])
             kwargs = {ha.ENABLED: False,
-                      l3.EXTERNAL_GW_INFO: {'network_id':
+                      bc.constants.EXTERNAL_GW_INFO: {'network_id':
                                             s['subnet']['network_id']}}
             with self.router(arg_list=(ha.ENABLED,), **kwargs) as r:
                 with self.port() as p:
@@ -817,7 +822,7 @@ class HAL3RouterApplianceVMTestCase(
             s = self.deserialize(self.fmt, res)
             self._set_net_external(s['subnet']['network_id'])
             kwargs = {ha.ENABLED: False,
-                      l3.EXTERNAL_GW_INFO: {'network_id':
+                      bc.constants.EXTERNAL_GW_INFO: {'network_id':
                                             s['subnet']['network_id']}}
             with self.router(tenant_id=tenant_id, arg_list=(ha.ENABLED,),
                              **kwargs) as r:
@@ -932,7 +937,7 @@ class HAL3RouterApplianceVMTestCase(
         with self.subnet(cidr='10.0.1.0/24') as s:
             self._set_net_external(s['subnet']['network_id'])
             kwargs = {ha.ENABLED: False,
-                      l3.EXTERNAL_GW_INFO: {'network_id':
+                      bc.constants.EXTERNAL_GW_INFO: {'network_id':
                                             s['subnet']['network_id']}}
             with self.router(arg_list=(ha.ENABLED,), **kwargs) as r:
                 ha_disabled_settings = self._get_ha_defaults(ha_enabled=False)
