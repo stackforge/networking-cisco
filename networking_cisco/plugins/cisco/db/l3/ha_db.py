@@ -26,7 +26,6 @@ from sqlalchemy.sql import expression as expr
 
 from neutron.common import utils
 from neutron.db import models_v2
-from neutron.extensions import l3
 from neutron_lib import exceptions as n_exc
 
 from networking_cisco._i18n import _
@@ -51,7 +50,7 @@ MAX_GLBP_GROUPS = 1023
 
 is_attr_set = bc.is_attr_set
 ATTR_NOT_SPECIFIED = bc.constants.ATTR_NOT_SPECIFIED
-EXTERNAL_GW_INFO = l3.EXTERNAL_GW_INFO
+EXTERNAL_GW_INFO = bc.constants.EXTERNAL_GW_INFO
 DEVICE_OWNER_ROUTER_GW = bc.constants.DEVICE_OWNER_ROUTER_GW
 DEVICE_OWNER_ROUTER_INTF = bc.constants.DEVICE_OWNER_ROUTER_INTF
 DEVICE_OWNER_ROUTER_HA_INTF = bc.constants.DEVICE_OWNER_ROUTER_HA_INTF
