@@ -215,6 +215,8 @@ if NEUTRON_VERSION >= NEUTRON_QUEENS_VERSION:
     setattr(constants, 'EXTERNAL_GW_INFO', getattr(l3_const,
             'EXTERNAL_GW_INFO'))
     setattr(constants, 'ROUTERS', getattr(l3_const, 'ROUTERS'))
+    setattr(constants, 'RESOURCE_ATTRIBUTE_MAP',
+            getattr(l3_const, 'RESOURCE_ATTRIBUTE_MAP'))
 else:
     # Pre-queens
     from neutron.api.v2 import base as cb_faults  # noqa
@@ -228,6 +230,8 @@ else:
     setattr(constants, 'EXTERNAL_GW_INFO', getattr(l3_exceptions,
             'EXTERNAL_GW_INFO'))
     setattr(constants, 'ROUTERS', getattr(l3_exceptions, 'ROUTERS'))
+    setattr(constants, 'RESOURCE_ATTRIBUTE_MAP',
+            getattr(l3_exceptions, 'RESOURCE_ATTRIBUTE_MAP'))
 
 core_opts = base_config.core_opts
 
