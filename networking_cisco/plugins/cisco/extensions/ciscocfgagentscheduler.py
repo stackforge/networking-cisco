@@ -18,7 +18,6 @@ from oslo_log import log as logging
 import webob.exc
 
 from neutron.api import extensions
-from neutron.api.v2 import base
 from neutron.api.v2 import resource
 from neutron.common import rpc as n_rpc
 from neutron import policy
@@ -152,13 +151,13 @@ class Ciscocfgagentscheduler(bc.extensions.ExtensionDescriptor):
         parent = dict(member_name="agent",
                       collection_name="agents")
         controller = resource.Resource(HostingDeviceSchedulerController(),
-                                       base.FAULT_MAP)
+                                       bc.cb_faults.FAULT_MAP)
         exts.append(extensions.ResourceExtension(CFG_AGENT_HOSTING_DEVICES,
                                                  controller, parent))
         parent = dict(member_name=ciscohostingdevicemanager.DEVICE,
                       collection_name=ciscohostingdevicemanager.DEVICES)
         controller = resource.Resource(
-            CfgAgentsHandlingHostingDeviceController(), base.FAULT_MAP)
+            CfgAgentsHandlingHostingDeviceController(), bc.cb_faults.FAULT_MAP)
         exts.append(extensions.ResourceExtension(HOSTING_DEVICE_CFG_AGENTS,
                                                  controller, parent,
                                                  PATH_PREFIX))
