@@ -77,25 +77,26 @@ class TestL3RouterBaseExtensionManager(object):
         # initialize the main API router which extends
         # the global attribute map
         # first, add hosting device attribute to router resource
-        l3.RESOURCE_ATTRIBUTE_MAP['routers'].update(
+        bc.constants.RESOURCE_ATTRIBUTE_MAP['routers'].update(
             routerhostingdevice.EXTENDED_ATTRIBUTES_2_0['routers'])
         # also add role attribute to router resource
-        l3.RESOURCE_ATTRIBUTE_MAP['routers'].update(
+        bc.constants.RESOURCE_ATTRIBUTE_MAP['routers'].update(
             routerrole.EXTENDED_ATTRIBUTES_2_0['routers'])
         # also add routertype attribute to router resource
-        l3.RESOURCE_ATTRIBUTE_MAP['routers'].update(
+        bc.constants.RESOURCE_ATTRIBUTE_MAP['routers'].update(
             routertype.EXTENDED_ATTRIBUTES_2_0['routers'])
         # also add description attribute to router and fip resources
         ext_res = (standardattrdescription.Standardattrdescription().
                    get_extended_resources("2.0"))
         if 'routers' in ext_res:
-            l3.RESOURCE_ATTRIBUTE_MAP['routers'].update(ext_res['routers'])
+            bc.constants.RESOURCE_ATTRIBUTE_MAP['routers'].update(
+                    ext_res['routers'])
         if 'floatingips' in ext_res:
-            (l3.RESOURCE_ATTRIBUTE_MAP['floatingips'].
+            (bc.constants.RESOURCE_ATTRIBUTE_MAP['floatingips'].
              update(ext_res['floatingips']))
         # finally, extend the global attribute map
         attributes.RESOURCE_ATTRIBUTE_MAP.update(
-            l3.RESOURCE_ATTRIBUTE_MAP)
+            bc.constants.RESOURCE_ATTRIBUTE_MAP)
         res = l3.L3.get_resources()
         # add routertype resource
         for item in routertype.Routertype.get_resources():
