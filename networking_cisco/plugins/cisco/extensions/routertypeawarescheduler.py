@@ -15,7 +15,6 @@
 import abc
 
 from neutron.api import extensions
-from neutron.api.v2 import base
 from neutron.api.v2 import resource
 from neutron.common import rpc as n_rpc
 from neutron import policy
@@ -174,13 +173,13 @@ class Routertypeawarescheduler(bc.extensions.ExtensionDescriptor):
         parent = dict(member_name=ciscohostingdevicemanager.DEVICE,
                       collection_name=ciscohostingdevicemanager.DEVICES)
         controller = resource.Resource(
-            RouterHostingDeviceSchedulerController(), base.FAULT_MAP)
+            RouterHostingDeviceSchedulerController(), bc.cb_faults.FAULT_MAP)
         exts.append(extensions.ResourceExtension(
             DEVICE_L3_ROUTERS, controller, parent, path_prefix="/dev_mgr"))
         parent = dict(member_name="router",
                       collection_name=bc.constants.ROUTERS)
         controller = resource.Resource(
-            HostingDevicesHostingRouterController(), base.FAULT_MAP)
+            HostingDevicesHostingRouterController(), bc.cb_faults.FAULT_MAP)
         exts.append(extensions.ResourceExtension(L3_ROUTER_DEVICES, controller,
                                                  parent))
         return exts
