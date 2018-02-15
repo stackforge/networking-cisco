@@ -204,6 +204,7 @@ else:
 if NEUTRON_VERSION >= NEUTRON_QUEENS_VERSION:
     # Newer than queens
     from neutron.conf.plugins.ml2 import config as ml2_config
+    from neutron_lib import constants as cb_constants
     from neutron_lib.api.definitions import dns as dns_const
     from neutron_lib.api.definitions import extraroute as extraroute_const
     from neutron_lib.api.definitions import l3 as l3_const
@@ -229,6 +230,7 @@ else:
     from neutron.extensions import dns as dns_const  # noqa
     from neutron.extensions import extraroute as extraroute_const  # noqa
     from neutron.extensions import l3 as l3_const  # noqa
+    from neutron.plugins.common import constants as cb_constants  #noqa
     from neutron.plugins.ml2 import config as ml2_config  # noqa
     from neutron.plugins.ml2 import driver_api as ml2_api  # noqa
     l3_exceptions = l3_const
