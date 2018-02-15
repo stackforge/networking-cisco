@@ -217,6 +217,7 @@ if NEUTRON_VERSION >= NEUTRON_QUEENS_VERSION:
     setattr(constants, 'ROUTERS', getattr(l3_const, 'ROUTERS'))
     setattr(constants, 'RESOURCE_ATTRIBUTE_MAP',
             getattr(l3_const, 'RESOURCE_ATTRIBUTE_MAP'))
+    setattr(constants, 'FLOATINGIPS', getattr(l3_const, 'FLOATINGIPS'))
 else:
     # Pre-queens
     from neutron.api.v2 import base as cb_faults  # noqa
@@ -232,6 +233,7 @@ else:
     setattr(constants, 'ROUTERS', getattr(l3_exceptions, 'ROUTERS'))
     setattr(constants, 'RESOURCE_ATTRIBUTE_MAP',
             getattr(l3_exceptions, 'RESOURCE_ATTRIBUTE_MAP'))
+    setattr(constants, 'FLOATINGIPS', getattr(l3_exceptions, 'FLOATINGIPS'))
 
 core_opts = base_config.core_opts
 
