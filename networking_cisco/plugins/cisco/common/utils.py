@@ -71,9 +71,10 @@ def convert_validate_driver_class(driver_class_name):
         return driver_class_name
     else:
         parts = driver_class_name.split('.')
-        m_pathname = '/'.join(parts[:-1])
+        m_pathname = '/'.join(parts[:-2])
+        m_name = parts[-2]
         try:
-            info = imp.find_module(m_pathname)
+            info = imp.find_module(m_name, [m_pathname])
             mod = imp.load_module(parts[-2], *info)
             if parts[-1] in dir(mod):
                 return driver_class_name
