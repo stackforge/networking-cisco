@@ -65,16 +65,27 @@ def retry(ExceptionToCheck, tries=4, delay=3, backoff=2):
     return deco_retry
 
 
+def import_module(module_path, parent_path=None):
+    if not isinstance(module_path, list):
+        module_path = module_path.split(".")
+    info = imp.find_module(module_path[0], parent_path)
+    m = imp.load_module(module_path[0], *info)
+    if len(module_path) == 1:
+        return m
+    elif not hasattr(m, "__path__"):
+        raise ImportError("{} is a single module not a package.".format(module_path[0]))
+    else:
+        return import_module(module_path[1:], parent_path=m.__path__)
+
+
 def convert_validate_driver_class(driver_class_name):
     # Verify that import_obj is a loadable class
     if driver_class_name is None or driver_class_name == '':
         return driver_class_name
     else:
-        parts = driver_class_name.split('.')
-        m_pathname = '/'.join(parts[:-1])
         try:
-            info = imp.find_module(m_pathname)
-            mod = imp.load_module(parts[-2], *info)
+            parts = driver_class_name.split(".")
+            mod = import_module(parts[:-1])
             if parts[-1] in dir(mod):
                 return driver_class_name
         except ImportError as e:
