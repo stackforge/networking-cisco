@@ -247,8 +247,12 @@ class L3RoutertypeAwareL3AgentSchedulerTestCase(
                  mock.call(mock.ANY, self.adminContext, r3['id'], None)])
             r_ids = [r['id'] for r in r_list]
             # then test auto_schedule function
-            self.l3_plugin.auto_schedule_routers(self.adminContext, 'host_1',
-                                                 r_ids)
+            if bc.NEUTRON_VERSION >= bc.NEUTRON_PIKE_VERSION:
+                self.l3_plugin.auto_schedule_routers(self.adminContext,
+                                                     'host_1')
+            else:
+                self.l3_plugin.auto_schedule_routers(self.adminContext,
+                                                     'host_1', r_ids)
             r_ids_scheduled = set([r['id'] for r in
                                    auto_scheduler_mock.call_args[0][2]])
             self.assertEqual(2, len(r_ids_scheduled))
