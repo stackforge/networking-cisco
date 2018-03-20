@@ -20,6 +20,7 @@ import sys
 from oslo_config import cfg
 
 from networking_cisco._i18n import _LE
+from networking_cisco.config import multi_config_parser
 
 
 from networking_cisco.apps.saf.agent.vdp import (
@@ -186,7 +187,7 @@ class CiscoDFAConfig(object):
         for k, v in opts:
             if k == '--config-file':
                 cfgfile.insert(0, v)
-        multi_parser = cfg.MultiConfigParser()
+        multi_parser = multi_config_parser.MultiConfigParser()
         read_ok = multi_parser.read(cfgfile)
 
         if len(read_ok) != len(cfgfile):
