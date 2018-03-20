@@ -22,6 +22,7 @@ import six
 
 from networking_cisco._i18n import _
 from networking_cisco import backwards_compatibility as bc
+from networking_cisco.config import multi_config_parser
 
 LOG = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ def get_specific_config(prefix):
     returns: a dict, {<UUID>: {<key1>:<value1>, <key2>:<value2>, ...}}
     """
     conf_dict = {}
-    multi_parser = cfg.MultiConfigParser()
+    multi_parser = multi_config_parser.MultiConfigParser()
     read_ok = multi_parser.read(cfg.CONF.config_file)
     if len(read_ok) != len(cfg.CONF.config_file):
         raise cfg.Error(_("Some config files were not parsed properly"))
