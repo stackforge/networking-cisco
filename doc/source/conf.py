@@ -19,28 +19,26 @@ import sys
 sys.path.insert(0, os.path.abspath('../..'))
 # -- General configuration ----------------------------------------------------
 
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-if on_rtd and not os.path.isdir("contributor/api"):
-    print("On Read the Docs and autodoc python module docs aren't built. "
-          "Building...")
-    os.environ['READTHEDOCS'] = 'False'
-    os.environ['JUST_BUILD_AUTO_DOC'] = 'True'
-    subprocess.check_call(
-        [sys.executable, 'setup.py', 'build_sphinx', '-b', 'dummy'],
-        cwd=os.path.join(os.path.dirname(__file__), os.path.pardir,
-                         os.path.pardir),
-    )
-    os.environ['JUST_BUILD_AUTO_DOC'] = 'False'
-    os.environ['READTHEDOCS'] = 'True'
+api_doc_exclude_paths = [
+    "networking_cisco/db/",
+    "networking_cisco/ml2_drivers/ncs",
+    "networking_cisco/ml2_drivers/n1kv",
+    "networking_cisco/plugins/cisco/db/l3/l3_router_appliance_db.py",
+    "networking_cisco/tests/unit/ml2_drivers/ncs",
+    "networking_cisco/tests/unit/ml2_drivers/n1kv"
+]
+api_doc_path = "doc/source/contributor/api"
 
-ignore_everything = os.environ.get('JUST_BUILD_AUTO_DOC', None) == 'True'
-if ignore_everything:
-    master_doc = 'dummy'
-    exclude_patterns = ['index.rst', '*/*']
-else:
-    # The master toctree document.
-    master_doc = 'index'
-    exclude_patterns = ['dummy.rst', 'api/networking_cisco_tempest_plugin.*']
+def build_auto_api_docs(module_name, api_doc_path, exclude_paths):
+    cmd = ['sphinx-apidoc', '-f', '-d', '3', '-e', '-o', api_doc_path, module_name]
+    cmd.extend(exclude_paths)
+    root_dir = os.path.join(
+        os.path.dirname(__file__), os.path.pardir, os.path.pardir)
+    subprocess.check_call(cmd, cwd=root_dir)
+
+build_auto_api_docs("networking_cisco", api_doc_path, api_doc_exclude_paths)
+
+master_doc = 'index'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
