@@ -22,10 +22,10 @@ import socket
 import struct
 import sys
 import threading
+from oslo_utils import uuidutils
 from threading import Lock
 import time
 import traceback
-import uuid
 
 
 TIME_FORMAT = '%a %b %d %H:%M:%S %Y'
@@ -115,7 +115,7 @@ class Dict2Obj(object):
 
 
 def get_uuid():
-    return str(uuid.uuid4())
+    return str(uuidutils.generate_uuid())
 
 
 def lock():
