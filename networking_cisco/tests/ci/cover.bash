@@ -23,7 +23,7 @@ show_diff () {
 run_coverage () {
     local which=$1 ; shift
     report=$(mktemp -t rally_coverageXXXXXXX)
-    find . -type f -name "*.pyc" -delete && python setup.py test --coverage --coverage-package-name=networking_cisco --testr-args="$*"
+    tox -e cover
     coverage report > $report
     echo "$which COVERAGE"
     cat $report
