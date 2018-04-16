@@ -96,7 +96,7 @@ In this scenario, SAF will be installed on a setup which has already OpenStack i
     admin_password = <admin password>
     admin_user = nova
     admin_tenant_name = service
-    auth_uri = http://<ip address of controller>:5000/v2.0
+    www_authenticate_uri = http://<ip address of controller>:5000/v2.0
     auth_host = <ip address of controller>
     ...
 
