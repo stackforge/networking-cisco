@@ -1,0 +1,10 @@
+Code-Review+1: Stephen Finucane <stephenfin@redhat.com>
+Code-Review+2: Sandhya Dasu <sadasu@cisco.com>
+Code-Review+2: Bradley Jones <jones.bradley@me.com>
+Workflow+1: Bradley Jones <jones.bradley@me.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Tue, 24 Apr 2018 15:37:06 +0000
+Reviewed-on: https://review.openstack.org/557307
+Project: openstack/networking-cisco
+Branch: refs/heads/master
