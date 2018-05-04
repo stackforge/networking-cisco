@@ -1,0 +1,10 @@
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Code-Review+1: kaka <huang.zhiping@99cloud.net>
+Code-Review+2: Bradley Jones <jones.bradley@me.com>
+Workflow+1: Bradley Jones <jones.bradley@me.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Fri, 04 May 2018 15:47:25 +0000
+Reviewed-on: https://review.openstack.org/560516
+Project: openstack/networking-cisco
+Branch: refs/heads/master
