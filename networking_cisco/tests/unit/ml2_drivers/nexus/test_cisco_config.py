@@ -32,17 +32,18 @@ vpc_pool=5,10
 intfcfg_portchannel=user cmd1;user cmd2
 https_verify=True
 https_local_certificate=/path/to/your/local-certificate-file.crt
-compute1=1/1
-compute2=1/2
-compute5=1/3,1/4
+host_ports_mapping=compute1:[1/1],
+                   compute2:[1/2],
+                   compute5:[1/3, 1/4]
+
 
 [ml2_mech_cisco_nexus:2.2.2.2]
 username=admin
 password=mySecretPassword
 ssh_port=22
-compute3=1/1
-compute4=1/2
-compute5=portchannel:20,portchannel:30
+host_ports_mapping=compute3:[1/1],
+                   compute4:[1/2],
+                   compute5:[port-channel:20,port-channel:30]
 """
 
 # Make sure intfcfg.portchannel still works
@@ -57,9 +58,9 @@ vpc_pool=5,10
 intfcfg.portchannel=user cmd1;user cmd2
 https_verify=True
 https_local_certificate=/path/to/your/local-certificate-file.crt
-compute1=1/1
-compute2=1/2
-compute5=1/3,1/4
+host_ports_mapping=compute1:[1/1],
+                   compute2:[1/2],
+                   compute5:[1/3, 1/4]
 """
 
 # Assign non-integer to ssh_port for error
@@ -109,10 +110,10 @@ class TestCiscoNexusPluginConfig(TestCiscoNexusPluginConfigBase):
                 'https_verify': True,
                 'https_local_certificate': (
                     '/path/to/your/local-certificate-file.crt'),
-                'host_port_mapping': {
-                    'compute1': '1/1',
-                    'compute2': '1/2',
-                    'compute5': '1/3,1/4'
+                'host_ports_mapping': {
+                    'compute1': ['1/1'],
+                    'compute2': ['1/2'],
+                    'compute5': ['1/3', '1/4']
                 }
             }, '2.2.2.2': {
                 'username': 'admin',
@@ -124,10 +125,10 @@ class TestCiscoNexusPluginConfig(TestCiscoNexusPluginConfigBase):
                 'intfcfg_portchannel': None,
                 'https_verify': False,
                 'https_local_certificate': None,
-                'host_port_mapping': {
-                    'compute3': '1/1',
-                    'compute4': '1/2',
-                    'compute5': 'portchannel:20,portchannel:30'
+                'host_ports_mapping': {
+                    'compute3': ['1/1'],
+                    'compute4': ['1/2'],
+                    'compute5': ['port-channel:20', 'port-channel:30']
                 }
             }
         }
@@ -153,10 +154,10 @@ class TestCiscoNexusPluginConfig(TestCiscoNexusPluginConfigBase):
                 'https_verify': True,
                 'https_local_certificate': (
                     '/path/to/your/local-certificate-file.crt'),
-                'host_port_mapping': {
-                    'compute1': '1/1',
-                    'compute2': '1/2',
-                    'compute5': '1/3,1/4'
+                'host_ports_mapping': {
+                    'compute1': ['1/1'],
+                    'compute2': ['1/2'],
+                    'compute5': ['1/3', '1/4']
                 }
             }
         }
@@ -181,7 +182,7 @@ class TestCiscoNexusPluginConfig(TestCiscoNexusPluginConfigBase):
 
     def test_dict_host_port_mapping(self):
         nc_base.load_config_file(dict_mapping_config_file)
-        """Test port_host_mapping dictionary works."""
+        """Test host_ports_mapping dictionary works."""
         expected = {
             '1.1.1.1': {
                 'username': 'admin',
