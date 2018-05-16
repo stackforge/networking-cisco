@@ -264,27 +264,27 @@ class TestCiscoNexusDeviceResults(
         'add_port2_driver_result3': (
             [test_cisco_nexus_base.RESULT_ADD_VLAN.format(268),
             test_cisco_nexus_base.RESULT_ADD_INTERFACE.
-                format('portchannel', '2', 268),
+                format('port-channel', '2', 268),
             test_cisco_nexus_base.RESULT_ADD_VLAN.format(268),
             test_cisco_nexus_base.RESULT_ADD_INTERFACE.
-                format('portchannel', '2', 268)]),
+                format('port-channel', '2', 268)]),
 
         'delete_port2_driver_result3': (
             [test_cisco_nexus_base.RESULT_DEL_INTERFACE.
-            format('portchannel', '2', 268),
+            format('port-channel', '2', 268),
             test_cisco_nexus_base.RESULT_DEL_VLAN.format(268),
             test_cisco_nexus_base.RESULT_DEL_INTERFACE.
-                format('portchannel', '2', 268),
+                format('port-channel', '2', 268),
             test_cisco_nexus_base.RESULT_DEL_VLAN.format(268)]),
 
         'add_port_channel_driver_result': (
             [test_cisco_nexus_base.RESULT_ADD_VLAN.format(268),
             test_cisco_nexus_base.RESULT_ADD_INTERFACE.
-                format('portchannel', '2', 268)]),
+                format('port-channel', '2', 268)]),
 
         'delete_port_channel_driver_result': (
             [test_cisco_nexus_base.RESULT_DEL_INTERFACE.
-                format('portchannel', '2', 268),
+                format('port-channel', '2', 268),
             test_cisco_nexus_base.RESULT_DEL_VLAN.format(268)]),
 
         'dual_add_port_driver_result': (
@@ -293,14 +293,14 @@ class TestCiscoNexusDeviceResults(
                 format('ethernet', '1\/3', 269),
             test_cisco_nexus_base.RESULT_ADD_VLAN.format(269),
             test_cisco_nexus_base.RESULT_ADD_INTERFACE.
-                format('portchannel', '2', 269)]),
+                format('port-channel', '2', 269)]),
 
         'dual_delete_port_driver_result': (
             [test_cisco_nexus_base.RESULT_DEL_INTERFACE.
                 format('ethernet', '1\/3', 269),
             test_cisco_nexus_base.RESULT_DEL_VLAN.format(269),
             test_cisco_nexus_base.RESULT_DEL_INTERFACE.
-                format('portchannel', '2', 269)]),
+                format('port-channel', '2', 269)]),
 
         'migrate_add_host2_driver_result': (
             [test_cisco_nexus_base.RESULT_ADD_VLAN.format(267),
@@ -1008,15 +1008,15 @@ class TestCiscoNexusInitResults(
             [test_cisco_nexus_base.RESULT_INTERFACE.
                 format('ethernet', '1\/10', 'None'),
             test_cisco_nexus_base.RESULT_INTERFACE.
-                format('portchannel', '2', 'None'),
+                format('port-channel', '2', 'None'),
             test_cisco_nexus_base.RESULT_INTERFACE.
                 format('ethernet', '1\/20', 'None'),
             test_cisco_nexus_base.RESULT_INTERFACE.
                 format('ethernet', '1\/3', 'None'),
             test_cisco_nexus_base.RESULT_INTERFACE.
-                format('portchannel', '2', 'None'),
+                format('port-channel', '2', 'None'),
             test_cisco_nexus_base.RESULT_INTERFACE.
-                format('portchannel', '2', 'None'),
+                format('port-channel', '2', 'None'),
             test_cisco_nexus_base.RESULT_INTERFACE.
                 format('ethernet', '1\/10', 'None')]),
 
@@ -1028,7 +1028,7 @@ class TestCiscoNexusInitResults(
             None,
             None,
             test_cisco_nexus_base.RESULT_INTERFACE.
-                format('portchannel', '2', 'None'),
+                format('port-channel', '2', 'None'),
             None,
             None,
             test_cisco_nexus_base.RESULT_INTERFACE.
