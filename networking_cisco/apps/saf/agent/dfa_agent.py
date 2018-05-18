@@ -15,13 +15,12 @@
 #
 
 
+import eventlet
 import os
 import platform
 import sys
 import time
 
-import eventlet
-eventlet.monkey_patch()
 from oslo_serialization import jsonutils
 
 from networking_cisco.apps.saf.agent import iptables_driver as iptd
@@ -32,6 +31,8 @@ from networking_cisco.apps.saf.common import dfa_logger as logging
 from networking_cisco.apps.saf.common import rpc
 from networking_cisco.apps.saf.common import utils
 
+
+eventlet.monkey_patch()
 
 LOG = logging.getLogger(__name__)
 

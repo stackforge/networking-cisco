@@ -17,11 +17,13 @@ import datetime
 import mock
 from oslo_utils import uuidutils
 
-sys.modules['ncclient'] = mock.MagicMock()
 from networking_cisco.plugins.cisco.cfg_agent import device_status
 from neutron.tests import base
 
 import networking_cisco.plugins.cisco.common.cisco_constants as cc
+
+
+sys.modules['ncclient'] = mock.MagicMock()
 _uuid = uuidutils.generate_uuid
 
 TYPE_STRING = 'string'
