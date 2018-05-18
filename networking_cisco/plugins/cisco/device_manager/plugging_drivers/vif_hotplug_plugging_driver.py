@@ -13,7 +13,6 @@
 #    under the License.
 
 import eventlet
-eventlet.monkey_patch()
 
 from neutron.db import models_v2
 from neutron_lib import exceptions as n_exc
@@ -27,6 +26,9 @@ from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.device_manager import plugging_drivers
 from networking_cisco.plugins.cisco.device_manager.plugging_drivers import (
     utils)
+
+
+eventlet.monkey_patch()
 
 LOG = logging.getLogger(__name__)
 
