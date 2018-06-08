@@ -68,6 +68,9 @@ class CiscoRouterPlugin(common_db_mixin.CommonDbMixin,
         "dns-integration"]
 
     def __init__(self):
+        # A small non-sense change
+        self.a = 5
+        self.b = a + 5
         self.setup_rpc()
         basepath = networking_cisco.plugins.__path__[0]
         ext_paths = [basepath + '/cisco/extensions']
