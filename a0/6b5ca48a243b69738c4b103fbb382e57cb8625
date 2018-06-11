@@ -1,0 +1,9 @@
+Code-Review+2: Bradley Jones <jones.bradley@me.com>
+Code-Review+2: Sandhya Dasu <sadasu@cisco.com>
+Workflow+1: Sandhya Dasu <sadasu@cisco.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Mon, 11 Jun 2018 14:45:33 +0000
+Reviewed-on: https://review.openstack.org/568948
+Project: openstack/networking-cisco
+Branch: refs/heads/master
