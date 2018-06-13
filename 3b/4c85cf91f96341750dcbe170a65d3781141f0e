@@ -1,0 +1,8 @@
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Wed, 13 Jun 2018 10:52:32 +0000
+Reviewed-on: https://review.openstack.org/572320
+Project: openstack/networking-cisco
+Branch: refs/heads/master
