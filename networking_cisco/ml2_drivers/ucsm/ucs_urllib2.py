@@ -14,8 +14,8 @@
 # under the License.
 
 import ssl
-import urllib2
-from urllib2 import *  # noqa
+#import urllib2
+#from urllib2 import *  # noqa
 
 from oslo_config import cfg
 
@@ -30,15 +30,16 @@ def build_opener(*handlers):
             # Python version does not support creation of default
             # context. In that case, proceed with the regular
             # build_opener.
-            return urllib2.build_opener(*handlers)
+            # return urllib2.build_opener(*handlers)
+            pass
         else:
             # Update successfully created context to ignore
             # SSL certificates on this HTTPS connection.
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
-            return urllib2.build_opener(urllib2.HTTPSHandler(context=ctx),
-                *handlers)
-    else:
-        # SSL certificate checking has not be turned off. Continue
-        # using the unmodified build_opener().
-        return urllib2.build_opener(*handlers)
+            #return urllib2.build_opener(urllib2.HTTPSHandler(context=ctx),
+            #    *handlers)
+    #else:
+    #    # SSL certificate checking has not be turned off. Continue
+    #    # using the unmodified build_opener().
+    #    return urllib2.build_opener(*handlers)
