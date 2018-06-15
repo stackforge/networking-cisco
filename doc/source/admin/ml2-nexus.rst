@@ -291,7 +291,6 @@ following configuration is required.
         ComputeHostB=1/9,1/10
         username=admin
         password=secretPassword
-        ssh_port=22
         physnet=physnet1
         https_verify=True  # for secure path if certificate available
 
@@ -299,7 +298,6 @@ following configuration is required.
         ComputeHostC=1/10
         username=admin
         password=secretPassword
-        ssh_port=22
         physnet=physnet1
         https_verify=True  # for secure path if certificate available
 
@@ -341,7 +339,6 @@ variables.  More details on these neutron variable names can be found in
                     "ports": "1/2"
                 }
             },
-            "ssh_port": 22,
             "username": "admin",
             "vpc_pool": "1001-1025,1030",
             "intfcfg_portchannel": "no lacp suspend-individual;spanning-tree port type edge trunk",
@@ -394,7 +391,6 @@ found in :doc:`Nexus Configuration Reference </configuration/ml2-nexus>`.
                         "ports": "1/10"
                     }
                 },
-                "ssh_port": 22,
                 "username": "admin"
                 "https_verify":=True
             }
@@ -411,7 +407,6 @@ found in :doc:`Nexus Configuration Reference </configuration/ml2-nexus>`.
                         "ports": "1/11"
                     }
                 },
-                "ssh_port": 22,
                 "username": "admin"
                 "https_verify":=True
             }
@@ -460,7 +455,6 @@ the section :ref:`nexus_nodhcp_startup`.
                         "ports": "1/10"
                     }
                 },
-                "ssh_port": 22,
                 "username": "admin"
                 "https_verify":=True
             }
@@ -477,7 +471,6 @@ the section :ref:`nexus_nodhcp_startup`.
                         "ports": "1/11"
                     }
                 },
-                "ssh_port": 22,
                 "username": "admin"
                 "https_verify":=True
             }
