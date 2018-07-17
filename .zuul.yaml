@@ -126,6 +126,8 @@
       - docs-on-readthedocs
     check:
       jobs:
+        - openstack-tox-bandit:
+            override-checkout: mitaka-eol
         - openstack-tox-compare-cover:
             override-checkout: mitaka-eol
             voting: false
