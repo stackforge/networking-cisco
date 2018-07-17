@@ -755,8 +755,10 @@ def alloc_vpcid(nexus_ips):
                              False, True)
             vpc_id = intersect_tuple.vpc_id
             break
-        except Exception:
-            # Another controller may have beaten us to this vpcid
+        except Exception:  # nosec
+            # An exception is expected if another controller
+            # has beaten us to this vpcid. Suppress
+            # bandit static analysis error with nosec.
             pass
 
     return vpc_id
