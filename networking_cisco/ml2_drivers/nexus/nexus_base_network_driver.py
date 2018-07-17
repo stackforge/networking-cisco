@@ -44,7 +44,7 @@ class CiscoNexusBaseDriver(object):
         pass
 
     def capture_and_print_timeshot(self, start_time, which,
-                                   other=99, switch="0.0.0.0"):
+                                   other=99, switch="x.x.x.x"):
         """Determine delta, keep track, and print results."""
 
         curr_timeout = time.time() - start_time
