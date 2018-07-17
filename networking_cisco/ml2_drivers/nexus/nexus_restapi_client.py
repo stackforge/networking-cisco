@@ -193,8 +193,11 @@ class CiscoNexusRestapiClient(object):
                 'text/json' in response.headers['content-type']):
                 try:
                     output = response.json()
-                except Exception:
-                    pass
+                except Exception as e:
+                    LOG.error("Unexpected error encountered extracting "
+                              "json body from response. "
+                              "Reason: %(reason)s",
+                              {'reason': e})
             if 'ins_api' in output:
                 # do special nxapi response handling
                 try:
