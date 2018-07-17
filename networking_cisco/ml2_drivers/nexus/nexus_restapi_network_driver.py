@@ -162,7 +162,9 @@ class CiscoNexusRestapiDriver(basedrvr.CiscoNexusBaseDriver):
             mode_cfg = if_info['attributes']['mode']
             if mode_cfg == "trunk":
                 mode_found = True
-        except Exception:
+        except Exception:  # nosec
+            # pass is acceptable since mode_found set to False.
+            # Mark nosec to skip bandit statistic analysis error.
             pass
 
         vlan_configured = False
@@ -170,7 +172,10 @@ class CiscoNexusRestapiDriver(basedrvr.CiscoNexusBaseDriver):
             vlan_list = if_info['attributes']['trunkVlans']
             if vlan_list != const.UNCONFIGURED_VLAN:
                 vlan_configured = True
-        except Exception:
+        except Exception:  # nosec
+            # pass is acceptable since vlan_configured already
+            # set to False.
+            # Mark nosec to skip bandit statistic analysis error.
             pass
 
         return mode_found, vlan_configured
@@ -296,7 +301,9 @@ class CiscoNexusRestapiDriver(basedrvr.CiscoNexusBaseDriver):
                     _, nbr = mbr_data['parentSKey'].split("po")
                     ch_grp = int(nbr)
                     break
-        except Exception:
+        except Exception:  # nosec
+            # Valid when there is no channel-group configured.
+            # Mark nosec to skip bandit statistic analysis error.
             pass
 
         LOG.debug("GET interface %(key)s port channel is %(pc)d",
@@ -426,8 +433,8 @@ class CiscoNexusRestapiDriver(basedrvr.CiscoNexusBaseDriver):
         try:
             nxos_db.update_vpc_entry(
                 nexus_ip_list, ch_grp, True, True)
-        except cexc.NexusVPCAllocNotFound:
-            # Valid to get this error if learned ch_grp
+        except cexc.NexusVPCAllocNotFound:   # nosec
+            # Valid to get Exception if learned ch_grp
             # not part of configured vpc_pool
             pass
 
@@ -587,7 +594,11 @@ class CiscoNexusRestapiDriver(basedrvr.CiscoNexusBaseDriver):
         if response:
             try:
                 result = response['imdata'][0]["eqptCh"]['attributes']['descr']
-            except Exception:
+            except Exception:  # nosec
+                # Nexus Type is not depended on at this time so it's ok
+                # if can't get the Nexus type. The real purpose
+                # of this method is to determine if the connection is active.
+                # Mark nosec to skip bandit statistic analysis error.
                 pass
             nexus_type = re.findall(
                 "Nexus\s*(\d)\d+\s*[0-9A-Z]+\s*"

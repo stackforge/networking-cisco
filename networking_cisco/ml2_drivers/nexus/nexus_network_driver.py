@@ -137,7 +137,8 @@ class CiscoNexusSshDriver(basedrvr.CiscoNexusBaseDriver):
                     starttime, "geterr", retry_count, switch=nexus_host)
                 try:
                     self._close_session(mgr, nexus_host)
-                except Exception:
+                except Exception:  # nosec
+                    # Ignore. Code going away
                     pass
 
                 # if transaction is snipp.EXEC_GET_INVENTORY_SNIPPET,
@@ -211,7 +212,8 @@ class CiscoNexusSshDriver(basedrvr.CiscoNexusBaseDriver):
                         return
                 try:
                     self._close_session(mgr, nexus_host)
-                except Exception:
+                except Exception:  # nosec
+                    # Ignore. Code going away
                     pass
                 if retry_count == 1:
                     first_exc = e

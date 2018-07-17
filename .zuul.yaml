@@ -149,6 +149,7 @@
             override-checkout: mitaka-eol
             required-projects:
               - openstack/python-neutronclient
+        - openstack-tox-bandit
         - networking-cisco-tox-py27-newton
         - networking-cisco-tox-py27-ocata
         - networking-cisco-tox-py27-pike
@@ -176,6 +177,7 @@
             override-checkout: mitaka-eol
             required-projects:
               - openstack/python-neutronclient
+        - openstack-tox-bandit
         - networking-cisco-tox-py27-newton
         - networking-cisco-tox-py27-ocata
         - networking-cisco-tox-py27-pike
