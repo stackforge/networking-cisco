@@ -30,6 +30,8 @@ from networking_cisco.backwards_compatibility import constants  # noqa
 # that passes constants and functions according to version number.
 
 
+mutable_config = False
+
 if nv.NEUTRON_VERSION >= nv.NEUTRON_NEWTON_VERSION:
     from neutron.conf import common as base_config
     from neutron_lib.api import validators
@@ -71,6 +73,7 @@ if nv.NEUTRON_VERSION >= nv.NEUTRON_OCATA_VERSION:
     Agent = agent_model.Agent
     RouterPort = l3_models.RouterPort
     Router = l3_models.Router
+    mutable_config = True
 
     def get_context():
         return context.Context()
