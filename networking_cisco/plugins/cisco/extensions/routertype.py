@@ -14,7 +14,6 @@
 
 import abc
 
-from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
 from neutron_lib.api import converters as conv
 from neutron_lib import exceptions
@@ -134,7 +133,7 @@ class Routertype(bc.extensions.ExtensionDescriptor):
         plural_mappings = resource_helper.build_plural_mappings(
             {}, RESOURCE_ATTRIBUTE_MAP)
         if NEUTRON_VERSION.version[0] <= NEUTRON_NEWTON_VERSION.version[0]:
-            attr.PLURALS.update(plural_mappings)
+            bc.constants.PLURALS.update(plural_mappings)
         return resource_helper.build_resource_info(plural_mappings,
                                                    RESOURCE_ATTRIBUTE_MAP,
                                                    bc.constants.L3)
