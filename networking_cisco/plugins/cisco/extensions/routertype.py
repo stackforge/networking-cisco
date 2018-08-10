@@ -14,7 +14,7 @@
 
 import abc
 
-from neutron.api.v2 import attributes as attr
+from neutron_lib.api import attributes as attr
 from neutron.api.v2 import resource_helper
 from neutron_lib.api import converters as conv
 from neutron_lib import exceptions
