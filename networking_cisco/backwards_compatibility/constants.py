@@ -25,6 +25,10 @@ from neutron_lib.constants import *  # noqa
 if nv.NEUTRON_VERSION < nv.NEUTRON_NEWTON_VERSION:
     from neutron.api.v2.attributes import ATTR_NOT_SPECIFIED  # noqa: F401
 
+# Compatibility additions for releases before Newton(including)
+if nv.NEUTRON_VERSION <= nv.NEUTRON_NEWTON_VERSION:
+    from neutron.api.v2.attributes import PLURALS  # noqa: F401
+
 # Compatibility additions for releases before Ocata
 if nv.NEUTRON_VERSION < nv.NEUTRON_OCATA_VERSION:
     from neutron.plugins.common.constants import L3_ROUTER_NAT as L3  # noqa: F401
