@@ -56,7 +56,7 @@ def upgrade():
         sa.Column('group_identity', sa.String(255), nullable=True),
         sa.Column('ha_port_id', sa.String(36), nullable=False),
         sa.Column('extra_port_id', sa.String(36), nullable=True),
-        sa.Column('subnet_id', sa.String(36), nullable=True),
+        sa.Column('subnet_id', sa.String(36), nullable=False),
         sa.Column('user_router_id', sa.String(36), nullable=True),
         sa.Column('timers_config', sa.String(255), nullable=True),
         sa.Column('tracking_config', sa.String(255), nullable=True),
@@ -65,7 +65,8 @@ def upgrade():
                                 ondelete='CASCADE'),
         sa.ForeignKeyConstraint(['extra_port_id'], ['ports.id'],
                                 ondelete='SET NULL'),
-        sa.ForeignKeyConstraint(['subnet_id'], ['subnets.id']),
+        sa.ForeignKeyConstraint(['subnet_id'], ['subnets.id'],
+                                ondelete='CASCADE'),
         sa.ForeignKeyConstraint(['user_router_id'], ['routers.id']),
         sa.PrimaryKeyConstraint('ha_port_id')
     )
