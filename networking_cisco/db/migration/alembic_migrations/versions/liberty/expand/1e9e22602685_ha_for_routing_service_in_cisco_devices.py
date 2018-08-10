@@ -56,7 +56,7 @@ def upgrade():
         sa.Column('group_identity', sa.String(255), nullable=True),
         sa.Column('ha_port_id', sa.String(36), nullable=False),
         sa.Column('extra_port_id', sa.String(36), nullable=True),
-        sa.Column('subnet_id', sa.String(36), nullable=True),
+        sa.Column('subnet_id', sa.String(36), nullable=False),
         sa.Column('user_router_id', sa.String(36), nullable=True),
         sa.Column('timers_config', sa.String(255), nullable=True),
         sa.Column('tracking_config', sa.String(255), nullable=True),
