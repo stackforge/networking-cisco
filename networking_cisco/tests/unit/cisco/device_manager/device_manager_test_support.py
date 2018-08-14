@@ -17,7 +17,6 @@ from datetime import datetime
 import mock
 import time
 
-from neutron.api.v2 import attributes
 from neutron.common import test_lib
 from neutron.db import agents_db
 from neutron.extensions import agent
@@ -296,7 +295,7 @@ class TestDeviceManagerExtensionManager(object):
         # This is done here as the setup process won't
         # initialize the main API router which extends
         # the global attribute map
-        attributes.RESOURCE_ATTRIBUTE_MAP.update(
+        bc.RESOURCES.update(
             ciscodevmgr.RESOURCE_ATTRIBUTE_MAP)
         return res
 
