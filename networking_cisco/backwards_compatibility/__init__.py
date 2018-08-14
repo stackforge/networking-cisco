@@ -85,10 +85,10 @@ if nv.NEUTRON_VERSION >= nv.NEUTRON_OCATA_VERSION:
         return nclient.glance
 
     def get_reader_session():
-        return db_api.get_reader_session()
+        return lib_db_api.get_reader_session()
 
     def get_writer_session():
-        return db_api.get_writer_session()
+        return lib_db_api.get_writer_session()
 
     is_agent_down = agent_utils.is_agent_down
 
@@ -159,10 +159,10 @@ else:
         return nclient.images
 
     def get_reader_session():
-        return db_api.get_session()
+        return lib_db_api.get_session()
 
     def get_writer_session():
-        return db_api.get_session()
+        return lib_db_api.get_session()
 
     is_agent_down = agents_db.AgentDbMixin.is_agent_down
 
@@ -238,5 +238,12 @@ else:
 
     def get_agent_db_obj(agent):
         return agent
+
+if nv.NEUTRON_VERSION >= nv.NEUTRON_ROCKY_VERSION:
+    from neutron_lib.agent import topics  # noqa
+    from neutron_lib.db import api as lib_db_api
+else:
+    from neutron.common import topics  # noqa
+    from neutron.db import api as lib_db_api
 
 core_opts = base_config.core_opts
