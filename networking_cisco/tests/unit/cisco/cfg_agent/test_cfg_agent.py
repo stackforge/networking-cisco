@@ -21,6 +21,7 @@ import testtools
 from neutron.tests import base
 
 from networking_cisco import backwards_compatibility as bc
+from networking_cisco.backwards_compatibility import rpc as n_rpc
 from networking_cisco.plugins.cisco.cfg_agent import cfg_agent
 
 
@@ -90,7 +91,8 @@ class TestCiscoCfgAgentWithStateReporting(base.BaseTestCase):
             'oslo_service.loopingcall.FixedIntervalLoopingCall')
         self.looping_call_p.start()
 
-        mock.patch('neutron.common.rpc.create_connection').start()
+        mock.patch('networking_cisco.backwards_compatibility.'
+                   'rpc.Connection').start()
 
     def test_agent_registration_success(self):
         agent = cfg_agent.CiscoCfgAgentWithStateReport(HOSTNAME, self.conf)
