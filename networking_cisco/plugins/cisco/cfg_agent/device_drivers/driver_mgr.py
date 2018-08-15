@@ -88,9 +88,14 @@ class DeviceDriverManager(object):
                 obfusc_creds = dict(hosting_device.get('credentials'))
                 if obfusc_creds:
                     # get un-obfuscated password
+                    # FIXME(sambetts) DO NOT MERGE
+                    LOG.debug("Getting real password for %s" % obfusc_creds.get('credentials_id'))
                     real_pw = self._cfg_agent.get_hosting_device_password(
                         obfusc_creds.get('credentials_id'))
+                    LOG.debug("Found real password %s" % real_pw)
                     hosting_device['credentials']['password'] = real_pw
+
+                LOG.debug("Starting driver with hosting device %s" % hosting_device)
                 driver = importutils.import_object(driver_class,
                                                    **hosting_device)
                 self._hosting_device_routing_drivers_binding[hd_id] = driver
