@@ -26,7 +26,6 @@ import networking_cisco
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.backwards_compatibility import (constants as
     svc_constants)
-from networking_cisco.backwards_compatibility import attributes
 from networking_cisco.plugins.cisco.common import cisco_constants as c_const
 from networking_cisco.plugins.cisco.device_manager import service_vm_lib
 from networking_cisco.plugins.cisco.extensions import ciscocfgagentscheduler
@@ -115,7 +114,7 @@ class HostingDeviceConfigAgentSchedulerTestCaseBase(
         # Save the global RESOURCE_ATTRIBUTE_MAP
         self.saved_attr_map = {}
         for resource, attrs in six.iteritems(
-                attributes.RESOURCE_ATTRIBUTE_MAP):
+                bc.RESOURCES):
             self.saved_attr_map[resource] = attrs.copy()
         if not core_plugin:
             core_plugin = CORE_PLUGIN_KLASS
