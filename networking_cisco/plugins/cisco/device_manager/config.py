@@ -115,10 +115,21 @@ router_types = base.SubsectionOpt(
     subopts=router_type_subopts)
 
 
+hwvlantrunkingdrivers_subopts = [
+    base.RemainderOpt('interfaces')
+]
+
+hwvlantrunkingdrivers = base.SubsectionOpt(
+    'HwVLANTrunkingPlugDriver',
+    dest='HwVLANTrunkingPlugDriver',
+    help=_("Subgroups that allow you to specify trunking driver interfaces"),
+    subopts=hwvlantrunkingdrivers_subopts)
+
 cfg.CONF.register_opt(hosting_device_credentials)
 cfg.CONF.register_opt(hosting_device_templates)
 cfg.CONF.register_opt(hosting_devices)
 cfg.CONF.register_opt(router_types)
+cfg.CONF.register_opt(hwvlantrunkingdrivers)
 
 
 def get_specific_config(prefix):

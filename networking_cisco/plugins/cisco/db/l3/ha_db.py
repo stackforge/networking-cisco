@@ -32,6 +32,7 @@ from networking_cisco._i18n import _
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.backwards_compatibility import l3_const
 from networking_cisco.backwards_compatibility import l3_exceptions
+from networking_cisco.backwards_compatibility import extensions
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.common import utils as cisco_utils
 from networking_cisco.plugins.cisco.extensions import ha
@@ -767,7 +768,7 @@ class HA_db_mixin(object):
     @bc.extends([l3_const.ROUTERS])
     def _extend_router_dict_ha(router_res, router_db):
         self = bc.get_plugin(bc.constants.L3)
-        if utils.is_extension_supported(self, ha.HA_ALIAS):
+        if extensions.is_extension_supported(self, ha.HA_ALIAS):
             ha_s = router_db.ha_settings
             rr_b = router_db.redundancy_binding
             if rr_b and rr_b.user_router:
@@ -945,7 +946,7 @@ class HA_db_mixin(object):
             'device_owner': port_type,
             'admin_state_up': True,
             'name': ''}}
-        if utils.is_extension_supported(self._core_plugin, "dns-integration"):
+        if extensions.is_extension_supported(self._core_plugin, "dns-integration"):
                 port['port'].update(dns_name='')
         core_plugin = bc.get_plugin()
         return core_plugin.create_port(context, port)
