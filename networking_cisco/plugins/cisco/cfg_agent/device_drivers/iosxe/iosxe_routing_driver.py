@@ -49,12 +49,18 @@ class IosXeRoutingDriver(devicedriver_api.RoutingDriverBase):
     DEV_NAME_LEN = 14
 
     def __init__(self, **device_params):
+
+        LOG.debug('Starting routing driver with %s' % device_params)
+
         try:
             self._host_ip = device_params['management_ip_address']
             self._host_ssh_port = device_params['protocol_port']
-            credentials = device_params.get('credentials', {})
-            self._username = credentials.get('user_name')
-            self._password = credentials.get('password')
+
+            # FIXME(sambetts) DO NOT MERGE
+            self.credentials = device_params.get('credentials', {})
+
+            self._username = self.credentials.get('user_name')
+            self._password = self.credentials.get('password')
             self._timeout = (device_params.get('timeout') or
                              cfg.CONF.cfg_agent.device_connection_timeout)
             self._ncc_connection = None
@@ -63,6 +69,10 @@ class IosXeRoutingDriver(devicedriver_api.RoutingDriverBase):
             LOG.error("Missing device parameter:%s. Aborting "
                       "IosXeRoutingDriver initialization", e)
             raise cfg_exc.InitializationException()
+
+        if self._password is None:
+            import traceback
+            traceback.print_stack()
 
     # Public Functions
 
@@ -270,6 +280,9 @@ class IosXeRoutingDriver(devicedriver_api.RoutingDriverBase):
             else:
                 # ncclient needs 'name' to be 'csr' in order to communicate
                 # with the device in the correct way.
+                LOG.debug('Current driver instance: %s' % self)
+                LOG.debug('Before connection got creds %s' % self.credentials)
+                LOG.debug('Before connection got passw %s' % self._password)
                 self._ncc_connection = manager.connect(
                     host=self._host_ip, port=self._host_ssh_port,
                     username=self._username, password=self._password,
@@ -279,6 +292,9 @@ class IosXeRoutingDriver(devicedriver_api.RoutingDriverBase):
                         self._ncc_connection)
             return self._ncc_connection
         except Exception as e:
+            # FIXME(sambetts) PASSWORD ADDED HERE FOR DEBUGGING ONLY REMOVE BEFORE MERGING!
+            LOG.error('Found creds %s' % self.credentials)
+            LOG.error('Found password %s' % self._password)
             conn_params = {'host': self._host_ip, 'port': self._host_ssh_port,
                            'user': self._username,
                            'timeout': self._timeout, 'reason': e.message}
