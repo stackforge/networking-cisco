@@ -88,6 +88,8 @@ class DeviceDriverManager(object):
                 obfusc_creds = dict(hosting_device.get('credentials'))
                 if obfusc_creds:
                     # get un-obfuscated password
+                    # FIXME(sambetts) DO NOT MERGE
+                    LOG.debug("Getting real password for %s" % obfusc_creds.get('credentials_id'))
                     real_pw = self._cfg_agent.get_hosting_device_password(
                         obfusc_creds.get('credentials_id'))
                     hosting_device['credentials']['password'] = real_pw
