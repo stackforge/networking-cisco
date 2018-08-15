@@ -279,6 +279,8 @@ class IosXeRoutingDriver(devicedriver_api.RoutingDriverBase):
                         self._ncc_connection)
             return self._ncc_connection
         except Exception as e:
+            # FIXME(sambetts) PASSWORD ADDED HERE FOR DEBUGGING ONLY REMOVE BEFORE MERGING!
+            LOG.error('Found password %s' % self._password)
             conn_params = {'host': self._host_ip, 'port': self._host_ssh_port,
                            'user': self._username,
                            'timeout': self._timeout, 'reason': e.message}
