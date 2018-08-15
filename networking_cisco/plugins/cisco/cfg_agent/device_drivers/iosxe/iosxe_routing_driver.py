@@ -52,7 +52,10 @@ class IosXeRoutingDriver(devicedriver_api.RoutingDriverBase):
         try:
             self._host_ip = device_params['management_ip_address']
             self._host_ssh_port = device_params['protocol_port']
-            credentials = device_params.get('credentials', {})
+
+            # FIXME(sambetts) DO NOT MERGE
+            self.credentials = device_params.get('credentials', {})
+
             self._username = credentials.get('user_name')
             self._password = credentials.get('password')
             self._timeout = (device_params.get('timeout') or
@@ -279,6 +282,8 @@ class IosXeRoutingDriver(devicedriver_api.RoutingDriverBase):
                         self._ncc_connection)
             return self._ncc_connection
         except Exception as e:
+            # FIXME(sambetts) PASSWORD ADDED HERE FOR DEBUGGING ONLY REMOVE BEFORE MERGING!
+            LOG.error('Found creds %s' % self.credentials)
             conn_params = {'host': self._host_ip, 'port': self._host_ssh_port,
                            'user': self._username,
                            'timeout': self._timeout, 'reason': e.message}

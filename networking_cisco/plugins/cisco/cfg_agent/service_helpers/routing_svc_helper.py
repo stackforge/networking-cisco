@@ -263,7 +263,8 @@ class RoutingServiceHelper(object):
                 self._get_and_clear_removed_routers_cache()
                 self.sync_devices.clear()
                 routers = self._fetch_router_info(all_routers=True)
-                LOG.debug("All routers: %s" % (pp.pformat(routers)))
+                # FIXME(sambetts) DO NOT MERGE THIS CHANGE
+                #LOG.debug("All routers: %s" % (pp.pformat(routers)))
                 if routers is not None:
                     self._cleanup_invalid_cfg(routers)
             else:
@@ -271,7 +272,7 @@ class RoutingServiceHelper(object):
                     router_ids = self._get_and_clear_updated_routers_cache()
                     LOG.debug("Updated routers: %s", router_ids)
                     routers = self._fetch_router_info(router_ids=router_ids)
-                    LOG.debug("Updated routers: %s" % (pp.pformat(routers)))
+                    #LOG.debug("Updated routers: %s" % (pp.pformat(routers)))
                 if device_ids:
                     LOG.debug("Adding new devices: %s", device_ids)
                     self.sync_devices = set(device_ids) | self.sync_devices
