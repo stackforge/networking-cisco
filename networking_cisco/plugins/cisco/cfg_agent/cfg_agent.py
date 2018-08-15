@@ -157,6 +157,10 @@ class CiscoCfgAgent(manager.Manager):
         self.conf = conf or cfg.CONF
         self._credentials = (
             config.obtain_hosting_device_credentials_from_config())
+
+        # FIXME(sambetts) DO NOT MERGE THIS
+        LOG.debug("Found credentials: %s" % self._credentials)
+
         self._dev_status = device_status.DeviceStatus()
         self._dev_status.enable_heartbeat = (
             self.conf.cfg_agent.enable_heartbeat)
