@@ -1,0 +1,8 @@
+Code-Review+2: Bradley Jones <jones.bradley@me.com>
+Workflow+1: Bradley Jones <jones.bradley@me.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Tue, 21 Aug 2018 13:53:56 +0000
+Reviewed-on: https://review.openstack.org/591401
+Project: openstack/networking-cisco
+Branch: refs/heads/master
