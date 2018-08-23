@@ -51,6 +51,7 @@ LOG = logging.getLogger(__name__)
 
 HOST_NOT_FOUND = "Host %s not defined in switch configuration section."
 
+# For Pre Queens releases only
 # Delay the start of the monitor thread to avoid problems with Neutron server
 # process forking. One problem observed was ncclient RPC sync close_session
 # call hanging during initial _monitor_thread() processing to replay existing
@@ -402,9 +403,24 @@ class CiscoNexusMechanismDriver(api.MechanismDriver):
         LOG.info("CiscoNexusMechanismDriver: initialize() called "
                  "pid %(pid)d thid %(tid)d", {'pid': self._ppid,
                  'tid': threading.current_thread().ident})
-        # Start the monitor thread
+
         if self.is_replay_enabled():
-            eventlet.spawn_after(DELAY_MONITOR_THREAD, self._monitor_thread)
+            bc.execute_after_workers_spawned(
+                self.post_fork_callback,
+                self.delayed_spawn_of_replay_thread)
+
+    def post_fork_callback(self, resource, event, trigger, payload=None):
+        # Called after all workers have been forked.  This is
+        # only available queens and thereafter.
+        LOG.info("CiscoNexusMechanismDriver: port_fork_callback()")
+
+        # Start the monitor thread
+        eventlet.spawn(self._monitor_thread)
+
+    def delayed_spawn_of_replay_thread(self):
+        # Prior to queens there isn't a definitive means to
+        # execute after spawning of workers so we delay instead.
+        eventlet.spawn_after(DELAY_MONITOR_THREAD, self._monitor_thread)
 
     def is_replay_enabled(self):
         return conf.cfg.CONF.ml2_cisco.switch_heartbeat_time > 0
