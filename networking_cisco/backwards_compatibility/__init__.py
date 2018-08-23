@@ -216,7 +216,17 @@ if nv.NEUTRON_VERSION >= nv.NEUTRON_QUEENS_VERSION:
     # Return the database object rather than oslo versioned object
     def get_agent_db_obj(agent):
         return agent.db_obj
+
+    def execute_after_workers_spawned(queens_func, pre_queens_func):
+
+        cb_registry.subscribe(queens_func,
+                              cb_resources.PROCESS,
+                              cb_events.AFTER_SPAWN)
 else:
+    def execute_after_workers_spawned(queens_func, pre_queens_func):
+
+        pre_queens_func()
+
     # Pre-queens
     from neutron.agent.linux import external_process  # noqa
     from neutron.agent.linux import interface as neutron_agent_conf  # noqa
