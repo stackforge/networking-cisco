@@ -12,11 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from defusedxml import ElementTree as ET
 import netaddr
 import pprint as pp
 import re
 import six
-import xml.etree.ElementTree as ET
 
 from oslo_config import cfg
 from oslo_log import log as logging

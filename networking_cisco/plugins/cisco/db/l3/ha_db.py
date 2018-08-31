@@ -1008,12 +1008,12 @@ class HA_db_mixin(object):
                               ha_group_uuid):
         #TODO(bob-melander): Generate "guaranteed" unique id
         if ha_settings_db.ha_type == ha.HA_HSRP:
-            return random.randint(0, MAX_HSRP_GROUPS)
+            return random.SystemRandom().randint(0, MAX_HSRP_GROUPS)
         elif ha_settings_db.ha_type == ha.HA_VRRP:
-            return random.randint(0, MAX_VRRP_GROUPS)
+            return random.SystemRandom().randint(0, MAX_VRRP_GROUPS)
         else:
             # ha_type must be ha_type.GLBP
-            return random.randint(0, MAX_GLBP_GROUPS)
+            return random.SystemRandom().randint(0, MAX_GLBP_GROUPS)
 
     # Overloaded function from l3_db
     def get_router_for_floatingip(self, context, internal_port,

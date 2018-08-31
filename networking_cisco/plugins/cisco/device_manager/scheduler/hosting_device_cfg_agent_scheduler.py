@@ -64,7 +64,7 @@ class HostingDeviceCfgAgentScheduler(object):
             return
         LOG.debug('Randomly selecting a Cisco cfg agent among %d candidates' %
                   len(active_cfg_agents))
-        return random.choice(active_cfg_agents)
+        return random.SystemRandom().choice(active_cfg_agents)
 
 
 class StingyHostingDeviceCfgAgentScheduler(HostingDeviceCfgAgentScheduler):

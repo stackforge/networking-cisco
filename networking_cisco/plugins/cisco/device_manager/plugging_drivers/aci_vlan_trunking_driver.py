@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ast
 import re
 
 from neutron_lib import exceptions as n_exc
@@ -106,7 +107,7 @@ class AciVLANTrunkingPlugDriver(hw_vlan.HwVLANTrunkingPlugDriver):
         if self._cfg_file:
             networks_dict = open(self._cfg_file, 'r').read()
             try:
-                self._transit_nets_cfg = eval(networks_dict)
+                self._transit_nets_cfg = ast.literal_eval(networks_dict)
                 self._sanity_check_config(self._transit_nets_cfg)
             except SyntaxError:
                 raise AciDriverConfigInvalidFileFormat

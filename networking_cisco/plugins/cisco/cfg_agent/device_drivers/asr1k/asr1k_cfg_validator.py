@@ -20,8 +20,8 @@ from networking_cisco.plugins.cisco.common.htparser import HTParser
 from networking_cisco.plugins.cisco.extensions import ha
 from networking_cisco.plugins.cisco.extensions import routerrole
 
+from defusedxml import ElementTree as ET
 import re
-import xml.etree.ElementTree as ET
 
 
 ROUTER_ROLE_ATTR = routerrole.ROUTER_ROLE_ATTR

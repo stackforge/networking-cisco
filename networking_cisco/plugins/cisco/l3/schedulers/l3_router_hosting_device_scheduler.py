@@ -233,7 +233,7 @@ class L3RouterHostingDeviceRandomScheduler(L3RouterHostingDeviceBaseScheduler):
         if len(candidates) == 0:
             # report unsuccessful scheduling
             return
-        return random.choice(list(candidates))
+        return random.SystemRandom().choice(list(candidates))
 
     def unschedule_router(self, plugin, context, r_hd_binding_db):
         return True
