@@ -42,6 +42,11 @@ else:
     from neutron.common import config as base_config
     is_attr_set = attributes.is_attr_set
     validators = attributes.validators
+    from neutron.worker import NeutronWorker
+
+    class BaseWorker(NeutronWorker):
+        def __init__(self, worker_process_count=None):
+            super(BaseWorker, self).__init__()
 
 
 if nv.NEUTRON_VERSION >= nv.NEUTRON_OCATA_VERSION:
