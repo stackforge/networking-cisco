@@ -345,6 +345,7 @@ class TestCiscoUcsmMechDriver(testlib_api.SqlTestCase,
         port = port_context._port
         port['status'] = bc.constants.PORT_STATUS_ACTIVE
         self.assertTrue(self.mech_driver._is_status_active(port))
+        self.assertTrue(False)
 
     def test_port_unsupported_status(self):
         """Verifies detection of unsupported status values for ports."""
