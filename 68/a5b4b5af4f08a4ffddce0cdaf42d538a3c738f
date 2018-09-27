@@ -1,0 +1,9 @@
+Code-Review+2: Bradley Jones <jones.bradley@me.com>
+Code-Review+2: Carol Bouchard <caboucha@cisco.com>
+Workflow+1: Bradley Jones <jones.bradley@me.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Thu, 27 Sep 2018 20:15:18 +0000
+Reviewed-on: https://review.openstack.org/601967
+Project: openstack/networking-cisco
+Branch: refs/heads/release-6
