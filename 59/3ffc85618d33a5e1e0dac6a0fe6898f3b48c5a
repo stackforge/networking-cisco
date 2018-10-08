@@ -1,0 +1,9 @@
+Code-Review+2: Bob Melander <bob.melander@gmail.com>
+Code-Review+2: Bradley Jones <jones.bradley@me.com>
+Workflow+1: Bradley Jones <jones.bradley@me.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Mon, 08 Oct 2018 16:26:37 +0000
+Reviewed-on: https://review.openstack.org/592167
+Project: openstack/networking-cisco
+Branch: refs/heads/master
