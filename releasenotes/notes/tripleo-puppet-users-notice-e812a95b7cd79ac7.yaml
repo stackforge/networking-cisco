@@ -1,0 +1,8 @@
+---
+prelude: >
+    In this release, clean-up of Nexus configuration was performed
+    by removing obsolete features. For users of tripleo and
+    puppet-neutron repos, you must make sure you are using the
+    correct versions of the repos that include the changes
+    https://review.openstack.org/#/c/606958 and
+    https://review.openstack.org/#/c/606957.
