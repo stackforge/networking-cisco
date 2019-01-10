@@ -35,7 +35,7 @@ MYSQL_PASSWORD=<mysql password>
 #
 # DCNM credentials:
 #     ENABLER_DCNM_USER     : DCNM user id, default is root
-#     ENABLER_DCNM_AMQP_USER: DCNM rabbitmq user id, defualt is admin
+#     ENABLER_DCNM_AMQP_USER: DCNM rabbitmq user id, default is admin
 #     ENABLER_DCNM_DHCP     : Use dcnm dhcp server or not, default is False
 # Segmentation ID range:
 #     ENABLER_SEG_ID_MIN    : segmentation ID minimum value, default is 10000
