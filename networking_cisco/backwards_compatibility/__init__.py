@@ -46,10 +46,26 @@ else:
     is_attr_set = _attributes.is_attr_set
     validators = _attributes.validators
 
+if nv.NEUTRON_VERSION >= nv.NEUTRON_STEIN_VERSION:
+    from neutron_lib import rpc as n_rpc
+    from neutron_lib import exceptions as n_exc
+    from neutron_lib.tests.unit import fake_notifier
+    from neutron_lib.db import model_query as n_db_model_query
+else:
+    from neutron.common import rpc as n_rpc
+    from neutron.common import exceptions as n_exc
+    from neutron.tests import fake_notifier
+
+if nv.NEUTRON_VERSION >= nv.NEUTRON_ROCKY_VERSION:
+    from neutron_lib.agent import topics  # noqa
+    from neutron_lib.db import api as lib_db_api
+else:
+    from neutron.common import topics  # noqa
+    from neutron.db import api as lib_db_api
+
 
 if nv.NEUTRON_VERSION >= nv.NEUTRON_OCATA_VERSION:
     from neutron.agent.common import utils as agent_utils
-    from neutron.db import api as db_api
     from neutron.db.models import agent as agent_model
     from neutron.db.models import l3 as l3_models
     from neutron.db.models import l3agent as rb_model
@@ -106,7 +122,6 @@ else:
     from neutron.common import utils as common_utils  # noqa
     from neutron import context
     from neutron.db import agents_db
-    from neutron.db import api as db_api
     from neutron.db import l3_agentschedulers_db as rb_model  # noqa
     from neutron.db import l3_db
     from neutron.db import model_base  # noqa
@@ -151,7 +166,7 @@ else:
         return context.Context(user_id=None, tenant_id=None)
 
     def get_db_ref(context):
-        return db_api.get_session()
+        return lib_db_api.get_session()
 
     def get_tunnel_session(context):
         return context
@@ -167,7 +182,17 @@ else:
 
     is_agent_down = agents_db.AgentDbMixin.is_agent_down
 
-if nv.NEUTRON_VERSION >= nv.NEUTRON_PIKE_VERSION:
+if nv.NEUTRON_VERSION >= nv.NEUTRON_STEIN_VERSION:
+    from neutron.conf.agent import common as config
+    from neutron_lib.db.resource_extend import extends
+    from neutron_lib.db.resource_extend import get_funcs  # noqa
+    from neutron_lib.db.resource_extend import has_resource_extenders  # noqa
+    from neutron_lib.api.definitions import dns
+    from neutron_lib.api.definitions import provider_net
+
+    def auto_schedule_routers(self, hosts, r_ids):
+        self.l3_plugin.auto_schedule_routers(self.adminContext, hosts)
+elif nv.NEUTRON_VERSION >= nv.NEUTRON_PIKE_VERSION:
     from neutron.conf.agent import common as config
     from neutron.db._resource_extend import extends
     from neutron.db._resource_extend import get_funcs  # noqa
@@ -239,12 +264,5 @@ else:
 
     def get_agent_db_obj(agent):
         return agent
-
-if nv.NEUTRON_VERSION >= nv.NEUTRON_ROCKY_VERSION:
-    from neutron_lib.agent import topics  # noqa
-    from neutron_lib.db import api as lib_db_api
-else:
-    from neutron.common import topics  # noqa
-    from neutron.db import api as lib_db_api
 
 core_opts = base_config.core_opts

@@ -31,7 +31,6 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import expression as expr
 from sqlalchemy.sql import false as sql_false
 
-from neutron.common import rpc as n_rpc
 from neutron.db import common_db_mixin
 from neutron.db import extraroute_db
 from neutron.db import l3_db
@@ -45,6 +44,7 @@ from networking_cisco.backwards_compatibility import cb_resources as resources
 from networking_cisco.backwards_compatibility import extensions
 from networking_cisco.backwards_compatibility import l3_const
 from networking_cisco.backwards_compatibility import l3_exceptions
+from networking_cisco.backwards_compatibility import n_rpc
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.db.device_manager import hd_models
 from networking_cisco.plugins.cisco.db.l3 import l3_models
@@ -188,6 +188,13 @@ class L3RouterApplianceDBMixin(extraroute_db.ExtraRoute_dbonly_mixin):
                 '_cisco_router_query_hook',
                 None,
                 '_cisco_router_result_filter_hook')
+        elif bc.NEUTRON_VERSION >= bc.NEUTRON_STEIN_VERSION:
+            bc.n_db_model_query.register(
+                bc.Router,
+                "cisco_router_query_hook",
+                _cisco_router_query_hook,
+                None,
+                _cisco_router_result_filter_hook)
         else:
             common_db_mixin.CommonDbMixin.register_model_query_hook(
                 bc.Router,
