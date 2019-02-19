@@ -18,7 +18,6 @@ import unittest
 
 from neutron.api.rpc.agentnotifiers import l3_rpc_agent_api
 from neutron.common import test_lib
-from neutron.tests import fake_notifier
 from neutron.tests.unit.db import test_agentschedulers_db
 from neutron.tests.unit.extensions import test_l3
 from neutron.tests.unit.scheduler import test_l3_agent_scheduler
@@ -31,6 +30,7 @@ from webob import exc
 
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.backwards_compatibility import agent_exceptions
+from networking_cisco.backwards_compatibility import fake_notifier
 from networking_cisco.backwards_compatibility import l3_const
 from networking_cisco.plugins.cisco.common import cisco_constants as c_const
 from networking_cisco.plugins.cisco.db.l3 import ha_db

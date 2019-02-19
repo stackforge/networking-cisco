@@ -19,6 +19,7 @@ import six
 
 from neutron.tests.unit import testlib_api
 
+from networking_cisco import backwards_compatibility as bc
 from networking_cisco.tests import base as nc_base
 
 from networking_cisco.ml2_drivers.nexus import config  # noqa
@@ -124,13 +125,16 @@ class TestCiscoNexusPluginConfig(TestCiscoNexusPluginConfigBase):
     def test_create_device_error(self):
         """Test error during create of the Nexus device dictionary."""
         nc_base.load_config_file(test_error_config_file)
-
         e = self.assertRaises(cfg.ConfigFileValueError,
             cfg.CONF.ml2_cisco.nexus_switches.get('1.1.1.1').get,
             "https_verify")
         x = six.u(str(e))
-        self.assertIn("Value for option https_verify is not valid: "
-                      "Unexpected boolean value 'abc'", x)
+
+        if bc.NEUTRON_VERSION >= bc.NEUTRON_STEIN_VERSION:
+            self.assertIn("Unexpected boolean value 'abc'", x)
+        else:
+            self.assertIn("Value for option https_verify is not valid: "
+                          "Unexpected boolean value 'abc'", x)
 
     def test_dict_host_port_mapping(self):
         nc_base.load_config_file(dict_mapping_config_file)

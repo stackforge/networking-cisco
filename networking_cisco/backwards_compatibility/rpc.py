@@ -18,8 +18,12 @@
 
 from networking_cisco.backwards_compatibility import neutron_version as nv
 
-from neutron.common.rpc import *  # noqa
-from neutron.common import rpc
+if nv.NEUTRON_VERSION >= nv.NEUTRON_STEIN_VERSION:
+    from neutron_lib.rpc import *  # noqa
+    from neutron_lib import rpc
+else:
+    from neutron.common.rpc import *  # noqa
+    from neutron.common import rpc
 
 if nv.NEUTRON_VERSION < nv.NEUTRON_ROCKY_VERSION:
     Connection = rpc.create_connection
