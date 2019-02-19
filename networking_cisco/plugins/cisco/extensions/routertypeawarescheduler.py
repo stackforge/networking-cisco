@@ -16,7 +16,6 @@ import abc
 
 from neutron.api import extensions
 from neutron.api.v2 import resource
-from neutron.common import rpc as n_rpc
 from neutron import policy
 from neutron import wsgi
 from neutron_lib.api import converters as conv
@@ -28,6 +27,7 @@ from networking_cisco._i18n import _
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.backwards_compatibility import cb_faults
 from networking_cisco.backwards_compatibility import l3_const
+from networking_cisco.backwards_compatibility import n_rpc
 from networking_cisco.plugins.cisco.extensions import ciscohostingdevicemanager
 
 

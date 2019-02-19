@@ -22,9 +22,9 @@ import unittest
 import webob.exc
 
 from neutron.db import l3_db
-from neutron.tests import fake_notifier
 
 from networking_cisco import backwards_compatibility as bc
+from networking_cisco.backwards_compatibility import fake_notifier
 from networking_cisco.backwards_compatibility import cb_events as events
 from networking_cisco.backwards_compatibility import cb_registry as registry
 from networking_cisco.backwards_compatibility import cb_resources as resources
