@@ -47,9 +47,16 @@ else:
     validators = _attributes.validators
 
 
+if nv.NEUTRON_VERSION >= nv.NEUTRON_ROCKY_VERSION:
+    from neutron_lib.agent import topics  # noqa
+    from neutron_lib.db import api as lib_db_api
+else:
+    from neutron.common import topics  # noqa
+    from neutron.db import api as lib_db_api
+
+
 if nv.NEUTRON_VERSION >= nv.NEUTRON_OCATA_VERSION:
     from neutron.agent.common import utils as agent_utils
-    from neutron.db import api as db_api
     from neutron.db.models import agent as agent_model
     from neutron.db.models import l3 as l3_models
     from neutron.db.models import l3agent as rb_model
@@ -106,7 +113,6 @@ else:
     from neutron.common import utils as common_utils  # noqa
     from neutron import context
     from neutron.db import agents_db
-    from neutron.db import api as db_api
     from neutron.db import l3_agentschedulers_db as rb_model  # noqa
     from neutron.db import l3_db
     from neutron.db import model_base  # noqa
@@ -151,7 +157,7 @@ else:
         return context.Context(user_id=None, tenant_id=None)
 
     def get_db_ref(context):
-        return db_api.get_session()
+        return lib_db_api.get_session()
 
     def get_tunnel_session(context):
         return context
@@ -239,12 +245,5 @@ else:
 
     def get_agent_db_obj(agent):
         return agent
-
-if nv.NEUTRON_VERSION >= nv.NEUTRON_ROCKY_VERSION:
-    from neutron_lib.agent import topics  # noqa
-    from neutron_lib.db import api as lib_db_api
-else:
-    from neutron.common import topics  # noqa
-    from neutron.db import api as lib_db_api
 
 core_opts = base_config.core_opts
