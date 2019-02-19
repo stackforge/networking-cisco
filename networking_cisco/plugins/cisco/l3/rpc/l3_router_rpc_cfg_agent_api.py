@@ -16,10 +16,9 @@
 from oslo_log import log as logging
 import oslo_messaging
 
-from neutron.common import rpc as n_rpc
-
 from networking_cisco import backwards_compatibility as bc
 from networking_cisco.backwards_compatibility import extensions
+from networking_cisco.backwards_compatibility import n_rpc
 from networking_cisco.backwards_compatibility import topics
 from networking_cisco.plugins.cisco.common import cisco_constants
 from networking_cisco.plugins.cisco.extensions import ciscocfgagentscheduler

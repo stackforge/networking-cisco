@@ -16,6 +16,8 @@
 from oslo_config import cfg
 from oslo_config import types
 
+from networking_cisco import backwards_compatibility as bc
+
 
 class RemainderOpt(cfg.DictOpt):
 
@@ -64,6 +66,7 @@ class RemainderOpt(cfg.DictOpt):
         return opt_names
 
     def _get_from_namespace(self, namespace, group_name):
+        loc = None
         opt_names = self._get_opts_including_deprecated(namespace,
                                                         group_name)
         result = {}
@@ -82,8 +85,14 @@ class RemainderOpt(cfg.DictOpt):
                     else:
                         result[key] = self.item_type(data)
 
+            if bc.NEUTRON_VERSION >= bc.NEUTRON_STEIN_VERSION:
+                loc = cfg.LocationInfo(
+                    cfg.Locations.user,
+                    namespace._sections_to_file.get(group_name, ''),
+                )
+
         if getattr(cfg.CONF, 'get_location', None):
-            return (result, None)
+            return result, loc
         else:
             return result
 
@@ -133,6 +142,13 @@ class SubsectionOpt(cfg.DictOpt):
         self.subopts = subopts or []
 
     def _get_from_namespace(self, namespace, group_name):
+        loc = None
+        if bc.NEUTRON_VERSION >= bc.NEUTRON_STEIN_VERSION:
+            loc = cfg.LocationInfo(
+                cfg.Locations.user,
+                namespace._sections_to_file.get(group_name, ''),
+            )
+
         identities = {}
         sections = cfg.CONF.list_all_sections()
 
@@ -142,7 +158,8 @@ class SubsectionOpt(cfg.DictOpt):
                 continue
             cfg.CONF.register_opts(self.subopts, group=section)
             identities[ident] = cfg.CONF.get(section)
+
         if getattr(cfg.CONF, 'get_location', None):
-            return (identities, None)
+            return identities, loc
         else:
             return identities
