@@ -17,6 +17,8 @@ import mock
 import os
 import unittest
 
+from networking_cisco.plugins.cisco.device_manager import config as cfg
+
 from neutron.db import agents_db
 from neutron.db import dns_db
 from neutron.extensions import providernet as pnet
