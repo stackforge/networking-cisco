@@ -8,6 +8,17 @@
       - ^releasenotes/.*$
 
 - job:
+    name: networking-cisco-tox-py35-master
+    parent: networking-cisco-tox
+    override-checkout: master
+    description: |
+      Run unit tests for networking-cisco under cPython version 3.5 with neutron newton.
+      Uses tox with the ``py35-newton`` environment.
+    vars:
+      tox_envlist: py35-master
+      bindep_profile: test py35
+
+- job:
     name: networking-cisco-tox-py35-mitaka
     parent: networking-cisco-tox
     override-checkout: mitaka-eol
@@ -15,7 +26,7 @@
       Run unit tests for networking-cisco under cPython version 3.5 with neutron newton.
       Uses tox with the ``py35-newton`` environment.
     vars:
-      tox_envlist: py35
+      tox_envlist: py35-mitaka
       bindep_profile: test py35
 
 - job:
@@ -74,6 +85,17 @@
       bindep_profile: test py35
 
 - job:
+    name: networking-cisco-tox-py27-master
+    parent: networking-cisco-tox
+    override-checkout: master
+    description: |
+      Run unit tests for networking-cisco under cPython version 2.7 with neutron newton.
+      Uses tox with the ``py27-newton`` environment.
+    vars:
+      tox_envlist: py27-master
+      bindep_profile: test py27
+
+- job:
     name: networking-cisco-tox-py27-mitaka
     parent: networking-cisco-tox
     override-checkout: mitaka-eol
@@ -81,7 +103,7 @@
       Run unit tests for networking-cisco under cPython version 2.7 with neutron newton.
       Uses tox with the ``py27-newton`` environment.
     vars:
-      tox_envlist: py27
+      tox_envlist: py27-mitaka
       bindep_profile: test py27
 
 - job:
@@ -195,12 +217,16 @@
               - openstack/neutron
               - openstack/python-neutronclient
         - networking-cisco-tox-bandit
+        - networking-cisco-tox-py27-master:
+            voting: false
         - networking-cisco-tox-py27-mitaka
         - networking-cisco-tox-py27-newton
         - networking-cisco-tox-py27-ocata
         - networking-cisco-tox-py27-pike
         - networking-cisco-tox-py27-queens
         - networking-cisco-tox-py27-rocky
+        - networking-cisco-tox-py35-master:
+            voting: false
         - networking-cisco-tox-py35-mitaka
         - networking-cisco-tox-py35-newton
         - networking-cisco-tox-py35-ocata
